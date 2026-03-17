@@ -566,10 +566,8 @@ const ProductPage = () => {
         </section>
       </main>
 
-      <div className="hidden lg:block">
-        <SiteFooter />
-        <WhatsAppButton />
-      </div>
+      <SiteFooter />
+      <WhatsAppButton />
       <CartSidebar />
       <AddedToCartModal />
       {isImageModalOpen && (
