@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Menu, X, Info, MessageCircle, LayoutGrid } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Search, ShoppingCart, Menu, X, LayoutGrid } from "lucide-react";
 import logo from "@/assets/logo.webp";
 import { useCart } from "@/contexts/CartContext";
 import CategoriesMenu from "@/components/CategoriesMenu";
@@ -16,9 +16,6 @@ const SiteHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const { totalItems, setIsCartOpen } = useCart();
-  const location = useLocation();
-
-  const contactHref = location.pathname === "/" ? "#contato" : "/#contato";
 
   return (
     <>
@@ -67,19 +64,6 @@ const SiteHeader = () => {
               </button>
             </div>
 
-            <a
-              href="https://wa.me/5567991032937"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden rounded-full bg-primary p-2 text-primary-foreground transition-opacity hover:opacity-90 sm:flex"
-            >
-              <MessageCircle className="h-5 w-5" />
-            </a>
-
-            <a href={contactHref} className="rounded-full p-2 text-primary transition-colors hover:bg-secondary">
-              <Info className="h-5 w-5" />
-            </a>
-
             <button
               type="button"
               onClick={() => setCategoriesOpen(true)}
@@ -124,7 +108,7 @@ const SiteHeader = () => {
                 </a>
               ))}
               <a
-                href={contactHref}
+                href="/#contato"
                 onClick={() => setMobileOpen(false)}
                 className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
               >
