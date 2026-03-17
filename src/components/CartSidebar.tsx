@@ -162,7 +162,6 @@ const CartSidebar = () => {
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
           `Endereço completo: ${savedAddress || "-"}`,
-          `Distância estimada: ${estimatedDistanceKm} km`,
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
           ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
@@ -177,7 +176,6 @@ const CartSidebar = () => {
             ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor || "-"}`] : [])]
             : []),
           `Taxa do motoboy: ${formatPrice(deliveryFee)}`,
-          "Prazo médio de entrega: 30 a 40 minutos",
           `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
       ),
@@ -186,7 +184,6 @@ const CartSidebar = () => {
       name,
       phone,
       savedAddress,
-      estimatedDistanceKm,
       totalPrice,
       paymentMethod,
       pixDiscount,
@@ -311,9 +308,6 @@ const CartSidebar = () => {
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                           <div>
                             <p className="text-sm text-foreground">{savedAddress}</p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Distância estimada: {estimatedDistanceKm} km
-                            </p>
                           </div>
                         </div>
                         <button
@@ -329,14 +323,9 @@ const CartSidebar = () => {
                   )}
 
                   <div className="mt-3 rounded-xl bg-secondary p-3 text-sm text-foreground">
-                    <div className="flex items-center gap-2">
-                      <Bike className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Entrega em Campo Grande - MS</span>
-                    </div>
-                    <p className="mt-2">
+                    <p>
                       Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
                     </p>
-                    <p className="mt-1 text-muted-foreground">Prazo médio: 30 a 40 minutos</p>
                   </div>
                 </div>
 
@@ -438,8 +427,6 @@ const CartSidebar = () => {
                 <span className="font-medium text-muted-foreground">Total final:</span>
                 <span className="text-xl font-bold text-primary">{formatPrice(finalTotal)}</span>
               </div>
-
-              <p className="text-xs text-muted-foreground">Entrega média de 30 a 40 minutos em Campo Grande - MS.</p>
             </div>
             <a
               href={whatsappHref}
