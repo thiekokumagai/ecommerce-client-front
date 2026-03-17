@@ -30,34 +30,34 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
             loading="lazy"
           />
         </div>
+      </Link>
 
-        <div className="flex flex-1 flex-col justify-between gap-2 p-4 pt-2">
-          <div>
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {product.category}
-            </span>
+      <div className="flex flex-1 flex-col justify-between gap-2 p-4 pt-2">
+        <div>
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {product.category}
+          </span>
+          <Link to={`/produto/${product.id}`} className="block">
             <h3 className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-foreground">
               {product.name}
             </h3>
-          </div>
-
-          <div className="mt-1">
-            {product.oldPrice && (
-              <span className="text-xs text-muted-foreground line-through">
-                {formatPrice(product.oldPrice)}
-              </span>
-            )}
-            <p className="text-lg font-bold text-primary">
-              {formatPrice(product.price)}
-            </p>
-          </div>
+          </Link>
         </div>
-      </Link>
 
-      <div className="px-4 pb-4">
+        <div className="mt-1">
+          {product.oldPrice && (
+            <span className="text-xs text-muted-foreground line-through">
+              {formatPrice(product.oldPrice)}
+            </span>
+          )}
+          <p className="text-lg font-bold text-primary">
+            {formatPrice(product.price)}
+          </p>
+        </div>
+
         <button
           onClick={() => addToCart(product)}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+          className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
         >
           <ShoppingCart className="h-4 w-4" />
           Comprar
