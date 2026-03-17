@@ -1,4 +1,4 @@
-const bannerImage = "/442164dccf88c24bee679111d86dd834.jpg";
+import bannerImage from "@/assets/banner.jpg";
 
 const HeroBanner = () => {
   return (
