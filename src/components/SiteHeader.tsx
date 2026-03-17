@@ -20,21 +20,23 @@ const SiteHeader = () => {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-[60] border-b border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur-md md:hidden">
-        <div className="mx-auto flex max-w-7xl items-center gap-2 rounded-full bg-secondary px-4 py-2">
-          <Search className="h-4 w-4 text-primary" />
-          <input
-            type="text"
-            placeholder="Faça sua busca"
-            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-          />
+      <div className="fixed inset-x-0 top-0 z-[70] border-b border-border bg-background/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur-md md:hidden">
+        <div className="mx-auto max-w-7xl">
+          <div className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2.5">
+            <Search className="h-4 w-4 shrink-0 text-primary" />
+            <input
+              type="text"
+              placeholder="Faça sua busca"
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
         </div>
       </div>
 
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur-md md:top-0">
-        <div className="mx-auto mt-[68px] flex h-20 max-w-7xl items-center justify-between px-4 md:mt-0 md:px-8">
+        <div className="mx-auto mt-[74px] flex h-16 max-w-7xl items-center justify-between px-4 md:mt-0 md:h-20 md:px-8">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Pod & Mais" className="h-16 w-16 object-contain md:h-20 md:w-20" />
+            <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain md:h-20 md:w-20" />
           </Link>
 
           <nav className="hidden items-center gap-6 lg:flex">
@@ -49,7 +51,7 @@ const SiteHeader = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <div className="hidden items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 md:flex">
               <input
                 type="text"
