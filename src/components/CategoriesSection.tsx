@@ -19,12 +19,12 @@ const categories = [
 
 const CategoriesSection = () => {
   return (
-    <section id="categorias" className="py-12 md:py-16">
+    <section id="categorias" className="py-10 md:py-14">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
           Categorias
         </h2>
-        <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-7 md:gap-4">
+        <div className="mt-6 flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-7 md:gap-4 md:overflow-visible">
           {categories.map((cat, i) => (
             <motion.a
               key={cat.name}
@@ -33,16 +33,16 @@ const CategoriesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.05, duration: 0.4 }}
-              className="group flex flex-col items-center gap-3"
+              className="group flex shrink-0 flex-col items-center gap-2"
             >
-              <div className="overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/5">
+              <div className="overflow-hidden rounded-full border-2 border-transparent bg-secondary p-1 transition-all duration-200 group-hover:border-primary group-hover:shadow-md">
                 <img
                   src={cat.image}
                   alt={cat.name}
-                  className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="aspect-square w-20 rounded-full object-cover md:w-24"
                 />
               </div>
-              <span className="text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground md:text-sm">
+              <span className="text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary md:text-sm">
                 {cat.name}
               </span>
             </motion.a>
