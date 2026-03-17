@@ -73,11 +73,13 @@ const ProductPage = () => {
               onClick={() => setIsImageModalOpen(true)}
               className="block w-full"
             >
-              <img
-                src={details.gallery[selectedImage]}
-                alt={product.name}
-                className="aspect-square w-full object-contain"
-              />
+              <div className="aspect-square w-full">
+                <img
+                  src={details.gallery[selectedImage]}
+                  alt={product.name}
+                  className="h-full w-full object-contain"
+                />
+              </div>
             </button>
 
             <button
@@ -282,17 +284,19 @@ const ProductPage = () => {
                 ))}
               </div>
 
-              <div className="relative overflow-hidden rounded-[14px] bg-[#f6f5f3]">
+              <div className="relative w-full overflow-hidden rounded-[14px] bg-[#f6f5f3]">
                 <button
                   type="button"
                   onClick={() => setIsImageModalOpen(true)}
                   className="block w-full"
                 >
-                  <img
-                    src={details.gallery[selectedImage]}
-                    alt={product.name}
-                    className="aspect-square w-full object-contain"
-                  />
+                  <div className="aspect-square w-full">
+                    <img
+                      src={details.gallery[selectedImage]}
+                      alt={product.name}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
                 </button>
 
                 <button
