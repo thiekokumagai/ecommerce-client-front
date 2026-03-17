@@ -3,6 +3,8 @@ import { X, Minus, Plus, Trash2, ShoppingBag, Bike, MapPin, Pencil } from "lucid
 import { useCart } from "@/contexts/CartContext";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
+const SESSION_NAME_KEY = "podemais-checkout-name";
+const SESSION_PHONE_KEY = "podemais-checkout-phone";
 
 const STORE_ORIGIN = "Rua Glauce Rocha, 539, Campo Grande - MS";
 
@@ -84,11 +86,21 @@ const CartSidebar = () => {
 
   useEffect(() => {
     const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY) ?? "";
+    const storedName = sessionStorage.getItem(SESSION_NAME_KEY) ?? "";
+    const storedPhone = sessionStorage.getItem(SESSION_PHONE_KEY) ?? "";
 
     if (storedAddress) {
       setSavedAddress(storedAddress);
       setAddress(storedAddress);
       setIsEditingAddress(false);
+    }
+
+    if (storedName) {
+      setName(storedName);
+    }
+
+    if (storedPhone) {
+      setPhone(storedPhone);
     }
   }, []);
 
@@ -106,6 +118,17 @@ const CartSidebar = () => {
   const finalTotal = discountedProductsTotal + deliveryFee;
 
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    sessionStorage.setItem(SESSION_NAME_KEY, value);
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formattedPhone = formatPhone(value);
+    setPhone(formattedPhone);
+    sessionStorage.setItem(SESSION_PHONE_KEY, formattedPhone);
+  };
 
   const handleSaveAddress = () => {
     const trimmedAddress = address.trim();
@@ -237,7 +260,7 @@ const CartSidebar = () => {
                   <label className="mb-2 block text-sm font-medium text-foreground">Nome</label>
                   <input
                     value={name}
-                    onChange={(event) => setName(event.target.value)}
+                    onChange={(event) => handleNameChange(event.target.value)}
                     placeholder="Seu nome"
                     className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
@@ -247,7 +270,7 @@ const CartSidebar = () => {
                   <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
                   <input
                     value={phone}
-                    onChange={(event) => setPhone(formatPhone(event.target.value))}
+                    onChange={(event) => handlePhoneChange(event.target.value)}
                     placeholder="(67) 99999-9999"
                     className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
