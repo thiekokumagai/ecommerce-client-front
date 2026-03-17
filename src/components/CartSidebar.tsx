@@ -1,11 +1,56 @@
 import { useMemo, useState, useCallback } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, Bike } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 const formatPrice = (price: number) =>
   `R$${price.toFixed(2).replace(".", ",")}`;
 
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+
+  if (digits.length <= 2) return digits ? `(${digits}` : "";
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+
+  return value;
+};
+
+const formatCurrencyInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+
+  if (!digits) return "";
+
+  const numberValue = Number(digits) / 100;
+
+  return numberValue.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
+
+const deliveryZones = [
+  { keywords: ["centro", "jardim dos estados", "amambaí", "são francisco"], fee: 8 },
+  { keywords: ["caiçara", "carandá bosque", "rita vieira", "tiradentes", "vila carlota"], fee: 10 },
+  { keywords: ["universitário", "parati", "coronel antonino", "nova lima", "moreninhas"], fee: 12 },
+  { keywords: ["indubrasil", "lageado", "anhanduizinho", "aero rancho", "noroeste"], fee: 15 },
+];
+
+const getDeliveryFee = (address: string) => {
+  const normalizedAddress = address
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const zone = deliveryZones.find((item) =>
+    item.keywords.some((keyword) => normalizedAddress.includes(keyword))
+  );
+
+  return zone?.fee ?? 10;
+};
 
 const CartSidebar = () => {
   const { items, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
@@ -17,6 +62,9 @@ const CartSidebar = () => {
   const [changeFor, setChangeFor] = useState("");
 
   const totalWithPixDiscount = useMemo(() => totalPrice * 0.95, [totalPrice]);
+  const deliveryFee = useMemo(() => getDeliveryFee(address), [address]);
+  const subtotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
+  const finalTotal = subtotal + deliveryFee;
 
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
 
@@ -35,15 +83,18 @@ const CartSidebar = () => {
           `Endereço completo: ${address || "-"}`,
           "",
           paymentMethod === "pix"
-            ? `Forma de pagamento: Pix (5% de desconto) - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
+            ? `Forma de pagamento: Pix (5% de desconto) - Subtotal com desconto: ${formatPrice(totalWithPixDiscount)}`
             : paymentMethod === "debito"
-              ? `Forma de pagamento: Débito - Total: ${formatPrice(totalPrice)}`
+              ? `Forma de pagamento: Débito - Subtotal: ${formatPrice(totalPrice)}`
               : paymentMethod === "credito"
-                ? `Forma de pagamento: Crédito - Total: ${formatPrice(totalPrice)}`
-                : `Forma de pagamento: Dinheiro - Total: ${formatPrice(totalPrice)}`,
+                ? `Forma de pagamento: Crédito - Subtotal: ${formatPrice(totalPrice)}`
+                : `Forma de pagamento: Dinheiro - Subtotal: ${formatPrice(totalPrice)}`,
           ...(paymentMethod === "dinheiro"
-            ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: ${changeFor || "-"}`] : [])]
+            ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor || "-"}`] : [])]
             : []),
+          `Taxa de entrega em Campo Grande - MS: ${formatPrice(deliveryFee)}`,
+          "Prazo médio de entrega: 30 a 40 minutos",
+          `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
       ),
     [
@@ -56,6 +107,8 @@ const CartSidebar = () => {
       totalPrice,
       needsChange,
       changeFor,
+      deliveryFee,
+      finalTotal,
     ]
   );
 
@@ -88,7 +141,7 @@ const CartSidebar = () => {
               <div className="space-y-4">
                 {items.map((item) => (
                   <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex gap-3 rounded-xl border border-border bg-background p-3">
-                    <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-lg object-contain bg-secondary/30" loading="lazy" />
+                    <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-lg bg-secondary/30 object-contain" loading="lazy" />
                     <div className="flex flex-1 flex-col justify-between">
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -135,8 +188,8 @@ const CartSidebar = () => {
                   <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
                   <input
                     value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
-                    placeholder="Seu telefone"
+                    onChange={(event) => setPhone(formatPhone(event.target.value))}
+                    placeholder="(67) 99999-9999"
                     className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
@@ -149,6 +202,16 @@ const CartSidebar = () => {
                     placeholder="Rua, número, bairro, complemento e referência"
                     className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
+                  <div className="mt-3 rounded-xl bg-secondary p-3 text-sm text-foreground">
+                    <div className="flex items-center gap-2">
+                      <Bike className="h-4 w-4 text-primary" />
+                      <span className="font-medium">Entrega em Campo Grande - MS</span>
+                    </div>
+                    <p className="mt-2">
+                      Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
+                    </p>
+                    <p className="text-muted-foreground">Prazo médio: 30 a 40 minutos</p>
+                  </div>
                 </div>
 
                 <div>
@@ -187,7 +250,7 @@ const CartSidebar = () => {
 
                 {paymentMethod === "pix" && (
                   <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
-                    Total com 5% de desconto: <span className="font-bold text-primary">{formatPrice(totalWithPixDiscount)}</span>
+                    Subtotal com 5% de desconto: <span className="font-bold text-primary">{formatPrice(totalWithPixDiscount)}</span>
                   </div>
                 )}
 
@@ -218,7 +281,7 @@ const CartSidebar = () => {
                         <label className="mb-2 block text-sm font-medium text-foreground">Troco para quanto?</label>
                         <input
                           value={changeFor}
-                          onChange={(event) => setChangeFor(event.target.value)}
+                          onChange={(event) => setChangeFor(formatCurrencyInput(event.target.value))}
                           placeholder="Ex: 100,00"
                           className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                         />
@@ -233,11 +296,22 @@ const CartSidebar = () => {
 
         {items.length > 0 && (
           <div className="border-t border-border p-5">
-            <div className="flex items-center justify-between text-base">
-              <span className="font-medium text-muted-foreground">Total ({totalItems} {totalItems === 1 ? "item" : "itens"}):</span>
-              <span className="text-xl font-bold text-primary">
-                {paymentMethod === "pix" ? formatPrice(totalWithPixDiscount) : formatPrice(totalPrice)}
-              </span>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})</span>
+                <span className="font-medium text-foreground">
+                  {paymentMethod === "pix" ? formatPrice(totalWithPixDiscount) : formatPrice(totalPrice)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Taxa do motoboy</span>
+                <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
+              </div>
+              <div className="flex items-center justify-between text-base">
+                <span className="font-medium text-muted-foreground">Total final:</span>
+                <span className="text-xl font-bold text-primary">{formatPrice(finalTotal)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Entrega média de 30 a 40 minutos em Campo Grande - MS.</p>
             </div>
             <a
               href={whatsappHref}
