@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { ShoppingCart } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
@@ -14,12 +13,8 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
   const { addToCart } = useCart();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.04, duration: 0.4 }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl  transition-all duration-200 hover:-translate-y-1 "
+    <div
+      className="group relative flex flex-col overflow-hidden rounded-2xl"
     >
       {product.isPromo && product.oldPrice && (
         <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
@@ -27,7 +22,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         </span>
       )}
 
-      <div className="relative overflow-hidden bg-secondary/30 p-4 pb-0 ">
+      <div className="relative overflow-hidden bg-secondary/30 p-4 pb-0">
         <img
           src={product.image}
           alt={product.name}
@@ -59,13 +54,13 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
 
         <button
           onClick={() => addToCart(product)}
-          className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 active:scale-[0.98]"
+          className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
         >
           <ShoppingCart className="h-4 w-4" />
           Comprar
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
