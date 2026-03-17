@@ -92,7 +92,8 @@ const CartSidebar = () => {
     }
   }, []);
 
-  const totalWithPixDiscount = useMemo(() => totalPrice * 0.95, [totalPrice]);
+  const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
+  const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
   const discountedProductsTotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
   const estimatedDistanceKm = useMemo(
     () => estimateDistanceFromAddress(savedAddress || address),
@@ -136,13 +137,15 @@ const CartSidebar = () => {
           `Endereço completo: ${savedAddress || "-"}`,
           `Distância estimada: ${estimatedDistanceKm} km`,
           "",
+          `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
+          ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
           paymentMethod === "pix"
-            ? `Forma de pagamento: Pix (5% de desconto apenas nos produtos) - Subtotal com desconto: ${formatPrice(totalWithPixDiscount)}`
+            ? `Forma de pagamento: Pix - Total dos produtos com desconto: ${formatPrice(totalWithPixDiscount)}`
             : paymentMethod === "debito"
-              ? `Forma de pagamento: Débito - Subtotal dos produtos: ${formatPrice(totalPrice)}`
+              ? `Forma de pagamento: Débito`
               : paymentMethod === "credito"
-                ? `Forma de pagamento: Crédito - Subtotal dos produtos: ${formatPrice(totalPrice)}`
-                : `Forma de pagamento: Dinheiro - Subtotal dos produtos: ${formatPrice(totalPrice)}`,
+                ? `Forma de pagamento: Crédito`
+                : `Forma de pagamento: Dinheiro`,
           ...(paymentMethod === "dinheiro"
             ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor || "-"}`] : [])]
             : []),
@@ -157,9 +160,10 @@ const CartSidebar = () => {
       phone,
       savedAddress,
       estimatedDistanceKm,
-      paymentMethod,
-      totalWithPixDiscount,
       totalPrice,
+      paymentMethod,
+      pixDiscount,
+      totalWithPixDiscount,
       needsChange,
       changeFor,
       deliveryFee,
@@ -343,12 +347,6 @@ const CartSidebar = () => {
                   </div>
                 </div>
 
-                {paymentMethod === "pix" && (
-                  <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
-                    Desconto de 5% aplicado apenas nos produtos: <span className="font-bold text-primary">{formatPrice(totalWithPixDiscount)}</span>
-                  </div>
-                )}
-
                 {paymentMethod === "dinheiro" && (
                   <div className="space-y-3">
                     <div>
@@ -394,18 +392,26 @@ const CartSidebar = () => {
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Produtos ({totalItems} {totalItems === 1 ? "item" : "itens"})</span>
-                <span className="font-medium text-foreground">
-                  {paymentMethod === "pix" ? formatPrice(totalWithPixDiscount) : formatPrice(totalPrice)}
-                </span>
+                <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
               </div>
+
+              {paymentMethod === "pix" && (
+                <div className="mx-[-20px] flex items-center justify-between bg-primary px-5 py-3 text-sm font-medium text-primary-foreground">
+                  <span>Desconto PIX:</span>
+                  <span>-{formatPrice(pixDiscount)}</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Taxa do motoboy</span>
                 <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
               </div>
+
               <div className="flex items-center justify-between text-base">
                 <span className="font-medium text-muted-foreground">Total final:</span>
                 <span className="text-xl font-bold text-primary">{formatPrice(finalTotal)}</span>
               </div>
+
               <p className="text-xs text-muted-foreground">Entrega média de 30 a 40 minutos em Campo Grande - MS.</p>
             </div>
             <a
