@@ -40,7 +40,7 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
-        <main className="mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center md:px-8">
+        <main className="mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center lg:px-8">
           <h1 className="text-2xl font-bold text-foreground">Produto não encontrado</h1>
           <Link to="/" className="mt-6 rounded-xl border border-primary px-6 py-3 text-sm font-medium text-primary">
             Voltar para a loja
@@ -75,13 +75,13 @@ const ProductPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 md:pb-0">
-      <div className="hidden md:block">
+    <div className="min-h-screen bg-background pb-28 lg:pb-0">
+      <div className="hidden lg:block">
         <SiteHeader />
       </div>
 
-      <main className="mx-auto max-w-[1220px] md:px-8 md:py-8">
-        <section className="md:hidden">
+      <main className="mx-auto max-w-[1220px] lg:px-8 lg:py-8">
+        <section className="lg:hidden">
           <div className="relative bg-[#f5f5f5]">
             <button
               type="button"
@@ -322,11 +322,7 @@ const ProductPage = () => {
               type="button"
               onClick={handleAddToCart}
               disabled={!canAddToCart || (isNicSalt && availableNicotineOptions.length === 0)}
-              className={`mx-auto block w-full max-w-[240px] rounded-xl px-6 py-3.5 text-base font-bold ${
-                canAddToCart && (!isNicSalt || availableNicotineOptions.length > 0)
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-[#c7c7c7] text-white"
-              }`}
+              className="mx-auto block w-full max-w-[240px] rounded-xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground disabled:bg-[#c7c7c7] disabled:text-white"
             >
               {isNicSalt && availableNicotineOptions.length === 0
                 ? "Indisponível"
@@ -337,7 +333,7 @@ const ProductPage = () => {
           </div>
         </section>
 
-        <section className="hidden md:block">
+        <section className="hidden lg:block">
           <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-center">
             <div className={`grid items-start gap-4 pt-16 ${isNicSalt ? "grid-cols-1" : "grid-cols-[82px_1fr]"}`}>
               {!isNicSalt && (
@@ -570,7 +566,7 @@ const ProductPage = () => {
         </section>
       </main>
 
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <SiteFooter />
         <WhatsAppButton />
       </div>
