@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
@@ -18,38 +18,59 @@ const CartSidebar = () => {
 
   const totalWithPixDiscount = useMemo(() => totalPrice * 0.95, [totalPrice]);
 
-  if (!isCartOpen) return null;
+  const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
 
-  const checkoutMessage = encodeURIComponent(
+  const checkoutMessage = useMemo(
+    () =>
+      encodeURIComponent(
+        [
+          "Olá! Gostaria de finalizar meu pedido:",
+          "",
+          ...items.map((item) => `${item.quantity}x ${item.product.name} - ${formatPrice(item.product.price * item.quantity)}`),
+          "",
+          `Nome: ${name || "-"}`,
+          `Telefone: ${phone || "-"}`,
+          `Endereço completo: ${address || "-"}`,
+          "",
+          paymentMethod === "pix"
+            ? `Forma de pagamento: Pix (5% de desconto) - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
+            : paymentMethod === "debito"
+              ? `Forma de pagamento: Débito - Total: ${formatPrice(totalPrice)}`
+              : paymentMethod === "credito"
+                ? `Forma de pagamento: Crédito - Total: ${formatPrice(totalPrice)}`
+                : `Forma de pagamento: Dinheiro - Total: ${formatPrice(totalPrice)}`,
+          ...(paymentMethod === "dinheiro"
+            ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: ${changeFor || "-"}`] : [])]
+            : []),
+        ].join("\n")
+      ),
     [
-      "Olá! Gostaria de finalizar meu pedido:",
-      "",
-      ...items.map((item) => `${item.quantity}x ${item.product.name} - ${formatPrice(item.product.price * item.quantity)}`),
-      "",
-      `Nome: ${name || "-"}`,
-      `Telefone: ${phone || "-"}`,
-      `Endereço completo: ${address || "-"}`,
-      "",
-      paymentMethod === "pix"
-        ? `Forma de pagamento: Pix (5% de desconto) - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
-        : paymentMethod === "debito"
-          ? `Forma de pagamento: Débito - Total: ${formatPrice(totalPrice)}`
-          : paymentMethod === "credito"
-            ? `Forma de pagamento: Crédito - Total: ${formatPrice(totalPrice)}`
-            : `Forma de pagamento: Dinheiro - Total: ${formatPrice(totalPrice)}`,
-      ...(paymentMethod === "dinheiro"
-        ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: ${changeFor || "-"}`] : [])]
-        : []),
-    ].join("\n")
+      items,
+      name,
+      phone,
+      address,
+      paymentMethod,
+      totalWithPixDiscount,
+      totalPrice,
+      needsChange,
+      changeFor,
+    ]
   );
+
+  const whatsappHref = useMemo(
+    () => `https://wa.me/5567991032937?text=${checkoutMessage}`,
+    [checkoutMessage]
+  );
+
+  if (!isCartOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end">
-      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)} />
+      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={closeCart} />
       <div className="relative flex h-full w-full max-w-md flex-col bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border bg-primary px-5 py-4">
           <h2 className="text-lg font-bold text-primary-foreground">Confira seu pedido</h2>
-          <button onClick={() => setIsCartOpen(false)} className="text-primary-foreground/80">
+          <button onClick={closeCart} className="text-primary-foreground/80">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -65,7 +86,7 @@ const CartSidebar = () => {
               <div className="space-y-4">
                 {items.map((item) => (
                   <div key={item.product.id} className="flex gap-3 rounded-xl border border-border bg-background p-3">
-                    <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-lg object-contain bg-secondary/30" />
+                    <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-lg object-contain bg-secondary/30" loading="lazy" />
                     <div className="flex flex-1 flex-col justify-between">
                       <div className="flex items-start justify-between gap-2">
                         <p className="line-clamp-2 text-sm font-medium text-foreground">{item.product.name}</p>
@@ -210,7 +231,7 @@ const CartSidebar = () => {
               </span>
             </div>
             <a
-              href={`https://wa.me/5567991032937?text=${checkoutMessage}`}
+              href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground"
