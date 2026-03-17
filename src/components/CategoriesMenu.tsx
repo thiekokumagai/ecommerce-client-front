@@ -30,7 +30,7 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[75] flex">
+    <div className="fixed inset-0 z-[75] flex justify-end">
       <button
         type="button"
         aria-label="Fechar menu de categorias"
