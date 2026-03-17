@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import catDescartavel from "@/assets/cat-descartavel.webp";
 import catLifepod from "@/assets/cat-lifepod.webp";
 import catNicsalt from "@/assets/cat-nicsalt.webp";
@@ -26,26 +25,22 @@ const CategoriesSection = () => {
         </h2>
         <div className="mt-6 flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-7 md:gap-4 md:overflow-visible">
           {categories.map((cat, i) => (
-            <motion.a
+            <a
               key={cat.name}
               href="#"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05, duration: 0.4 }}
               className="group flex shrink-0 flex-col items-center gap-2"
             >
-              <div className="overflow-hidden rounded-full border-2 border-transparent bg-secondary p-1 transition-all duration-200 group-hover:border-primary group-hover:shadow-md">
+              <div className="overflow-hidden rounded-full border-2 border-transparent bg-secondary p-1">
                 <img
                   src={cat.image}
                   alt={cat.name}
                   className="aspect-square w-20 rounded-full object-cover md:w-24"
                 />
               </div>
-              <span className="text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary md:text-sm">
+              <span className="text-xs font-medium text-muted-foreground md:text-sm">
                 {cat.name}
               </span>
-            </motion.a>
+            </a>
           ))}
         </div>
       </div>
