@@ -42,7 +42,7 @@ const SiteFooter = () => {
             <div className="flex items-start gap-2 text-sm text-muted-foreground">
               <Clock className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p>Terça a Sábado</p>
+                <p>Segunda à Sábado</p>
                 <p>08:00 – 12:00 | 13:00 – 20:00</p>
               </div>
             </div>
