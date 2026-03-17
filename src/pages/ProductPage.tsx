@@ -32,7 +32,7 @@ const ProductPage = () => {
   const [note, setNote] = useState("");
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [nicotineStrength, setNicotineStrength] = useState("35mg");
+  const [nicotineStrength, setNicotineStrength] = useState<string | null>(null);
 
   const product = useMemo(() => getProductById(Number(id)), [id]);
 
@@ -54,12 +54,15 @@ const ProductPage = () => {
   const details = getProductMockDetails(product);
   const visibleSpecs = showFullDescription ? details.specs : details.specs.slice(0, 3);
   const isNicSalt = product.category === "NicSalt";
+  const canAddToCart = !isNicSalt || nicotineStrength !== null;
 
   const productDescription = isNicSalt
     ? "Hortelã gelada"
     : details.specs[0];
 
   const handleAddToCart = () => {
+    if (!canAddToCart) return;
+
     for (let i = 0; i < quantity; i += 1) {
       addToCart(product);
     }
@@ -246,13 +249,14 @@ const ProductPage = () => {
             <button
               type="button"
               onClick={handleAddToCart}
+              disabled={!canAddToCart}
               className={`mt-6 w-full rounded-xl px-6 py-3 text-center text-base font-medium ${
-                isNicSalt
-                  ? "bg-[#c7c7c7] text-white"
-                  : "bg-primary text-primary-foreground"
+                canAddToCart
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-[#c7c7c7] text-white"
               }`}
             >
-              {isNicSalt ? "Selecione" : "Adicionar ao Pedido"}
+              {canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
             </button>
 
             <button
@@ -291,22 +295,25 @@ const ProductPage = () => {
             </div>
           </div>
 
-          {!isNicSalt && (
-            <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                className="mx-auto block w-full max-w-[200px] rounded-xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground"
-              >
-                Adicionar ao Pedido
-              </button>
-            </div>
-          )}
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!canAddToCart}
+              className={`mx-auto block w-full max-w-[240px] rounded-xl px-6 py-3.5 text-base font-bold ${
+                canAddToCart
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-[#c7c7c7] text-white"
+              }`}
+            >
+              {canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+            </button>
+          </div>
         </section>
 
         <section className="hidden md:block">
           <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-center">
-            <div className="grid grid-cols-[82px_1fr] items-start gap-4 pt-16">
+            <div className={`grid items-start gap-4 pt-16 ${isNicSalt ? "grid-cols-1" : "grid-cols-[82px_1fr]"}`}>
               {!isNicSalt && (
                 <div className="flex flex-col gap-3">
                   <button
@@ -412,7 +419,7 @@ const ProductPage = () => {
                           className="flex items-center gap-3 text-left"
                         >
                           <span
-                            className={`h-5 w-5 rounded-full border ${nicotineStrength === option ? "border-primary bg-[#bdbdbd]" : "border-[#c9c9c9] bg-[#d9d9d9]"}`}
+                            className={`h-5 w-5 rounded-full border ${nicotineStrength === option ? "border-primary bg-primary" : "border-[#c9c9c9] bg-[#d9d9d9]"}`}
                           />
                           <span className="text-[16px] text-[#555555]">{option}</span>
                         </button>
@@ -485,9 +492,14 @@ const ProductPage = () => {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className={`w-full px-6 py-3.5 text-base font-bold ${isNicSalt ? "rounded-xl bg-[#bfbfbf] text-white" : "rounded-lg bg-primary text-primary-foreground"}`}
+                  disabled={!canAddToCart}
+                  className={`w-full px-6 py-3.5 text-base font-bold ${
+                    canAddToCart
+                      ? "rounded-lg bg-primary text-primary-foreground"
+                      : "rounded-xl bg-[#bfbfbf] text-white"
+                  }`}
                 >
-                  {isNicSalt ? "Selecione" : "Adicionar ao Pedido"}
+                  {canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
                 </button>
                 <button
                   type="button"
