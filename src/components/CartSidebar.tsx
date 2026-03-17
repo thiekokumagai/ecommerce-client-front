@@ -26,7 +26,9 @@ const CartSidebar = () => {
         [
           "Olá! Gostaria de finalizar meu pedido:",
           "",
-          ...items.map((item) => `${item.quantity}x ${item.product.name} - ${formatPrice(item.product.price * item.quantity)}`),
+          ...items.map((item) =>
+            `${item.quantity}x ${item.product.name}${item.selectedVariation ? ` (${item.product.variationGroup?.name}: ${item.selectedVariation})` : ""} - ${formatPrice(item.product.price * item.quantity)}`
+          ),
           "",
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
@@ -85,22 +87,29 @@ const CartSidebar = () => {
             <div className="space-y-5">
               <div className="space-y-4">
                 {items.map((item) => (
-                  <div key={item.product.id} className="flex gap-3 rounded-xl border border-border bg-background p-3">
+                  <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex gap-3 rounded-xl border border-border bg-background p-3">
                     <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-lg object-contain bg-secondary/30" loading="lazy" />
                     <div className="flex flex-1 flex-col justify-between">
                       <div className="flex items-start justify-between gap-2">
-                        <p className="line-clamp-2 text-sm font-medium text-foreground">{item.product.name}</p>
-                        <button onClick={() => removeFromCart(item.product.id)} className="shrink-0 text-muted-foreground">
+                        <div>
+                          <p className="line-clamp-2 text-sm font-medium text-foreground">{item.product.name}</p>
+                          {item.selectedVariation && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {item.product.variationGroup?.name}: {item.selectedVariation}
+                            </p>
+                          )}
+                        </div>
+                        <button onClick={() => removeFromCart(item.product.id, item.selectedVariation)} className="shrink-0 text-muted-foreground">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 rounded-lg border border-border">
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} className="px-2 py-1 text-muted-foreground">
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariation)} className="px-2 py-1 text-muted-foreground">
                             <Minus className="h-3 w-3" />
                           </button>
                           <span className="min-w-[24px] text-center text-sm font-medium">{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} className="px-2 py-1 text-muted-foreground">
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)} className="px-2 py-1 text-muted-foreground">
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>

@@ -33,7 +33,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleConfirmVariation = () => {
     if (!selectedVariation) return;
 
-    addToCart(product);
+    addToCart({ product, selectedVariation });
     setShowVariationModal(false);
   };
 

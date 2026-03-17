@@ -67,7 +67,10 @@ const ProductPage = () => {
     if (!canAddToCart) return;
 
     for (let i = 0; i < quantity; i += 1) {
-      addToCart(product);
+      addToCart({
+        product,
+        selectedVariation: nicotineStrength ?? undefined,
+      });
     }
   };
 

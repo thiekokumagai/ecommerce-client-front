@@ -1,22 +1,23 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import type { Product } from "@/data/products";
+import type { Product, SelectedProduct } from "@/data/products";
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedVariation?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  addToCart: (item: Product | SelectedProduct) => void;
+  removeFromCart: (productId: number, selectedVariation?: string) => void;
+  updateQuantity: (productId: number, quantity: number, selectedVariation?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
-  lastAdded: Product | null;
+  lastAdded: CartItem | null;
   showAddedModal: boolean;
   setShowAddedModal: (show: boolean) => void;
   selectedCategory: string | null;
@@ -31,47 +32,91 @@ export const useCart = () => {
   return ctx;
 };
 
+const normalizeItem = (item: Product | SelectedProduct) => {
+  if ("product" in item) {
+    return item;
+  }
+
+  return { product: item };
+};
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [lastAdded, setLastAdded] = useState<Product | null>(null);
+  const [lastAdded, setLastAdded] = useState<CartItem | null>(null);
   const [showAddedModal, setShowAddedModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const addToCart = useCallback((product: Product) => {
+  const addToCart = useCallback((item: Product | SelectedProduct) => {
+    const normalizedItem = normalizeItem(item);
+
     setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
+      const existing = prev.find(
+        (cartItem) =>
+          cartItem.product.id === normalizedItem.product.id &&
+          cartItem.selectedVariation === normalizedItem.selectedVariation
+      );
+
       if (existing) {
-        return prev.map((i) =>
-          i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+        return prev.map((cartItem) =>
+          cartItem.product.id === normalizedItem.product.id &&
+          cartItem.selectedVariation === normalizedItem.selectedVariation
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem
         );
       }
-      return [...prev, { product, quantity: 1 }];
+
+      return [
+        ...prev,
+        {
+          product: normalizedItem.product,
+          quantity: 1,
+          selectedVariation: normalizedItem.selectedVariation,
+        },
+      ];
     });
-    setLastAdded(product);
+
+    setLastAdded({
+      product: normalizedItem.product,
+      quantity: 1,
+      selectedVariation: normalizedItem.selectedVariation,
+    });
     setShowAddedModal(true);
   }, []);
 
-  const removeFromCart = useCallback((productId: number) => {
-    setItems((prev) => prev.filter((i) => i.product.id !== productId));
+  const removeFromCart = useCallback((productId: number, selectedVariation?: string) => {
+    setItems((prev) =>
+      prev.filter(
+        (item) =>
+          !(item.product.id === productId && item.selectedVariation === selectedVariation)
+      )
+    );
   }, []);
 
-  const updateQuantity = useCallback((productId: number, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number, selectedVariation?: string) => {
     if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.product.id !== productId));
+      setItems((prev) =>
+        prev.filter(
+          (item) =>
+            !(item.product.id === productId && item.selectedVariation === selectedVariation)
+        )
+      );
       return;
     }
+
     setItems((prev) =>
-      prev.map((i) =>
-        i.product.id === productId ? { ...i, quantity } : i
+      prev.map((item) =>
+        item.product.id === productId && item.selectedVariation === selectedVariation
+          ? { ...item, quantity }
+          : item
       )
     );
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   return (
     <CartContext.Provider

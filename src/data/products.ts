@@ -19,6 +19,11 @@ export interface Product {
   variationGroup?: ProductVariationGroup;
 }
 
+export interface SelectedProduct {
+  product: Product;
+  selectedVariation?: string;
+}
+
 export const promoProducts: Product[] = [
   {
     id: 1,

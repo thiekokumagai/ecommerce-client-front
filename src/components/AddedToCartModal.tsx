@@ -21,10 +21,15 @@ const AddedToCartModal = () => {
         </h3>
 
         <div className="mt-4 flex items-center gap-4">
-          <img src={lastAdded.image} alt={lastAdded.name} className="h-16 w-16 rounded-lg object-contain bg-secondary/30" />
+          <img src={lastAdded.product.image} alt={lastAdded.product.name} className="h-16 w-16 rounded-lg object-contain bg-secondary/30" />
           <div>
-            <p className="text-sm font-medium text-foreground">{lastAdded.name}</p>
-            <p className="text-sm text-primary font-bold">{formatPrice(lastAdded.price)}</p>
+            <p className="text-sm font-medium text-foreground">{lastAdded.product.name}</p>
+            {lastAdded.selectedVariation && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {lastAdded.product.variationGroup?.name}: {lastAdded.selectedVariation}
+              </p>
+            )}
+            <p className="text-sm font-bold text-primary">{formatPrice(lastAdded.product.price)}</p>
           </div>
         </div>
 
