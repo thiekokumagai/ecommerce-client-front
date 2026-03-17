@@ -4,7 +4,7 @@ const HeroBanner = () => {
   return (
     <section className="bg-background pt-4 md:pt-8">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <div className="overflow-hidden rounded-2xl md:rounded-3xl">
+        <div className="overflow-hidden rounded-sm md:rounded-sm">
           <img
             src={bannerImage}
             alt="Nosso horário de atendimento mudou"
