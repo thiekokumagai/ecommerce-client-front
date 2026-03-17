@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
@@ -13,48 +14,50 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
   const { addToCart } = useCart();
 
   return (
-    <div
-      className="group relative flex flex-col overflow-hidden rounded-2xl"
-    >
+    <div className="group relative flex flex-col overflow-hidden rounded-2xl">
       {product.isPromo && product.oldPrice && (
         <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
           -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
         </span>
       )}
 
-      <div className="relative overflow-hidden bg-secondary/30 p-4 pb-0">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="mx-auto aspect-square w-full object-contain rounded-sm"
-          loading="lazy"
-        />
-      </div>
-
-      <div className="flex flex-1 flex-col justify-between gap-2 p-4 pt-2">
-        <div>
-          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {product.category}
-          </span>
-          <h3 className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-foreground">
-            {product.name}
-          </h3>
+      <Link to={`/produto/${product.id}`} className="block">
+        <div className="relative overflow-hidden bg-secondary/30 p-4 pb-0">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="mx-auto aspect-square w-full object-contain rounded-sm"
+            loading="lazy"
+          />
         </div>
 
-        <div className="mt-1">
-          {product.oldPrice && (
-            <span className="text-xs text-muted-foreground line-through">
-              {formatPrice(product.oldPrice)}
+        <div className="flex flex-1 flex-col justify-between gap-2 p-4 pt-2">
+          <div>
+            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              {product.category}
             </span>
-          )}
-          <p className="text-lg font-bold text-primary">
-            {formatPrice(product.price)}
-          </p>
-        </div>
+            <h3 className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-foreground">
+              {product.name}
+            </h3>
+          </div>
 
+          <div className="mt-1">
+            {product.oldPrice && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(product.oldPrice)}
+              </span>
+            )}
+            <p className="text-lg font-bold text-primary">
+              {formatPrice(product.price)}
+            </p>
+          </div>
+        </div>
+      </Link>
+
+      <div className="px-4 pb-4">
         <button
           onClick={() => addToCart(product)}
-          className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
         >
           <ShoppingCart className="h-4 w-4" />
           Comprar

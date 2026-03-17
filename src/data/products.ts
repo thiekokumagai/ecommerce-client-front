@@ -33,3 +33,34 @@ export const bestSellers: Product[] = [
   { id: 20, name: "IGNITE V80 Blueberry Lemon 8k Puffs", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/d35e41d4f2394f55ecb8065b1e925a4a.webp", category: "Descartável", price: 89.90 },
   { id: 21, name: "IGNITE V80 Artic Gum 8k Puffs", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/d1e3168647b7a2e293f3f303b2142e59.webp", category: "Descartável", price: 89.90 },
 ];
+
+export const allProducts: Product[] = [...promoProducts, ...bestSellers];
+
+export const getProductById = (id: number) =>
+  allProducts.find((product) => product.id === id);
+
+export const getProductMockDetails = (product: Product) => {
+  const normalizedTag = product.name
+    .split(" ")
+    .slice(0, 1)
+    .join("")
+    .toLowerCase();
+
+  return {
+    gallery: [product.image, product.image],
+    videoLabel: "Vídeo",
+    specs: [
+      `Dimensões aproximadas do produto na categoria ${product.category}`,
+      `Design pensado para uso confortável no dia a dia`,
+      `Acabamento premium com foco em praticidade e desempenho`,
+      `Modelo com excelente custo-benefício para quem busca qualidade`,
+    ],
+    includes: [
+      `1x ${product.name}`,
+      "1x item principal pronto para uso",
+      "1x cabo USB-C",
+      "1x manual",
+    ],
+    tag: normalizedTag,
+  };
+};
