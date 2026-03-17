@@ -32,6 +32,7 @@ const ProductPage = () => {
   const [note, setNote] = useState("");
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [nicotineStrength, setNicotineStrength] = useState("35mg");
 
   const product = useMemo(() => getProductById(Number(id)), [id]);
 
@@ -52,6 +53,11 @@ const ProductPage = () => {
 
   const details = getProductMockDetails(product);
   const visibleSpecs = showFullDescription ? details.specs : details.specs.slice(0, 3);
+  const isNicSalt = product.category === "NicSalt";
+
+  const productDescription = isNicSalt
+    ? "Hortelã gelada"
+    : details.specs[0];
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i += 1) {
@@ -150,29 +156,59 @@ const ProductPage = () => {
               <div className="text-[20px] font-semibold text-[#5a5a5a]">{formatPrice(product.price)}</div>
             </div>
 
-            <div className="mt-5 text-[16px] leading-[1.25] text-[#7a7a7a]">
-              <ul className="list-disc pl-5">
-                {visibleSpecs.map((item, index) => (
-                  <li key={item} className={index === 0 ? "font-semibold text-[#666666]" : ""}>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+            {isNicSalt ? (
+              <div className="mt-5 space-y-5 text-[16px] text-[#7a7a7a]">
+                <p>{productDescription}</p>
+                <p>
+                  Tags: <span className="text-primary">BLVK</span> | <span className="text-primary">hortela</span>
+                </p>
 
-              {!showFullDescription && details.specs.length > visibleSpecs.length && (
-                <button
-                  type="button"
-                  onClick={() => setShowFullDescription(true)}
-                  className="mt-1 text-[#4b4b4b]"
-                >
-                  Ver mais
-                </button>
-              )}
-            </div>
+                <div className="border-t border-[#ececec] pt-4">
+                  <p className="text-sm uppercase tracking-wide text-[#7f7f7f]">Teor de nicotina :</p>
+                  <div className="mt-3 space-y-3">
+                    {["35mg", "50mg"].map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setNicotineStrength(option)}
+                        className="flex items-center gap-3 text-left"
+                      >
+                        <span
+                          className={`h-5 w-5 rounded-full border ${nicotineStrength === option ? "border-primary bg-primary" : "border-[#c9c9c9] bg-[#d9d9d9]"}`}
+                        />
+                        <span className="text-[16px] text-[#555555]">{option}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-5 text-[16px] leading-[1.25] text-[#7a7a7a]">
+                <ul className="list-disc pl-5">
+                  {visibleSpecs.map((item, index) => (
+                    <li key={item} className={index === 0 ? "font-semibold text-[#666666]" : ""}>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
 
-            <p className="mt-3 text-[16px] text-[#7a7a7a]">
-              Tag: <span className="text-primary">{details.tag}</span>
-            </p>
+                {!showFullDescription && details.specs.length > visibleSpecs.length && (
+                  <button
+                    type="button"
+                    onClick={() => setShowFullDescription(true)}
+                    className="mt-1 text-[#4b4b4b]"
+                  >
+                    Ver mais
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!isNicSalt && (
+              <p className="mt-3 text-[16px] text-[#7a7a7a]">
+                Tag: <span className="text-primary">{details.tag}</span>
+              </p>
+            )}
 
             <div className="mt-5 border-t border-[#ececec] pt-4">
               <h2 className="text-[18px] font-semibold text-[#676767]">Calcule o frete</h2>
@@ -202,15 +238,27 @@ const ProductPage = () => {
               <textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
-                placeholder="Observações"
+                placeholder={isNicSalt ? "Inclua algum detalhe para este produto (opcional)" : "Observações"}
                 className="min-h-[72px] w-full rounded-2xl bg-[#f3f2f2] p-4 text-sm text-foreground placeholder:text-[#b6b6b6] focus:outline-none"
               />
             </div>
 
             <button
               type="button"
+              onClick={handleAddToCart}
+              className={`mt-6 w-full rounded-xl px-6 py-3 text-center text-base font-medium ${
+                isNicSalt
+                  ? "bg-[#c7c7c7] text-white"
+                  : "bg-primary text-primary-foreground"
+              }`}
+            >
+              {isNicSalt ? "Selecione" : "Adicionar ao Pedido"}
+            </button>
+
+            <button
+              type="button"
               onClick={() => navigate("/")}
-              className="mx-auto mt-8 block w-full max-w-[200px] rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
+              className="mx-auto mt-4 block w-full rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
             >
               Voltar pra loja
             </button>
@@ -243,48 +291,52 @@ const ProductPage = () => {
             </div>
           </div>
 
-          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              className="mx-auto block w-full max-w-[200px] rounded-xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground"
-            >
-              Adicionar ao Pedido
-            </button>
-          </div>
+          {!isNicSalt && (
+            <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="mx-auto block w-full max-w-[200px] rounded-xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground"
+              >
+                Adicionar ao Pedido
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="hidden md:block">
           <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-center">
             <div className="grid grid-cols-[82px_1fr] items-start gap-4 pt-16">
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  className="flex h-20 flex-col items-center justify-center rounded-2xl bg-[#f3f3f3] text-primary"
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
-                    <Play className="h-5 w-5 fill-current" />
-                  </span>
-                  <span className="mt-1 text-sm">Vídeo</span>
-                </button>
-
-                {details.gallery.map((image, index) => (
+              {!isNicSalt && (
+                <div className="flex flex-col gap-3">
                   <button
-                    key={`${image}-${index}`}
                     type="button"
-                    onClick={() => setSelectedImage(index)}
-                    className={`overflow-hidden rounded-2xl border-2 ${selectedImage === index ? "border-primary" : "border-transparent"}`}
+                    className="flex h-20 flex-col items-center justify-center rounded-2xl bg-[#f3f3f3] text-primary"
                   >
-                    <img
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                      className="aspect-square w-[78px] object-cover"
-                    />
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
+                      <Play className="h-5 w-5 fill-current" />
+                    </span>
+                    <span className="mt-1 text-sm">Vídeo</span>
                   </button>
-                ))}
-              </div>
 
-              <div className="relative w-full max-w-[440px] overflow-hidden rounded-[14px] bg-[#f6f5f3]">
+                  {details.gallery.map((image, index) => (
+                    <button
+                      key={`${image}-${index}`}
+                      type="button"
+                      onClick={() => setSelectedImage(index)}
+                      className={`overflow-hidden rounded-2xl border-2 ${selectedImage === index ? "border-primary" : "border-transparent"}`}
+                    >
+                      <img
+                        src={image}
+                        alt={`${product.name} ${index + 1}`}
+                        className="aspect-square w-[78px] object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className={`relative w-full overflow-hidden bg-[#f6f5f3] ${isNicSalt ? "max-w-[450px] rounded-[18px]" : "max-w-[440px] rounded-[14px]"}`}>
                 <button
                   type="button"
                   onClick={() => setIsImageModalOpen(true)}
@@ -337,32 +389,65 @@ const ProductPage = () => {
                 <div className="text-[28px] font-semibold text-[#555555]">{formatPrice(product.price)}</div>
               </div>
 
-              <div className="mt-5 space-y-5 text-[15px] leading-[1.25] text-[#6f6f6f]">
-                <ul className="list-disc pl-5">
-                  {details.specs.map((item, index) => (
-                    <li key={item} className={index === 0 ? "font-semibold text-[#666666]" : ""}>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+              {isNicSalt ? (
+                <div className="mt-6 space-y-5 text-[15px] leading-[1.25] text-[#6f6f6f]">
+                  <p className="text-[16px] text-[#666666]">{productDescription}</p>
 
-                <div>
-                  <h2 className="font-semibold text-[#4f4f4f]">O que inclui?</h2>
-                  <ul className="mt-1 list-disc pl-5">
-                    {details.includes.map((item) => (
-                      <li key={item}>{item}</li>
+                  <p className="text-[16px]">
+                    Tags: <span className="text-primary">BLVK</span> | <span className="text-primary">hortela</span>
+                  </p>
+
+                  <div className="border-t border-[#ececec] pt-4">
+                    <div className="flex items-center gap-4">
+                      <p className="text-sm uppercase tracking-wide text-[#7f7f7f]">Teor de nicotina :</p>
+                      <div className="h-px flex-1 bg-[#ececec]" />
+                    </div>
+
+                    <div className="mt-3 space-y-3">
+                      {["35mg", "50mg"].map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setNicotineStrength(option)}
+                          className="flex items-center gap-3 text-left"
+                        >
+                          <span
+                            className={`h-5 w-5 rounded-full border ${nicotineStrength === option ? "border-primary bg-[#bdbdbd]" : "border-[#c9c9c9] bg-[#d9d9d9]"}`}
+                          />
+                          <span className="text-[16px] text-[#555555]">{option}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-5 space-y-5 text-[15px] leading-[1.25] text-[#6f6f6f]">
+                  <ul className="list-disc pl-5">
+                    {details.specs.map((item, index) => (
+                      <li key={item} className={index === 0 ? "font-semibold text-[#666666]" : ""}>
+                        {item}
+                      </li>
                     ))}
                   </ul>
-                </div>
 
-                <p>
-                  Tag: <span className="text-primary">{details.tag}</span>
-                </p>
-              </div>
+                  <div>
+                    <h2 className="font-semibold text-[#4f4f4f]">O que inclui?</h2>
+                    <ul className="mt-1 list-disc pl-5">
+                      {details.includes.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <p>
+                    Tag: <span className="text-primary">{details.tag}</span>
+                  </p>
+                </div>
+              )}
 
               <div className="mt-8 border-t border-[#ececec] pt-4">
                 <div className="flex items-center gap-2 text-[18px] font-semibold text-[#676767]">
-                  <Truck className="h-5 w-5 text-primary" />
+                  {!isNicSalt && <Truck className="h-5 w-5 text-primary" />}
                   <h2>Calcule o frete</h2>
                 </div>
                 <div className="mt-4 grid grid-cols-[minmax(0,1fr)_96px_108px] gap-2">
@@ -392,7 +477,7 @@ const ProductPage = () => {
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
                   placeholder="Inclua algum detalhe para este produto (opcional)"
-                  className="min-h-[106px] w-full rounded-lg bg-[#f3f2f2] p-4 text-sm text-foreground placeholder:text-[#b6b6b6] focus:outline-none"
+                  className={`w-full bg-[#f3f2f2] p-4 text-sm text-foreground placeholder:text-[#b6b6b6] focus:outline-none ${isNicSalt ? "min-h-[92px] rounded-2xl" : "min-h-[106px] rounded-lg"}`}
                 />
               </div>
 
@@ -400,9 +485,9 @@ const ProductPage = () => {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="w-full rounded-lg bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground"
+                  className={`w-full px-6 py-3.5 text-base font-bold ${isNicSalt ? "rounded-xl bg-[#bfbfbf] text-white" : "rounded-lg bg-primary text-primary-foreground"}`}
                 >
-                  Adicionar ao Pedido
+                  {isNicSalt ? "Selecione" : "Adicionar ao Pedido"}
                 </button>
                 <button
                   type="button"
@@ -412,6 +497,20 @@ const ProductPage = () => {
                   Voltar pra loja
                 </button>
               </div>
+
+              {isNicSalt && (
+                <div className="mt-10 text-center">
+                  <p className="text-[14px] text-[#7f7f7f]">Ficou com alguma dúvida?</p>
+                  <a
+                    href="https://wa.me/5567991032937"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mx-auto mt-3 inline-flex rounded-xl border border-primary px-5 py-2.5 text-base text-primary"
+                  >
+                    Falar com o vendedor
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </section>
