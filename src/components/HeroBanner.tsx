@@ -13,7 +13,7 @@ const HeroBanner = () => {
         >
           Sua experiência
           <br />
-          <span className="text-gradient">pode mais.</span>
+          <span className="text-gradient">pod & mais.</span>
         </motion.h1>
 
         <motion.p
@@ -45,7 +45,7 @@ const HeroBanner = () => {
         >
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Truck className="h-5 w-5 text-primary" />
-            <span>Envio para todo Brasil</span>
+            <span>Envio para toda Campo Grande - MS</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Shield className="h-5 w-5 text-primary" />
@@ -53,7 +53,7 @@ const HeroBanner = () => {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CreditCard className="h-5 w-5 text-primary" />
-            <span>Parcele em até 3x</span>
+            <span>Parcele em até 6x</span>
           </div>
         </motion.div>
       </div>
