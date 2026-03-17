@@ -139,6 +139,17 @@ const ProductPage = () => {
               onChange={setNote}
             />
 
+            <ProductActions
+              quantity={quantity}
+              priceLabel={formatPrice(product.price)}
+              canAddToCart={canAddToCart}
+              isUnavailable={isUnavailable}
+              onDecrease={handleDecreaseQuantity}
+              onIncrease={handleIncreaseQuantity}
+              onAddToCart={handleAddToCart}
+              onBackToStore={handleBackToStore}
+            />
+
             <ProductContact />
           </div>
 
@@ -211,7 +222,19 @@ const ProductPage = () => {
                 onChange={setNote}
               />
 
-              {isNicSalt && <ProductContact isDesktop />}
+              <ProductActions
+                quantity={quantity}
+                priceLabel={formatPrice(product.price)}
+                canAddToCart={canAddToCart}
+                isUnavailable={isUnavailable}
+                isDesktop
+                onDecrease={handleDecreaseQuantity}
+                onIncrease={handleIncreaseQuantity}
+                onAddToCart={handleAddToCart}
+                onBackToStore={handleBackToStore}
+              />
+
+              <ProductContact isDesktop />
             </div>
           </div>
         </section>
