@@ -11,7 +11,7 @@ import { useCart } from "@/contexts/CartContext";
 import { allProducts } from "@/data/products";
 
 const Index = () => {
-  const { searchTerm } = useCart();
+  const { searchTerm, setSearchTerm, setSelectedCategory } = useCart();
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const hasResults = normalizedSearch
@@ -23,6 +23,11 @@ const Index = () => {
       )
     : true;
 
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSelectedCategory(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
@@ -33,8 +38,15 @@ const Index = () => {
           <div className="mx-auto max-w-7xl px-4 text-center md:px-8">
             <h2 className="text-2xl font-bold text-foreground">Nenhum produto encontrado</h2>
             <p className="mt-2 text-muted-foreground">
-              Tente buscar por outro nome ou descrição.
+              Sua busca não retornou nenhum produto altere seus filtros ou seu termo de busca
             </p>
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              className="mt-6 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Limpar busca
+            </button>
           </div>
         </section>
       )}
