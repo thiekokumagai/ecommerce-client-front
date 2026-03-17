@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { ShoppingCart } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
-
 interface ProductCardProps {
   product: Product;
   index: number;
@@ -20,7 +19,7 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.04, duration: 0.4 }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md"
+      className="group relative flex flex-col overflow-hidden rounded-2xl  transition-all duration-200 hover:-translate-y-1 "
     >
       {product.isPromo && product.oldPrice && (
         <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
@@ -28,16 +27,16 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
         </span>
       )}
 
-      <div className="relative overflow-hidden bg-secondary/30 p-4">
+      <div className="relative overflow-hidden bg-secondary/30 p-4 pb-0 ">
         <img
           src={product.image}
           alt={product.name}
-          className="mx-auto aspect-square w-full max-w-[180px] object-contain transition-transform duration-300 group-hover:scale-105"
+          className="mx-auto aspect-square w-full object-contain rounded-sm"
           loading="lazy"
         />
       </div>
 
-      <div className="flex flex-1 flex-col justify-between gap-2 p-4">
+      <div className="flex flex-1 flex-col justify-between gap-2 p-4 pt-2">
         <div>
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             {product.category}
@@ -55,9 +54,6 @@ const ProductCard = ({ product, index }: ProductCardProps) => {
           )}
           <p className="text-lg font-bold text-primary">
             {formatPrice(product.price)}
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            ou 3x de {formatPrice(product.price / 3)}
           </p>
         </div>
 

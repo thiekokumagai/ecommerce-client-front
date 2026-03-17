@@ -8,7 +8,6 @@ const navLinks = [
   { label: "Categorias", href: "#categorias" },
   { label: "Promoções", href: "#promocoes" },
   { label: "Produtos", href: "#produtos" },
-  { label: "Contato", href: "#contato" },
 ];
 
 const SiteHeader = () => {
