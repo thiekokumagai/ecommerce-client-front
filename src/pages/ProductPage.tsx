@@ -255,8 +255,8 @@ const ProductPage = () => {
         </section>
 
         <section className="hidden md:block">
-          <div className="grid gap-8 lg:grid-cols-[460px_minmax(0,1fr)] xl:grid-cols-[470px_420px] xl:justify-center">
-            <div className="grid grid-cols-[82px_minmax(0,1fr)] gap-4 pt-16">
+          <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-center">
+            <div className="grid grid-cols-[82px_1fr] items-start gap-4 pt-16">
               <div className="flex flex-col gap-3">
                 <button
                   type="button"
@@ -284,7 +284,7 @@ const ProductPage = () => {
                 ))}
               </div>
 
-              <div className="relative w-full overflow-hidden rounded-[14px] bg-[#f6f5f3]">
+              <div className="relative w-full max-w-[440px] overflow-hidden rounded-[14px] bg-[#f6f5f3]">
                 <button
                   type="button"
                   onClick={() => setIsImageModalOpen(true)}
