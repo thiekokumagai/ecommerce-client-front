@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import WhatsAppButton from "@/components/WhatsAppButton";
 import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import ProductImageModal from "@/components/ProductImageModal";
@@ -567,7 +566,6 @@ const ProductPage = () => {
       </main>
 
       <SiteFooter />
-      <WhatsAppButton />
       <CartSidebar />
       <AddedToCartModal />
       {isImageModalOpen && (
