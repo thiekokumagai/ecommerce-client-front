@@ -1,6 +1,13 @@
-import { useMemo, useState, useCallback } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, Bike } from "lucide-react";
+import { useMemo, useState, useCallback, useEffect } from "react";
+import { X, Minus, Plus, Trash2, ShoppingBag, Bike, MapPin, Pencil } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+
+const SESSION_ADDRESS_KEY = "podemais-checkout-address";
+
+const STORE_COORDINATES = {
+  lat: -20.4697,
+  lng: -54.6201,
+};
 
 const formatPrice = (price: number) =>
   `R$${price.toFixed(2).replace(".", ",")}`;
@@ -10,11 +17,7 @@ const formatPhone = (value: string) => {
 
   if (digits.length <= 2) return digits ? `(${digits}` : "";
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 11) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  }
-
-  return value;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
 };
 
 const formatCurrencyInput = (value: string) => {
@@ -30,43 +33,92 @@ const formatCurrencyInput = (value: string) => {
   });
 };
 
-type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
-
-const deliveryZones = [
-  { keywords: ["centro", "jardim dos estados", "amambaí", "são francisco"], fee: 8 },
-  { keywords: ["caiçara", "carandá bosque", "rita vieira", "tiradentes", "vila carlota"], fee: 10 },
-  { keywords: ["universitário", "parati", "coronel antonino", "nova lima", "moreninhas"], fee: 12 },
-  { keywords: ["indubrasil", "lageado", "anhanduizinho", "aero rancho", "noroeste"], fee: 15 },
-];
-
-const getDeliveryFee = (address: string) => {
-  const normalizedAddress = address
+const normalizeAddress = (address: string) =>
+  address
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  const zone = deliveryZones.find((item) =>
-    item.keywords.some((keyword) => normalizedAddress.includes(keyword))
+const estimateDistanceFromAddress = (address: string) => {
+  const normalized = normalizeAddress(address);
+
+  if (!normalized.trim()) return 0;
+
+  const zones = [
+    { keywords: ["centro", "amambai", "sao francisco", "jardim dos estados"], distance: 3 },
+    { keywords: ["caiçara", "caicara", "caranda bosque", "vila carlota", "rita vieira"], distance: 5 },
+    { keywords: ["tiradentes", "universitario", "parati", "nova lima", "coronel antonino"], distance: 7 },
+    { keywords: ["moreninhas", "aero rancho", "anhanduizinho", "noroeste", "lageado"], distance: 10 },
+    { keywords: ["indubrasil"], distance: 13 },
+  ];
+
+  const matchedZone = zones.find((zone) =>
+    zone.keywords.some((keyword) => normalized.includes(keyword))
   );
 
-  return zone?.fee ?? 10;
+  return matchedZone?.distance ?? 6;
 };
+
+const getDynamicDeliveryFee = (distanceKm: number) => {
+  if (distanceKm <= 0) return 0;
+  if (distanceKm <= 3) return 8;
+  if (distanceKm <= 5) return 10;
+  if (distanceKm <= 7) return 12;
+  if (distanceKm <= 10) return 15;
+  return 18;
+};
+
+type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
 
 const CartSidebar = () => {
   const { items, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [savedAddress, setSavedAddress] = useState("");
+  const [isEditingAddress, setIsEditingAddress] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [needsChange, setNeedsChange] = useState("não");
   const [changeFor, setChangeFor] = useState("");
 
+  useEffect(() => {
+    const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY) ?? "";
+
+    if (storedAddress) {
+      setSavedAddress(storedAddress);
+      setAddress(storedAddress);
+      setIsEditingAddress(false);
+    }
+  }, []);
+
   const totalWithPixDiscount = useMemo(() => totalPrice * 0.95, [totalPrice]);
-  const deliveryFee = useMemo(() => getDeliveryFee(address), [address]);
-  const subtotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
-  const finalTotal = subtotal + deliveryFee;
+  const discountedProductsTotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
+  const estimatedDistanceKm = useMemo(
+    () => estimateDistanceFromAddress(savedAddress || address),
+    [savedAddress, address]
+  );
+  const deliveryFee = useMemo(
+    () => getDynamicDeliveryFee(estimatedDistanceKm),
+    [estimatedDistanceKm]
+  );
+  const finalTotal = discountedProductsTotal + deliveryFee;
 
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
+
+  const handleSaveAddress = () => {
+    const trimmedAddress = address.trim();
+
+    if (!trimmedAddress) return;
+
+    sessionStorage.setItem(SESSION_ADDRESS_KEY, trimmedAddress);
+    setSavedAddress(trimmedAddress);
+    setIsEditingAddress(false);
+  };
+
+  const handleEditAddress = () => {
+    setAddress(savedAddress);
+    setIsEditingAddress(true);
+  };
 
   const checkoutMessage = useMemo(
     () =>
@@ -80,19 +132,20 @@ const CartSidebar = () => {
           "",
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
-          `Endereço completo: ${address || "-"}`,
+          `Endereço completo: ${savedAddress || "-"}`,
+          `Distância estimada: ${estimatedDistanceKm} km`,
           "",
           paymentMethod === "pix"
-            ? `Forma de pagamento: Pix (5% de desconto) - Subtotal com desconto: ${formatPrice(totalWithPixDiscount)}`
+            ? `Forma de pagamento: Pix (5% de desconto apenas nos produtos) - Subtotal com desconto: ${formatPrice(totalWithPixDiscount)}`
             : paymentMethod === "debito"
-              ? `Forma de pagamento: Débito - Subtotal: ${formatPrice(totalPrice)}`
+              ? `Forma de pagamento: Débito - Subtotal dos produtos: ${formatPrice(totalPrice)}`
               : paymentMethod === "credito"
-                ? `Forma de pagamento: Crédito - Subtotal: ${formatPrice(totalPrice)}`
-                : `Forma de pagamento: Dinheiro - Subtotal: ${formatPrice(totalPrice)}`,
+                ? `Forma de pagamento: Crédito - Subtotal dos produtos: ${formatPrice(totalPrice)}`
+                : `Forma de pagamento: Dinheiro - Subtotal dos produtos: ${formatPrice(totalPrice)}`,
           ...(paymentMethod === "dinheiro"
             ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor || "-"}`] : [])]
             : []),
-          `Taxa de entrega em Campo Grande - MS: ${formatPrice(deliveryFee)}`,
+          `Taxa do motoboy: ${formatPrice(deliveryFee)}`,
           "Prazo médio de entrega: 30 a 40 minutos",
           `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
@@ -101,7 +154,8 @@ const CartSidebar = () => {
       items,
       name,
       phone,
-      address,
+      savedAddress,
+      estimatedDistanceKm,
       paymentMethod,
       totalWithPixDiscount,
       totalPrice,
@@ -196,12 +250,52 @@ const CartSidebar = () => {
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">Endereço completo</label>
-                  <textarea
-                    value={address}
-                    onChange={(event) => setAddress(event.target.value)}
-                    placeholder="Rua, número, bairro, complemento e referência"
-                    className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                  />
+
+                  {isEditingAddress ? (
+                    <div className="space-y-3">
+                      <textarea
+                        value={address}
+                        onChange={(event) => setAddress(event.target.value)}
+                        placeholder="Rua, número, bairro, complemento e referência"
+                        className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveAddress}
+                        disabled={!address.trim()}
+                        className={`w-full rounded-xl py-3 text-sm font-semibold ${
+                          address.trim()
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        Salvar endereço
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-border bg-background p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex gap-3">
+                          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                          <div>
+                            <p className="text-sm text-foreground">{savedAddress}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Distância estimada: {estimatedDistanceKm} km
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleEditAddress}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Alterar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mt-3 rounded-xl bg-secondary p-3 text-sm text-foreground">
                     <div className="flex items-center gap-2">
                       <Bike className="h-4 w-4 text-primary" />
@@ -210,7 +304,7 @@ const CartSidebar = () => {
                     <p className="mt-2">
                       Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
                     </p>
-                    <p className="text-muted-foreground">Prazo médio: 30 a 40 minutos</p>
+                    <p className="mt-1 text-muted-foreground">Prazo médio: 30 a 40 minutos</p>
                   </div>
                 </div>
 
@@ -250,7 +344,7 @@ const CartSidebar = () => {
 
                 {paymentMethod === "pix" && (
                   <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
-                    Subtotal com 5% de desconto: <span className="font-bold text-primary">{formatPrice(totalWithPixDiscount)}</span>
+                    Desconto de 5% aplicado apenas nos produtos: <span className="font-bold text-primary">{formatPrice(totalWithPixDiscount)}</span>
                   </div>
                 )}
 
@@ -298,7 +392,7 @@ const CartSidebar = () => {
           <div className="border-t border-border p-5">
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})</span>
+                <span className="text-muted-foreground">Produtos ({totalItems} {totalItems === 1 ? "item" : "itens"})</span>
                 <span className="font-medium text-foreground">
                   {paymentMethod === "pix" ? formatPrice(totalWithPixDiscount) : formatPrice(totalPrice)}
                 </span>
