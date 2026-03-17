@@ -99,16 +99,7 @@ const ProductPage = () => {
               {product.name}
             </h1>
 
-            <ProductActions
-              quantity={quantity}
-              priceLabel={formatPrice(product.price)}
-              canAddToCart={canAddToCart}
-              isUnavailable={isUnavailable}
-              onDecrease={handleDecreaseQuantity}
-              onIncrease={handleIncreaseQuantity}
-              onAddToCart={handleAddToCart}
-              onBackToStore={handleBackToStore}
-            />
+           
 
             <ProductInfo
               productName={product.name}
