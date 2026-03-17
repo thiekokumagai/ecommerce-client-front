@@ -7,13 +7,36 @@ import SiteFooter from "@/components/SiteFooter";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
+import { useCart } from "@/contexts/CartContext";
+import { allProducts } from "@/data/products";
 
 const Index = () => {
+  const { searchTerm } = useCart();
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const hasResults = normalizedSearch
+    ? allProducts.some(
+        (product) =>
+          product.name.toLowerCase().includes(normalizedSearch) ||
+          product.category.toLowerCase().includes(normalizedSearch)
+      )
+    : true;
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <HeroBanner />
       <CategoriesSection />
+      {!hasResults && normalizedSearch && (
+        <section className="py-12">
+          <div className="mx-auto max-w-7xl px-4 text-center md:px-8">
+            <h2 className="text-2xl font-bold text-foreground">Nenhum produto encontrado</h2>
+            <p className="mt-2 text-muted-foreground">
+              Tente buscar por outro nome ou categoria.
+            </p>
+          </div>
+        </section>
+      )}
       <PromotionsSection />
       <BestSellersSection />
       <SiteFooter />

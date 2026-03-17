@@ -22,6 +22,8 @@ interface CartContextType {
   setShowAddedModal: (show: boolean) => void;
   selectedCategory: string | null;
   setSelectedCategory: (category: string | null) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -46,6 +48,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [lastAdded, setLastAdded] = useState<CartItem | null>(null);
   const [showAddedModal, setShowAddedModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const addToCart = useCallback((item: Product | SelectedProduct) => {
     const normalizedItem = normalizeItem(item);
@@ -135,6 +138,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setShowAddedModal,
         selectedCategory,
         setSelectedCategory,
+        searchTerm,
+        setSearchTerm,
       }}
     >
       {children}

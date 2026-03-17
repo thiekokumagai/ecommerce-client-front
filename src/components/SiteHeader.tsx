@@ -15,7 +15,14 @@ const navLinks = [
 const SiteHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const { totalItems, setIsCartOpen } = useCart();
+  const { totalItems, setIsCartOpen, searchTerm, setSearchTerm, setSelectedCategory } = useCart();
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    if (value.trim()) {
+      setSelectedCategory(null);
+    }
+  };
 
   return (
     <>
@@ -25,6 +32,8 @@ const SiteHeader = () => {
             <Search className="h-4 w-4 shrink-0 text-primary" />
             <input
               type="text"
+              value={searchTerm}
+              onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Faça sua busca"
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
@@ -56,10 +65,12 @@ const SiteHeader = () => {
             <div className="hidden items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 md:flex">
               <input
                 type="text"
+                value={searchTerm}
+                onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder="Faça sua busca"
                 className="w-40 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none lg:w-52"
               />
-              <button className="text-primary hover:text-primary/80">
+              <button type="button" className="text-primary hover:text-primary/80" aria-label="Buscar produtos">
                 <Search className="h-4 w-4" />
               </button>
             </div>
