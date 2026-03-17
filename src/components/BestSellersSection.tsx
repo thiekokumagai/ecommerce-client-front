@@ -13,6 +13,7 @@ const BestSellersSection = () => {
     const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
     const matchesSearch = normalizedSearch
       ? product.name.toLowerCase().includes(normalizedSearch) ||
+        product.description.toLowerCase().includes(normalizedSearch) ||
         product.category.toLowerCase().includes(normalizedSearch)
       : true;
 

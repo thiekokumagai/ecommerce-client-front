@@ -18,6 +18,7 @@ const Index = () => {
     ? allProducts.some(
         (product) =>
           product.name.toLowerCase().includes(normalizedSearch) ||
+          product.description.toLowerCase().includes(normalizedSearch) ||
           product.category.toLowerCase().includes(normalizedSearch)
       )
     : true;
@@ -32,7 +33,7 @@ const Index = () => {
           <div className="mx-auto max-w-7xl px-4 text-center md:px-8">
             <h2 className="text-2xl font-bold text-foreground">Nenhum produto encontrado</h2>
             <p className="mt-2 text-muted-foreground">
-              Tente buscar por outro nome ou categoria.
+              Tente buscar por outro nome ou descrição.
             </p>
           </div>
         </section>
