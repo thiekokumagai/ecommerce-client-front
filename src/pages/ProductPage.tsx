@@ -1,6 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Minus, Plus, Share2, ChevronRight, House, Play, Truck } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Share2,
+  ChevronLeft,
+  Play,
+  Search,
+  Truck,
+  MessageCircle,
+} from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -20,6 +29,7 @@ const ProductPage = () => {
   const [zipCode, setZipCode] = useState("");
   const [addressNumber, setAddressNumber] = useState("");
   const [note, setNote] = useState("");
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const product = useMemo(() => getProductById(Number(id)), [id]);
 
@@ -39,6 +49,7 @@ const ProductPage = () => {
   }
 
   const details = getProductMockDetails(product);
+  const visibleSpecs = showFullDescription ? details.specs : details.specs.slice(0, 3);
 
   const handleAddToCart = () => {
     for (let i = 0; i < quantity; i += 1) {
@@ -47,32 +58,203 @@ const ProductPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">
-        <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/" className="flex items-center gap-2 text-foreground">
-            <House className="h-4 w-4" />
-            Home
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span>{product.category}</span>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">{product.name}</span>
-        </nav>
+    <div className="min-h-screen bg-background pb-28 md:pb-0">
+      <div className="hidden md:block">
+        <SiteHeader />
+      </div>
 
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_430px]">
-          <section className="space-y-5">
-            <div className="grid gap-4 lg:grid-cols-[104px_minmax(0,1fr)]">
-              <div className="order-2 flex gap-3 overflow-x-auto lg:order-1 lg:flex-col">
+      <main className="mx-auto max-w-[1220px] md:px-8 md:py-8">
+        <section className="md:hidden">
+          <div className="relative bg-black">
+            <img
+              src={details.gallery[selectedImage]}
+              alt={product.name}
+              className="h-[500px] w-full object-cover"
+            />
+
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              aria-label="Voltar"
+              className="absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white text-primary"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
+              aria-label="Ampliar imagem"
+              className="absolute right-0 top-0 flex h-14 w-14 items-center justify-center rounded-bl-[28px] bg-black/20 text-white backdrop-blur-sm"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
+              className="absolute bottom-5 left-4 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#e10600]"
+            >
+              <Play className="h-4 w-4 fill-current" />
+            </button>
+
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-[#cfc4ba] px-3 py-0.5 text-sm text-foreground/80">
+              {selectedImage + 1} de {details.gallery.length}
+            </div>
+
+            <button
+              type="button"
+              aria-label="Compartilhar produto"
+              className="absolute bottom-3 right-3 flex h-12 w-12 items-center justify-center rounded-full bg-white text-[#e10600] shadow-lg"
+            >
+              <Share2 className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="-mt-6 rounded-t-[28px] bg-background px-5 pb-8 pt-7">
+            <h1 className="text-[24px] font-medium leading-tight text-[#4b4b4b]">
+              {product.name}
+            </h1>
+
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-4 py-2.5">
                 <button
                   type="button"
-                  className="flex h-[92px] w-[92px] shrink-0 flex-col items-center justify-center rounded-[28px] bg-[#5b36f2] px-3 text-white"
+                  onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                  className="text-[#7a7a7a]"
+                  aria-label="Diminuir quantidade"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#5b36f2]">
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="min-w-5 text-center text-lg text-[#5c5c5c]">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((current) => current + 1)}
+                  className="text-[#7a7a7a]"
+                  aria-label="Aumentar quantidade"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <span className="text-sm text-[#9b9b9b]">un</span>
+              </div>
+
+              <div className="text-[20px] font-semibold text-[#5a5a5a]">{formatPrice(product.price)}</div>
+            </div>
+
+            <div className="mt-5 text-[16px] leading-[1.25] text-[#7a7a7a]">
+              <ul className="list-disc pl-5">
+                {visibleSpecs.map((item, index) => (
+                  <li key={item} className={index === 0 ? "font-semibold text-[#666666]" : ""}>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              {!showFullDescription && details.specs.length > visibleSpecs.length && (
+                <button
+                  type="button"
+                  onClick={() => setShowFullDescription(true)}
+                  className="mt-1 text-[#4b4b4b]"
+                >
+                  Ver mais
+                </button>
+              )}
+            </div>
+
+            <p className="mt-3 text-[16px] text-[#7a7a7a]">
+              Tag: <span className="text-primary">{details.tag}</span>
+            </p>
+
+            <div className="mt-5 border-t border-[#ececec] pt-4">
+              <h2 className="text-[18px] font-semibold text-[#676767]">Calcule o frete</h2>
+              <div className="mt-4 grid grid-cols-[minmax(0,1fr)_88px_92px] gap-2">
+                <input
+                  value={zipCode}
+                  onChange={(event) => setZipCode(event.target.value.replace(/[^\d-]/g, ""))}
+                  placeholder="Insira o CEP"
+                  className="h-10 rounded-full bg-[#f3f2f2] px-4 text-sm text-foreground placeholder:text-[#c0c0c0] focus:outline-none"
+                />
+                <input
+                  value={addressNumber}
+                  onChange={(event) => setAddressNumber(event.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="Nº"
+                  className="h-10 rounded-full bg-[#f3f2f2] px-4 text-sm text-foreground placeholder:text-[#c0c0c0] focus:outline-none"
+                />
+                <button
+                  type="button"
+                  className="h-10 rounded-full border border-primary text-sm font-medium text-primary"
+                >
+                  Calcular
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-[#ececec] pt-5">
+              <textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Observações"
+                className="min-h-[72px] w-full rounded-2xl bg-[#f3f2f2] p-4 text-sm text-foreground placeholder:text-[#b6b6b6] focus:outline-none"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="mx-auto mt-8 block w-full max-w-[200px] rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
+            >
+              Voltar pra loja
+            </button>
+
+            <div className="mt-10 text-center">
+              <p className="text-[14px] text-[#7f7f7f]">Ficou com alguma dúvida?</p>
+              <a
+                href="https://wa.me/5567991032937"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mx-auto mt-3 inline-flex rounded-xl border border-primary px-5 py-2.5 text-base text-primary"
+              >
+                Falar com o vendedor
+              </a>
+            </div>
+
+            <div className="mx-[-20px] mt-10 bg-[#f3f3f3] px-5 py-8">
+              <h3 className="text-[16px] font-semibold text-[#666666]">Fale com o vendedor</h3>
+              <a
+                href="https://wa.me/5567991032937"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex items-center gap-3 text-[#8b8b8b]"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-primary text-primary">
+                  <MessageCircle className="h-4 w-4" />
+                </span>
+                Pod & Mais
+              </a>
+            </div>
+          </div>
+
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="mx-auto block w-full max-w-[200px] rounded-xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground"
+            >
+              Adicionar ao Pedido
+            </button>
+          </div>
+        </section>
+
+        <section className="hidden md:block">
+          <div className="grid gap-8 lg:grid-cols-[460px_minmax(0,1fr)] xl:grid-cols-[470px_420px] xl:justify-center">
+            <div className="grid grid-cols-[82px_minmax(0,1fr)] gap-4 pt-16">
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  className="flex h-20 flex-col items-center justify-center rounded-2xl bg-[#f3f3f3] text-primary"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
                     <Play className="h-5 w-5 fill-current" />
-                  </div>
-                  <span className="mt-2 text-sm font-medium">Vídeo</span>
+                  </span>
+                  <span className="mt-1 text-sm">Vídeo</span>
                 </button>
 
                 {details.gallery.map((image, index) => (
@@ -80,162 +262,146 @@ const ProductPage = () => {
                     key={`${image}-${index}`}
                     type="button"
                     onClick={() => setSelectedImage(index)}
-                    className={`h-[92px] w-[92px] shrink-0 overflow-hidden rounded-[28px] border ${selectedImage === index ? "border-primary" : "border-border"}`}
+                    className={`overflow-hidden rounded-2xl border-2 ${selectedImage === index ? "border-primary" : "border-transparent"}`}
                   >
                     <img
                       src={image}
                       alt={`${product.name} ${index + 1}`}
-                      className="h-full w-full object-cover"
+                      className="h-[78px] w-[78px] object-cover"
                     />
                   </button>
                 ))}
               </div>
 
-              <div className="order-1 rounded-[36px] bg-[#f5f5f7] p-4 md:p-6 lg:order-2">
-                <div className="relative rounded-[30px] bg-white p-4 md:p-6">
-                  <button
-                    type="button"
-                    aria-label="Compartilhar produto"
-                    className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#f3f3f5] text-muted-foreground"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </button>
+              <div className="relative overflow-hidden rounded-[14px] bg-[#f6f5f3]">
+                <img
+                  src={details.gallery[selectedImage]}
+                  alt={product.name}
+                  className="h-full w-full object-cover"
+                />
 
-                  <img
-                    src={details.gallery[selectedImage]}
-                    alt={product.name}
-                    className="mx-auto aspect-square w-full max-w-[640px] object-contain"
-                  />
-                </div>
+                <button
+                  type="button"
+                  aria-label="Compartilhar produto"
+                  className="absolute right-[-10px] top-[-10px] flex h-12 w-12 items-center justify-center rounded-full bg-white text-primary shadow-md"
+                >
+                  <Share2 className="h-5 w-5" />
+                </button>
               </div>
             </div>
 
-            <section className="rounded-[32px] border border-border bg-white p-6 md:p-8">
-              <h2 className="text-[28px] font-semibold text-foreground md:text-[32px]">Descrição</h2>
+            <div className="max-w-[420px] pt-16">
+              <h1 className="text-[27px] font-semibold leading-[1.15] text-[#545454]">
+                {product.name}
+              </h1>
 
-              <div className="mt-6 space-y-6 text-[15px] leading-7 text-foreground md:text-base">
-                <ul className="list-disc space-y-2 pl-5 marker:text-foreground">
-                  {details.specs.map((item) => (
-                    <li key={item}>{item}</li>
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-5 py-2.5 text-[#666666]">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                    aria-label="Diminuir quantidade"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="min-w-4 text-center text-lg">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((current) => current + 1)}
+                    aria-label="Aumentar quantidade"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                  <span className="text-sm text-[#979797]">un</span>
+                </div>
+
+                <div className="text-[28px] font-semibold text-[#555555]">{formatPrice(product.price)}</div>
+              </div>
+
+              <div className="mt-5 space-y-5 text-[15px] leading-[1.25] text-[#6f6f6f]">
+                <ul className="list-disc pl-5">
+                  {details.specs.map((item, index) => (
+                    <li key={item} className={index === 0 ? "font-semibold text-[#666666]" : ""}>
+                      {item}
+                    </li>
                   ))}
                 </ul>
 
                 <div>
-                  <h3 className="text-xl font-semibold text-foreground">O que inclui?</h3>
-                  <ul className="mt-3 list-disc space-y-2 pl-5 marker:text-foreground">
+                  <h2 className="font-semibold text-[#4f4f4f]">O que inclui?</h2>
+                  <ul className="mt-1 list-disc pl-5">
                     {details.includes.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
                 </div>
 
-                <p className="text-base font-medium text-foreground">
+                <p>
                   Tag: <span className="text-primary">{details.tag}</span>
                 </p>
               </div>
-            </section>
-          </section>
 
-          <aside className="space-y-5 xl:sticky xl:top-24">
-            <div className="rounded-[32px] border border-border bg-white p-6 md:p-8">
-              <p className="text-sm font-medium text-muted-foreground">{product.category}</p>
-              <h1 className="mt-3 text-3xl font-bold leading-tight text-foreground md:text-[40px] md:leading-[1.05]">
-                {product.name}
-              </h1>
-
-              <div className="mt-6 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 rounded-full bg-[#f3f3f5] px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                    className="text-muted-foreground"
-                    aria-label="Diminuir quantidade"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="min-w-8 text-center text-lg font-medium text-foreground">{quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity((current) => current + 1)}
-                    className="text-muted-foreground"
-                    aria-label="Aumentar quantidade"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                  <span className="text-sm text-muted-foreground">un</span>
+              <div className="mt-8 border-t border-[#ececec] pt-4">
+                <div className="flex items-center gap-2 text-[18px] font-semibold text-[#676767]">
+                  <Truck className="h-5 w-5 text-primary" />
+                  <h2>Calcule o frete</h2>
                 </div>
-
-                <div className="text-3xl font-semibold text-foreground md:text-4xl">
-                  {formatPrice(product.price)}
-                </div>
-              </div>
-
-              <div className="mt-8 rounded-[28px] bg-[#f7f7f8] p-5">
-                <div className="flex items-center gap-3 text-foreground">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-primary">
-                    <Truck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold">Calcule o frete</h2>
-                    <p className="text-sm text-muted-foreground">Informe o CEP e o número do endereço</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3">
+                <div className="mt-4 grid grid-cols-[minmax(0,1fr)_96px_108px] gap-2">
                   <input
                     value={zipCode}
                     onChange={(event) => setZipCode(event.target.value.replace(/[^\d-]/g, ""))}
                     placeholder="Insira o CEP"
-                    className="h-12 rounded-full border border-transparent bg-white px-5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    className="h-10 rounded-full bg-[#f3f2f2] px-4 text-sm text-foreground placeholder:text-[#c0c0c0] focus:outline-none"
                   />
-                  <div className="grid grid-cols-[minmax(0,1fr)_120px] gap-3">
-                    <input
-                      value={addressNumber}
-                      onChange={(event) => setAddressNumber(event.target.value.replace(/[^\d]/g, ""))}
-                      placeholder="Número"
-                      className="h-12 rounded-full border border-transparent bg-white px-5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      className="h-12 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-                    >
-                      Calcular
-                    </button>
-                  </div>
+                  <input
+                    value={addressNumber}
+                    onChange={(event) => setAddressNumber(event.target.value.replace(/[^\d]/g, ""))}
+                    placeholder="Número"
+                    className="h-10 rounded-full bg-[#f3f2f2] px-4 text-sm text-foreground placeholder:text-[#c0c0c0] focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    className="h-10 rounded-xl border border-primary text-sm font-medium text-primary"
+                  >
+                    Calcular
+                  </button>
                 </div>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-6 border-t border-[#ececec] pt-5">
                 <textarea
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
                   placeholder="Inclua algum detalhe para este produto (opcional)"
-                  className="min-h-[130px] w-full rounded-[28px] bg-[#f7f7f8] p-5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  className="min-h-[106px] w-full rounded-lg bg-[#f3f2f2] p-4 text-sm text-foreground placeholder:text-[#b6b6b6] focus:outline-none"
                 />
               </div>
 
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 space-y-2.5">
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="w-full rounded-full bg-primary px-6 py-4 text-base font-bold text-primary-foreground"
+                  className="w-full rounded-lg bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground"
                 >
                   Adicionar ao Pedido
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate("/")}
-                  className="w-full rounded-full border border-primary px-6 py-4 text-base font-medium text-primary"
+                  className="w-full rounded-lg border border-primary px-6 py-3 text-base font-medium text-primary"
                 >
-                  Voltar para a loja
+                  Voltar pra loja
                 </button>
               </div>
             </div>
-          </aside>
-        </div>
+          </div>
+        </section>
       </main>
-      <SiteFooter />
-      <WhatsAppButton />
+
+      <div className="hidden md:block">
+        <SiteFooter />
+        <WhatsAppButton />
+      </div>
       <CartSidebar />
       <AddedToCartModal />
     </div>
