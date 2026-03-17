@@ -92,15 +92,22 @@ const SiteHeader = () => {
       </div>
 
       {searchOpen && (
-        <div className="border-t border-border px-4 py-3 md:hidden">
-          <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
+        <div className="fixed inset-x-0 top-0 z-[60] border-b border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur-md md:hidden">
+          <div className="mx-auto flex max-w-7xl items-center gap-2 rounded-full bg-secondary px-4 py-2">
             <input
               type="text"
               placeholder="Faça sua busca"
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
               autoFocus
             />
-            <Search className="h-4 w-4 text-primary" />
+            <button
+              type="button"
+              onClick={() => setSearchOpen(false)}
+              className="text-primary"
+              aria-label="Fechar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}
