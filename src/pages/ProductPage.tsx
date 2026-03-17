@@ -98,7 +98,6 @@ const ProductPage = () => {
             <h1 className="text-[24px] font-medium leading-tight text-[#4b4b4b]">
               {product.name}
             </h1>
-
            
 
             <ProductInfo
@@ -166,18 +165,6 @@ const ProductPage = () => {
               <h1 className="text-[27px] font-semibold leading-[1.15] text-[#545454]">
                 {product.name}
               </h1>
-
-              <ProductActions
-                quantity={quantity}
-                priceLabel={formatPrice(product.price)}
-                canAddToCart={canAddToCart}
-                isUnavailable={isUnavailable}
-                isDesktop
-                onDecrease={handleDecreaseQuantity}
-                onIncrease={handleIncreaseQuantity}
-                onAddToCart={handleAddToCart}
-                onBackToStore={handleBackToStore}
-              />
 
               <ProductInfo
                 productName={product.name}
