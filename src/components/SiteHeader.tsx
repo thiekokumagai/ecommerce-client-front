@@ -1,29 +1,31 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Search, ShoppingCart, Menu, X, Info, MessageCircle } from "lucide-react";
 import logo from "@/assets/logo.webp";
 import { useCart } from "@/contexts/CartContext";
 
 const navLinks = [
-  { label: "Início", href: "#" },
-  { label: "Categorias", href: "#categorias" },
-  { label: "Promoções", href: "#promocoes" },
-  { label: "Produtos", href: "#produtos" },
+  { label: "Início", href: "/" },
+  { label: "Categorias", href: "/#categorias" },
+  { label: "Promoções", href: "/#promocoes" },
+  { label: "Produtos", href: "/#produtos" },
 ];
 
 const SiteHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { totalItems, setIsCartOpen } = useCart();
+  const location = useLocation();
+
+  const contactHref = location.pathname === "/" ? "#contato" : "/#contato";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md shadow-sm">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
-        {/* Logo */}
-        <a href="#" className="flex items-center gap-2">
-          <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain" />
-        </a>
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 md:px-8">
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logo} alt="Pod & Mais" className="h-16 w-16 object-contain md:h-20 md:w-20" />
+        </Link>
 
-        {/* Desktop Nav */}
         <nav className="hidden items-center gap-6 lg:flex">
           {navLinks.map((link) => (
             <a
@@ -36,9 +38,7 @@ const SiteHeader = () => {
           ))}
         </nav>
 
-        {/* Search + Actions */}
         <div className="flex items-center gap-2">
-          {/* Desktop search bar */}
           <div className="hidden items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 md:flex">
             <input
               type="text"
@@ -50,7 +50,6 @@ const SiteHeader = () => {
             </button>
           </div>
 
-          {/* Mobile search toggle */}
           <button
             onClick={() => setSearchOpen(!searchOpen)}
             className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-primary md:hidden"
@@ -67,7 +66,7 @@ const SiteHeader = () => {
             <MessageCircle className="h-5 w-5" />
           </a>
 
-          <a href="#contato" className="rounded-full p-2 text-primary transition-colors hover:bg-secondary">
+          <a href={contactHref} className="rounded-full p-2 text-primary transition-colors hover:bg-secondary">
             <Info className="h-5 w-5" />
           </a>
 
@@ -92,7 +91,6 @@ const SiteHeader = () => {
         </div>
       </div>
 
-      {/* Mobile Search */}
       {searchOpen && (
         <div className="border-t border-border px-4 py-3 md:hidden">
           <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
@@ -107,7 +105,6 @@ const SiteHeader = () => {
         </div>
       )}
 
-      {/* Mobile Nav */}
       {mobileOpen && (
         <div className="border-t border-border bg-background px-4 py-4 lg:hidden">
           <nav className="flex flex-col gap-1">
@@ -121,6 +118,13 @@ const SiteHeader = () => {
                 {link.label}
               </a>
             ))}
+            <a
+              href={contactHref}
+              onClick={() => setMobileOpen(false)}
+              className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+            >
+              Contato
+            </a>
           </nav>
         </div>
       )}
