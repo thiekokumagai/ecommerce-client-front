@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, Menu, X, Info, MessageCircle } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, Info, MessageCircle, LayoutGrid } from "lucide-react";
 import logo from "@/assets/logo.webp";
 import { useCart } from "@/contexts/CartContext";
+import CategoriesMenu from "@/components/CategoriesMenu";
 
 const navLinks = [
   { label: "Início", href: "/" },
@@ -13,6 +14,7 @@ const navLinks = [
 
 const SiteHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const { totalItems, setIsCartOpen } = useCart();
   const location = useLocation();
 
@@ -35,9 +37,20 @@ const SiteHeader = () => {
 
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur-md md:top-0">
         <div className="mx-auto mt-[74px] flex h-16 max-w-7xl items-center justify-between px-4 md:mt-0 md:h-20 md:px-8">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain md:h-20 md:w-20" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCategoriesOpen(true)}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="Abrir categorias"
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </button>
+
+            <Link to="/" className="flex items-center gap-2">
+              <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain md:h-20 md:w-20" />
+            </Link>
+          </div>
 
           <nav className="hidden items-center gap-6 lg:flex">
             {navLinks.map((link) => (
@@ -121,6 +134,8 @@ const SiteHeader = () => {
           </div>
         )}
       </header>
+
+      <CategoriesMenu open={categoriesOpen} onClose={() => setCategoriesOpen(false)} />
     </>
   );
 };
