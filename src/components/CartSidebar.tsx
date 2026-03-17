@@ -64,11 +64,15 @@ const estimateDistanceFromAddress = (destinationAddress: string) => {
 
 const getDynamicDeliveryFee = (distanceKm: number) => {
   if (distanceKm <= 0) return 0;
-  if (distanceKm <= 3) return 8;
-  if (distanceKm <= 5) return 10;
-  if (distanceKm <= 7) return 12;
-  if (distanceKm <= 10) return 15;
-  return 18;
+  if (distanceKm <= 4) return 10;
+  if (distanceKm <= 6) return 12;
+  if (distanceKm <= 8) return 15;
+  if (distanceKm <= 12) return 20;
+  if (distanceKm <= 15) return 22;
+  if (distanceKm <= 17) return 25;
+  if (distanceKm <= 20) return 30;
+  if (distanceKm <= 32) return 35;
+  return 35;
 };
 
 type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
