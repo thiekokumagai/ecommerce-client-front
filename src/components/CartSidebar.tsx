@@ -4,10 +4,7 @@ import { useCart } from "@/contexts/CartContext";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
 
-const STORE_COORDINATES = {
-  lat: -20.4697,
-  lng: -54.6201,
-};
+const STORE_ORIGIN = "Rua Glauce Rocha, 539, Campo Grande - MS";
 
 const formatPrice = (price: number) =>
   `R$${price.toFixed(2).replace(".", ",")}`;
@@ -39,10 +36,11 @@ const normalizeAddress = (address: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-const estimateDistanceFromAddress = (address: string) => {
-  const normalized = normalizeAddress(address);
+const estimateDistanceFromAddress = (destinationAddress: string) => {
+  const normalizedDestination = normalizeAddress(destinationAddress);
+  const normalizedOrigin = normalizeAddress(STORE_ORIGIN);
 
-  if (!normalized.trim()) return 0;
+  if (!normalizedDestination.trim()) return 0;
 
   const zones = [
     { keywords: ["centro", "amambai", "sao francisco", "jardim dos estados"], distance: 3 },
@@ -53,7 +51,10 @@ const estimateDistanceFromAddress = (address: string) => {
   ];
 
   const matchedZone = zones.find((zone) =>
-    zone.keywords.some((keyword) => normalized.includes(keyword))
+    zone.keywords.some(
+      (keyword) =>
+        normalizedDestination.includes(keyword) && !normalizedOrigin.includes(keyword)
+    )
   );
 
   return matchedZone?.distance ?? 6;
