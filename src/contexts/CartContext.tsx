@@ -19,6 +19,8 @@ interface CartContextType {
   lastAdded: Product | null;
   showAddedModal: boolean;
   setShowAddedModal: (show: boolean) => void;
+  selectedCategory: string | null;
+  setSelectedCategory: (category: string | null) => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -34,6 +36,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [lastAdded, setLastAdded] = useState<Product | null>(null);
   const [showAddedModal, setShowAddedModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const addToCart = useCallback((product: Product) => {
     setItems((prev) => {
@@ -73,9 +76,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   return (
     <CartContext.Provider
       value={{
-        items, addToCart, removeFromCart, updateQuantity, clearCart,
-        totalItems, totalPrice, isCartOpen, setIsCartOpen,
-        lastAdded, showAddedModal, setShowAddedModal,
+        items,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+        isCartOpen,
+        setIsCartOpen,
+        lastAdded,
+        showAddedModal,
+        setShowAddedModal,
+        selectedCategory,
+        setSelectedCategory,
       }}
     >
       {children}

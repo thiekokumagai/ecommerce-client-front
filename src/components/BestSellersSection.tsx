@@ -2,9 +2,14 @@ import { useState } from "react";
 import { bestSellers } from "@/data/products";
 import ProductCard from "./ProductCard";
 import { TrendingUp } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 const BestSellersSection = () => {
   const [showAll, setShowAll] = useState(false);
+  const { selectedCategory } = useCart();
+
+  if (selectedCategory) return null;
+
   const visible = showAll ? bestSellers : bestSellers.slice(0, 8);
 
   return (
@@ -19,7 +24,7 @@ const BestSellersSection = () => {
           </div>
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+            className="text-sm font-medium text-primary"
           >
             {showAll ? "Ver menos" : "Ver todos"}
           </button>

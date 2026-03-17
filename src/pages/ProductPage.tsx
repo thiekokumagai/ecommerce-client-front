@@ -15,6 +15,7 @@ import SiteFooter from "@/components/SiteFooter";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
+import ProductImageModal from "@/components/ProductImageModal";
 import { getProductById, getProductMockDetails } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 
@@ -30,6 +31,7 @@ const ProductPage = () => {
   const [addressNumber, setAddressNumber] = useState("");
   const [note, setNote] = useState("");
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const product = useMemo(() => getProductById(Number(id)), [id]);
 
@@ -65,12 +67,18 @@ const ProductPage = () => {
 
       <main className="mx-auto max-w-[1220px] md:px-8 md:py-8">
         <section className="md:hidden">
-          <div className="relative bg-black">
-            <img
-              src={details.gallery[selectedImage]}
-              alt={product.name}
-              className="h-[500px] w-full object-cover"
-            />
+          <div className="relative bg-[#f5f5f5]">
+            <button
+              type="button"
+              onClick={() => setIsImageModalOpen(true)}
+              className="block w-full"
+            >
+              <img
+                src={details.gallery[selectedImage]}
+                alt={product.name}
+                className="aspect-square w-full object-contain"
+              />
+            </button>
 
             <button
               type="button"
@@ -83,6 +91,7 @@ const ProductPage = () => {
 
             <button
               type="button"
+              onClick={() => setIsImageModalOpen(true)}
               aria-label="Ampliar imagem"
               className="absolute right-0 top-0 flex h-14 w-14 items-center justify-center rounded-bl-[28px] bg-black/20 text-white backdrop-blur-sm"
             >
@@ -267,18 +276,24 @@ const ProductPage = () => {
                     <img
                       src={image}
                       alt={`${product.name} ${index + 1}`}
-                      className="h-[78px] w-[78px] object-cover"
+                      className="aspect-square w-[78px] object-cover"
                     />
                   </button>
                 ))}
               </div>
 
               <div className="relative overflow-hidden rounded-[14px] bg-[#f6f5f3]">
-                <img
-                  src={details.gallery[selectedImage]}
-                  alt={product.name}
-                  className="h-full w-full object-cover"
-                />
+                <button
+                  type="button"
+                  onClick={() => setIsImageModalOpen(true)}
+                  className="block w-full"
+                >
+                  <img
+                    src={details.gallery[selectedImage]}
+                    alt={product.name}
+                    className="aspect-square w-full object-contain"
+                  />
+                </button>
 
                 <button
                   type="button"
@@ -404,6 +419,14 @@ const ProductPage = () => {
       </div>
       <CartSidebar />
       <AddedToCartModal />
+      {isImageModalOpen && (
+        <ProductImageModal
+          images={details.gallery}
+          selectedIndex={selectedImage}
+          onSelect={setSelectedImage}
+          onClose={() => setIsImageModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
