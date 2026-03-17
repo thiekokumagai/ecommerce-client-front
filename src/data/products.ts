@@ -1,3 +1,8 @@
+export interface ProductVariationGroup {
+  name: string;
+  options: string[];
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -6,14 +11,60 @@ export interface Product {
   price: number;
   oldPrice?: number;
   isPromo?: boolean;
+  variationGroup?: ProductVariationGroup;
 }
 
 export const promoProducts: Product[] = [
-  { id: 1, name: "BLVK Fruit Ice Sweet Lychee 30ml 35/50mg", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/a146a326c20df0714d5e244f5d730ff2.webp", category: "NicSalt", price: 59.90, oldPrice: 79.90, isPromo: true },
-  { id: 2, name: "BLVK Fruit Ice Watermelon Apple 30ml 35/50mg", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/b2798a148b37aa712887c63d6c116041.webp", category: "NicSalt", price: 59.90, oldPrice: 79.90, isPromo: true },
-  { id: 3, name: "BLVK Fusion Grape Apple Ice 30ml 35/50mg", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/6f6d333d82efe70c974f4c8bd6e631f3.webp", category: "NicSalt", price: 59.90, oldPrice: 79.90, isPromo: true },
-  { id: 4, name: "BLVK Fusion Lemon Tangerine Ice 30ml 35/50mg", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/118e2d75df8180b561906ac08cf4b9a0.webp", category: "NicSalt", price: 59.90, oldPrice: 79.90, isPromo: true },
-  { id: 5, name: "BLVK Fusion Passion Grape Ice 30ml 35/50mg", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/7b3430efbf7e8ebb07613442a2d23409.webp", category: "NicSalt", price: 59.90, oldPrice: 79.90, isPromo: true },
+  {
+    id: 1,
+    name: "BLVK Fruit Ice Sweet Lychee 30ml 35/50mg",
+    image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/a146a326c20df0714d5e244f5d730ff2.webp",
+    category: "NicSalt",
+    price: 59.90,
+    oldPrice: 79.90,
+    isPromo: true,
+    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+  },
+  {
+    id: 2,
+    name: "BLVK Fruit Ice Watermelon Apple 30ml 35/50mg",
+    image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/b2798a148b37aa712887c63d6c116041.webp",
+    category: "NicSalt",
+    price: 59.90,
+    oldPrice: 79.90,
+    isPromo: true,
+    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+  },
+  {
+    id: 3,
+    name: "BLVK Fusion Grape Apple Ice 30ml 35/50mg",
+    image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/6f6d333d82efe70c974f4c8bd6e631f3.webp",
+    category: "NicSalt",
+    price: 59.90,
+    oldPrice: 79.90,
+    isPromo: true,
+    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+  },
+  {
+    id: 4,
+    name: "BLVK Fusion Lemon Tangerine Ice 30ml 35/50mg",
+    image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/118e2d75df8180b561906ac08cf4b9a0.webp",
+    category: "NicSalt",
+    price: 59.90,
+    oldPrice: 79.90,
+    isPromo: true,
+    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+  },
+  {
+    id: 5,
+    name: "BLVK Fusion Passion Grape Ice 30ml 35/50mg",
+    image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/7b3430efbf7e8ebb07613442a2d23409.webp",
+    category: "NicSalt",
+    price: 59.90,
+    oldPrice: 79.90,
+    isPromo: true,
+    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+  },
   { id: 6, name: "ElfBar GH Grape Ice 23k Puffs", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/cf22d93971bccd82e6bdd65974785954.webp", category: "Descartável", price: 149.90, oldPrice: 189.90, isPromo: true },
   { id: 7, name: "IGNITE V80 Banana Ice 8k Puffs", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/02a731a0d2f31bfa2bd5446d055925cb.webp", category: "Descartável", price: 89.90, oldPrice: 119.90, isPromo: true },
   { id: 8, name: "Ignite V50 Blue Raspberry Ice 5k Puffs", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/812c783e3a66227f310687fea16002cf.webp", category: "Descartável", price: 69.90, oldPrice: 89.90, isPromo: true },
