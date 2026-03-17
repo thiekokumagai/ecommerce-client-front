@@ -18,8 +18,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [showVariationModal, setShowVariationModal] = useState(false);
 
+  const availableOptions = product.variationGroup?.options.filter((option) => option.available) ?? [];
+
   const handleBuy = () => {
     if (product.variationGroup) {
+      setSelectedVariation(null);
       setShowVariationModal(true);
       return;
     }
@@ -73,10 +76,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {product.variationGroup.options.map((option) => (
                     <span
-                      key={option}
-                      className="rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-foreground"
+                      key={option.label}
+                      className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${
+                        option.available
+                          ? "border-border text-foreground"
+                          : "border-border text-muted-foreground line-through opacity-60"
+                      }`}
                     >
-                      {option}
+                      {option.label}
                     </span>
                   ))}
                 </div>
@@ -98,10 +105,19 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <button
             type="button"
             onClick={handleBuy}
-            className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+            disabled={product.variationGroup !== undefined && availableOptions.length === 0}
+            className={`mt-2 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${
+              product.variationGroup !== undefined && availableOptions.length === 0
+                ? "bg-muted text-muted-foreground"
+                : "bg-primary text-primary-foreground"
+            }`}
           >
             <ShoppingCart className="h-4 w-4" />
-            {product.variationGroup ? "Escolher opção" : "Comprar"}
+            {product.variationGroup
+              ? availableOptions.length === 0
+                ? "Indisponível"
+                : "Escolher opção"
+              : "Comprar"}
           </button>
         </div>
       </div>

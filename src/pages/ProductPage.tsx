@@ -54,7 +54,10 @@ const ProductPage = () => {
   const details = getProductMockDetails(product);
   const visibleSpecs = showFullDescription ? details.specs : details.specs.slice(0, 3);
   const isNicSalt = product.category === "NicSalt";
+  const nicotineOptions = product.variationGroup?.options ?? [];
+  const availableNicotineOptions = nicotineOptions.filter((option) => option.available);
   const canAddToCart = !isNicSalt || nicotineStrength !== null;
+  const hasNicotineOptions = nicotineOptions.length > 0;
 
   const productDescription = isNicSalt
     ? "Hortelã gelada"
@@ -169,19 +172,31 @@ const ProductPage = () => {
                 <div className="border-t border-[#ececec] pt-4">
                   <p className="text-sm uppercase tracking-wide text-[#7f7f7f]">Teor de nicotina :</p>
                   <div className="mt-3 space-y-3">
-                    {["35mg", "50mg"].map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setNicotineStrength(option)}
-                        className="flex items-center gap-3 text-left"
-                      >
-                        <span
-                          className={`h-5 w-5 rounded-full border ${nicotineStrength === option ? "border-primary bg-primary" : "border-[#c9c9c9] bg-[#d9d9d9]"}`}
-                        />
-                        <span className="text-[16px] text-[#555555]">{option}</span>
-                      </button>
-                    ))}
+                    {hasNicotineOptions &&
+                      nicotineOptions.map((option) => (
+                        <button
+                          key={option.label}
+                          type="button"
+                          onClick={() => option.available && setNicotineStrength(option.label)}
+                          disabled={!option.available}
+                          className={`flex items-center gap-3 text-left ${
+                            option.available ? "" : "cursor-not-allowed opacity-50"
+                          }`}
+                        >
+                          <span
+                            className={`h-5 w-5 rounded-full border ${
+                              nicotineStrength === option.label
+                                ? "border-primary bg-primary"
+                                : option.available
+                                  ? "border-[#c9c9c9] bg-[#d9d9d9]"
+                                  : "border-[#d8d8d8] bg-[#eeeeee]"
+                            }`}
+                          />
+                          <span className={`text-[16px] ${option.available ? "text-[#555555]" : "text-[#9a9a9a] line-through"}`}>
+                            {option.label}
+                          </span>
+                        </button>
+                      ))}
                   </div>
                 </div>
               </div>
@@ -249,14 +264,18 @@ const ProductPage = () => {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={!canAddToCart}
+              disabled={!canAddToCart || (isNicSalt && availableNicotineOptions.length === 0)}
               className={`mt-6 w-full rounded-xl px-6 py-3 text-center text-base font-medium ${
-                canAddToCart
+                canAddToCart && (!isNicSalt || availableNicotineOptions.length > 0)
                   ? "bg-primary text-primary-foreground"
                   : "bg-[#c7c7c7] text-white"
               }`}
             >
-              {canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+              {isNicSalt && availableNicotineOptions.length === 0
+                ? "Indisponível"
+                : canAddToCart
+                  ? "Adicionar ao Pedido"
+                  : "Selecione"}
             </button>
 
             <button
@@ -299,14 +318,18 @@ const ProductPage = () => {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={!canAddToCart}
+              disabled={!canAddToCart || (isNicSalt && availableNicotineOptions.length === 0)}
               className={`mx-auto block w-full max-w-[240px] rounded-xl px-6 py-3.5 text-base font-bold ${
-                canAddToCart
+                canAddToCart && (!isNicSalt || availableNicotineOptions.length > 0)
                   ? "bg-primary text-primary-foreground"
                   : "bg-[#c7c7c7] text-white"
               }`}
             >
-              {canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+              {isNicSalt && availableNicotineOptions.length === 0
+                ? "Indisponível"
+                : canAddToCart
+                  ? "Adicionar ao Pedido"
+                  : "Selecione"}
             </button>
           </div>
         </section>
@@ -411,19 +434,31 @@ const ProductPage = () => {
                     </div>
 
                     <div className="mt-3 space-y-3">
-                      {["35mg", "50mg"].map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          onClick={() => setNicotineStrength(option)}
-                          className="flex items-center gap-3 text-left"
-                        >
-                          <span
-                            className={`h-5 w-5 rounded-full border ${nicotineStrength === option ? "border-primary bg-primary" : "border-[#c9c9c9] bg-[#d9d9d9]"}`}
-                          />
-                          <span className="text-[16px] text-[#555555]">{option}</span>
-                        </button>
-                      ))}
+                      {hasNicotineOptions &&
+                        nicotineOptions.map((option) => (
+                          <button
+                            key={option.label}
+                            type="button"
+                            onClick={() => option.available && setNicotineStrength(option.label)}
+                            disabled={!option.available}
+                            className={`flex items-center gap-3 text-left ${
+                              option.available ? "" : "cursor-not-allowed opacity-50"
+                            }`}
+                          >
+                            <span
+                              className={`h-5 w-5 rounded-full border ${
+                                nicotineStrength === option.label
+                                  ? "border-primary bg-primary"
+                                  : option.available
+                                    ? "border-[#c9c9c9] bg-[#d9d9d9]"
+                                    : "border-[#d8d8d8] bg-[#eeeeee]"
+                              }`}
+                            />
+                            <span className={`text-[16px] ${option.available ? "text-[#555555]" : "text-[#9a9a9a] line-through"}`}>
+                              {option.label}
+                            </span>
+                          </button>
+                        ))}
                     </div>
                   </div>
                 </div>
@@ -492,14 +527,18 @@ const ProductPage = () => {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={!canAddToCart}
+                  disabled={!canAddToCart || (isNicSalt && availableNicotineOptions.length === 0)}
                   className={`w-full px-6 py-3.5 text-base font-bold ${
-                    canAddToCart
+                    canAddToCart && (!isNicSalt || availableNicotineOptions.length > 0)
                       ? "rounded-lg bg-primary text-primary-foreground"
                       : "rounded-xl bg-[#bfbfbf] text-white"
                   }`}
                 >
-                  {canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+                  {isNicSalt && availableNicotineOptions.length === 0
+                    ? "Indisponível"
+                    : canAddToCart
+                      ? "Adicionar ao Pedido"
+                      : "Selecione"}
                 </button>
                 <button
                   type="button"

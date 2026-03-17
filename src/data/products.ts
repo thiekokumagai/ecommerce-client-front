@@ -1,6 +1,11 @@
+export interface ProductVariationOption {
+  label: string;
+  available: boolean;
+}
+
 export interface ProductVariationGroup {
   name: string;
-  options: string[];
+  options: ProductVariationOption[];
 }
 
 export interface Product {
@@ -23,7 +28,13 @@ export const promoProducts: Product[] = [
     price: 59.90,
     oldPrice: 79.90,
     isPromo: true,
-    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+    variationGroup: {
+      name: "Teor de nicotina",
+      options: [
+        { label: "35mg", available: true },
+        { label: "50mg", available: false },
+      ],
+    },
   },
   {
     id: 2,
@@ -33,7 +44,13 @@ export const promoProducts: Product[] = [
     price: 59.90,
     oldPrice: 79.90,
     isPromo: true,
-    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+    variationGroup: {
+      name: "Teor de nicotina",
+      options: [
+        { label: "35mg", available: true },
+        { label: "50mg", available: true },
+      ],
+    },
   },
   {
     id: 3,
@@ -43,7 +60,13 @@ export const promoProducts: Product[] = [
     price: 59.90,
     oldPrice: 79.90,
     isPromo: true,
-    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+    variationGroup: {
+      name: "Teor de nicotina",
+      options: [
+        { label: "35mg", available: false },
+        { label: "50mg", available: true },
+      ],
+    },
   },
   {
     id: 4,
@@ -53,7 +76,13 @@ export const promoProducts: Product[] = [
     price: 59.90,
     oldPrice: 79.90,
     isPromo: true,
-    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+    variationGroup: {
+      name: "Teor de nicotina",
+      options: [
+        { label: "35mg", available: true },
+        { label: "50mg", available: false },
+      ],
+    },
   },
   {
     id: 5,
@@ -63,7 +92,13 @@ export const promoProducts: Product[] = [
     price: 59.90,
     oldPrice: 79.90,
     isPromo: true,
-    variationGroup: { name: "Teor de nicotina", options: ["35mg", "50mg"] },
+    variationGroup: {
+      name: "Teor de nicotina",
+      options: [
+        { label: "35mg", available: false },
+        { label: "50mg", available: false },
+      ],
+    },
   },
   { id: 6, name: "ElfBar GH Grape Ice 23k Puffs", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/cf22d93971bccd82e6bdd65974785954.webp", category: "Descartável", price: 149.90, oldPrice: 189.90, isPromo: true },
   { id: 7, name: "IGNITE V80 Banana Ice 8k Puffs", image: "https://cdn.vendizap.com/vendizap-produtos-thumbs/02a731a0d2f31bfa2bd5446d055925cb.webp", category: "Descartável", price: 89.90, oldPrice: 119.90, isPromo: true },
