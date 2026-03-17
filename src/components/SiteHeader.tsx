@@ -38,15 +38,6 @@ const SiteHeader = () => {
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur-md md:top-0">
         <div className="mx-auto mt-[74px] flex h-16 max-w-7xl items-center justify-between px-4 md:mt-0 md:h-20 md:px-8">
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCategoriesOpen(true)}
-              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              aria-label="Abrir categorias"
-            >
-              <LayoutGrid className="h-5 w-5" />
-            </button>
-
             <Link to="/" className="flex items-center gap-2">
               <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain md:h-20 md:w-20" />
             </Link>
@@ -88,6 +79,15 @@ const SiteHeader = () => {
             <a href={contactHref} className="rounded-full p-2 text-primary transition-colors hover:bg-secondary">
               <Info className="h-5 w-5" />
             </a>
+
+            <button
+              type="button"
+              onClick={() => setCategoriesOpen(true)}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="Abrir categorias"
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </button>
 
             <button
               onClick={() => setIsCartOpen(true)}
