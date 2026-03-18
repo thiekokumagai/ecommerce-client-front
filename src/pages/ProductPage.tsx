@@ -99,16 +99,32 @@ const ProductPage = () => {
               {product.name}
             </h1>
 
-            <ProductActions
-              quantity={quantity}
-              priceLabel={formatPrice(product.price)}
-              canAddToCart={canAddToCart}
-              isUnavailable={isUnavailable}
-              onDecrease={handleDecreaseQuantity}
-              onIncrease={handleIncreaseQuantity}
-              onAddToCart={handleAddToCart}
-              onBackToStore={handleBackToStore}
-            />
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-4 py-2.5">
+                <button
+                  type="button"
+                  onClick={handleDecreaseQuantity}
+                  className="text-[#7a7a7a]"
+                  aria-label="Diminuir quantidade"
+                >
+                  <span className="text-base">−</span>
+                </button>
+                <span className="min-w-5 text-center text-lg text-[#5c5c5c]">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={handleIncreaseQuantity}
+                  className="text-[#7a7a7a]"
+                  aria-label="Aumentar quantidade"
+                >
+                  <span className="text-base">+</span>
+                </button>
+                <span className="text-sm text-[#9b9b9b]">un</span>
+              </div>
+
+              <div className="text-[20px] font-semibold text-[#5a5a5a]">
+                {formatPrice(product.price)}
+              </div>
+            </div>
 
             <ProductInfo
               productName={product.name}
