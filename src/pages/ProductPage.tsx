@@ -141,17 +141,8 @@ const ProductPage = () => {
 
             <button
               type="button"
-              onClick={handleAddToCart}
-              disabled={!canAddToCart || isUnavailable}
-              className="mt-6 w-full rounded-xl bg-primary px-6 py-3 text-center text-base font-medium text-primary-foreground disabled:bg-[#c7c7c7] disabled:text-white"
-            >
-              {isUnavailable ? "Indisponível" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
-            </button>
-
-            <button
-              type="button"
               onClick={handleBackToStore}
-              className="mx-auto mt-4 block w-full rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
+              className="mx-auto mt-6 block w-full rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
             >
               Voltar pra loja
             </button>
