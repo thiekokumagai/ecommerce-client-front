@@ -1,5 +1,6 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, Bike, MapPin, Pencil } from "lucide-react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
@@ -87,6 +88,7 @@ const CartSidebar = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [needsChange, setNeedsChange] = useState("não");
   const [changeFor, setChangeFor] = useState("");
+  const previousTotalItems = useRef(totalItems);
 
   useEffect(() => {
     const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY) ?? "";
@@ -107,6 +109,14 @@ const CartSidebar = () => {
       setPhone(storedPhone);
     }
   }, []);
+
+  useEffect(() => {
+    if (previousTotalItems.current > 0 && totalItems === 0) {
+      toast.info("Seu carrinho ficou vazio. Escolha os produtos para continuar.");
+    }
+
+    previousTotalItems.current = totalItems;
+  }, [totalItems]);
 
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
@@ -147,6 +157,14 @@ const CartSidebar = () => {
   const handleEditAddress = () => {
     setAddress(savedAddress);
     setIsEditingAddress(true);
+  };
+
+  const handleRemoveItem = (productId: number, selectedVariation?: string) => {
+    removeFromCart(productId, selectedVariation);
+
+    if (totalItems <= 1) {
+      toast.info("Escolha os produtos para continuar.");
+    }
   };
 
   const checkoutMessage = useMemo(
@@ -218,6 +236,7 @@ const CartSidebar = () => {
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
               <ShoppingBag className="h-12 w-12" />
               <p className="text-sm">Seu carrinho está vazio</p>
+              <p className="text-center text-sm">Escolha os produtos para continuar.</p>
             </div>
           ) : (
             <div className="space-y-5">
@@ -235,7 +254,7 @@ const CartSidebar = () => {
                             </p>
                           )}
                         </div>
-                        <button onClick={() => removeFromCart(item.product.id, item.selectedVariation)} className="shrink-0 text-muted-foreground">
+                        <button onClick={() => handleRemoveItem(item.product.id, item.selectedVariation)} className="shrink-0 text-muted-foreground">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -403,7 +422,7 @@ const CartSidebar = () => {
           )}
         </div>
 
-        {items.length > 0 && (
+        {items.length > 0 ? (
           <div className="border-t border-border p-5">
             <div className="space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -436,6 +455,16 @@ const CartSidebar = () => {
             >
               Finalizar Pedido via WhatsApp
             </a>
+          </div>
+        ) : (
+          <div className="border-t border-border p-5">
+            <button
+              type="button"
+              onClick={() => toast.info("Escolha os produtos para continuar.")}
+              className="w-full rounded-xl bg-muted py-3.5 text-sm font-bold text-muted-foreground"
+            >
+              Escolha os produtos para continuar
+            </button>
           </div>
         )}
       </div>
