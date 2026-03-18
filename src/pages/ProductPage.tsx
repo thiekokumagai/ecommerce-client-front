@@ -98,7 +98,17 @@ const ProductPage = () => {
             <h1 className="text-[24px] font-medium leading-tight text-[#4b4b4b]">
               {product.name}
             </h1>
-           
+
+            <ProductActions
+              quantity={quantity}
+              priceLabel={formatPrice(product.price)}
+              canAddToCart={canAddToCart}
+              isUnavailable={isUnavailable}
+              onDecrease={handleDecreaseQuantity}
+              onIncrease={handleIncreaseQuantity}
+              onAddToCart={handleAddToCart}
+              onBackToStore={handleBackToStore}
+            />
 
             <ProductInfo
               productName={product.name}
@@ -115,16 +125,7 @@ const ProductPage = () => {
               onSelectNicotine={setNicotineStrength}
               onShowMore={() => setShowFullDescription(true)}
             />
-            <ProductActions
-              quantity={quantity}
-              priceLabel={formatPrice(product.price)}
-              canAddToCart={canAddToCart}
-              isUnavailable={isUnavailable}
-              onDecrease={handleDecreaseQuantity}
-              onIncrease={handleIncreaseQuantity}
-              onAddToCart={handleAddToCart}
-              onBackToStore={handleBackToStore}
-            />
+
             <ProductFreightCalculator
               zipCode={zipCode}
               addressNumber={addressNumber}
@@ -138,7 +139,22 @@ const ProductPage = () => {
               onChange={setNote}
             />
 
-            
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!canAddToCart || isUnavailable}
+              className="mt-6 w-full rounded-xl bg-primary px-6 py-3 text-center text-base font-medium text-primary-foreground disabled:bg-[#c7c7c7] disabled:text-white"
+            >
+              {isUnavailable ? "Indisponível" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBackToStore}
+              className="mx-auto mt-4 block w-full rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
+            >
+              Voltar pra loja
+            </button>
 
             <ProductContact />
           </div>
@@ -156,7 +172,7 @@ const ProductPage = () => {
               productName={product.name}
               images={details.gallery}
               selectedImage={selectedImage}
-              isNicSalt={isNicSalt}
+              isNicSalt={false}
               onSelectImage={setSelectedImage}
               onOpenModal={() => setIsImageModalOpen(true)}
             />
@@ -165,6 +181,18 @@ const ProductPage = () => {
               <h1 className="text-[27px] font-semibold leading-[1.15] text-[#545454]">
                 {product.name}
               </h1>
+
+              <ProductActions
+                quantity={quantity}
+                priceLabel={formatPrice(product.price)}
+                canAddToCart={canAddToCart}
+                isUnavailable={isUnavailable}
+                isDesktop
+                onDecrease={handleDecreaseQuantity}
+                onIncrease={handleIncreaseQuantity}
+                onAddToCart={handleAddToCart}
+                onBackToStore={handleBackToStore}
+              />
 
               <ProductInfo
                 productName={product.name}
@@ -182,17 +210,7 @@ const ProductPage = () => {
                 onSelectNicotine={setNicotineStrength}
                 onShowMore={() => setShowFullDescription(true)}
               />
-              <ProductActions
-                quantity={quantity}
-                priceLabel={formatPrice(product.price)}
-                canAddToCart={canAddToCart}
-                isUnavailable={isUnavailable}
-                isDesktop
-                onDecrease={handleDecreaseQuantity}
-                onIncrease={handleIncreaseQuantity}
-                onAddToCart={handleAddToCart}
-                onBackToStore={handleBackToStore}
-              />
+
               <ProductFreightCalculator
                 zipCode={zipCode}
                 addressNumber={addressNumber}
@@ -210,7 +228,22 @@ const ProductPage = () => {
                 onChange={setNote}
               />
 
-              
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={!canAddToCart || isUnavailable}
+                className="mt-6 w-full rounded-lg bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground disabled:bg-[#bfbfbf] disabled:text-white"
+              >
+                {isUnavailable ? "Indisponível" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBackToStore}
+                className="mt-2.5 w-full rounded-lg border border-primary px-6 py-3 text-base font-medium text-primary"
+              >
+                Voltar pra loja
+              </button>
 
               <ProductContact isDesktop />
             </div>
