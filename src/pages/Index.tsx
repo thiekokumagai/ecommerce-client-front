@@ -1,6 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import HeroBanner from "@/components/HeroBanner";
 import CategoriesSection from "@/components/CategoriesSection";
+import NicotineFilter from "@/components/NicotineFilter";
 import PromotionsSection from "@/components/PromotionsSection";
 import BestSellersSection from "@/components/BestSellersSection";
 import SiteFooter from "@/components/SiteFooter";
@@ -11,21 +12,35 @@ import { useCart } from "@/contexts/CartContext";
 import { allProducts } from "@/data/products";
 
 const Index = () => {
-  const { searchTerm, setSearchTerm, setSelectedCategory } = useCart();
+  const {
+    searchTerm,
+    setSearchTerm,
+    setSelectedCategory,
+    selectedNicotineStrength,
+    setSelectedNicotineStrength,
+  } = useCart();
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  const hasResults = normalizedSearch
-    ? allProducts.some(
-        (product) =>
-          product.name.toLowerCase().includes(normalizedSearch) ||
-          product.description.toLowerCase().includes(normalizedSearch) ||
-          product.category.toLowerCase().includes(normalizedSearch)
-      )
-    : true;
+  const hasResults = allProducts.some((product) => {
+    const matchesSearch = normalizedSearch
+      ? product.name.toLowerCase().includes(normalizedSearch) ||
+        product.description.toLowerCase().includes(normalizedSearch) ||
+        product.category.toLowerCase().includes(normalizedSearch)
+      : true;
+
+    const matchesNicotine = selectedNicotineStrength
+      ? product.variationGroup?.options.some(
+          (option) => option.available && option.label === selectedNicotineStrength
+        ) ?? false
+      : true;
+
+    return matchesSearch && matchesNicotine;
+  });
 
   const handleClearSearch = () => {
     setSearchTerm("");
     setSelectedCategory(null);
+    setSelectedNicotineStrength(null);
   };
 
   return (
@@ -33,7 +48,8 @@ const Index = () => {
       <SiteHeader />
       <HeroBanner />
       <CategoriesSection />
-      {!hasResults && normalizedSearch && (
+      <NicotineFilter />
+      {!hasResults && (normalizedSearch || selectedNicotineStrength) && (
         <section className="py-12">
           <div className="mx-auto max-w-7xl px-4 text-center md:px-8">
             <h2 className="text-2xl font-bold text-foreground">Nenhum produto encontrado</h2>

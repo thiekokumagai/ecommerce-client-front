@@ -24,6 +24,8 @@ interface CartContextType {
   setSelectedCategory: (category: string | null) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  selectedNicotineStrength: string | null;
+  setSelectedNicotineStrength: (strength: string | null) => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -49,6 +51,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [showAddedModal, setShowAddedModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedNicotineStrength, setSelectedNicotineStrength] = useState<string | null>(null);
 
   const addToCart = useCallback((item: Product | SelectedProduct) => {
     const normalizedItem = normalizeItem(item);
@@ -140,6 +143,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setSelectedCategory,
         searchTerm,
         setSearchTerm,
+        selectedNicotineStrength,
+        setSelectedNicotineStrength,
       }}
     >
       {children}

@@ -4,7 +4,7 @@ import { Flame } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
 const PromotionsSection = () => {
-  const { selectedCategory, searchTerm } = useCart();
+  const { selectedCategory, searchTerm, selectedNicotineStrength } = useCart();
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const visibleProducts = promoProducts.filter((product) => {
@@ -14,8 +14,13 @@ const PromotionsSection = () => {
         product.description.toLowerCase().includes(normalizedSearch) ||
         product.category.toLowerCase().includes(normalizedSearch)
       : true;
+    const matchesNicotine = selectedNicotineStrength
+      ? product.variationGroup?.options.some(
+          (option) => option.available && option.label === selectedNicotineStrength
+        ) ?? false
+      : true;
 
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesSearch && matchesNicotine;
   });
 
   if (visibleProducts.length === 0) return null;

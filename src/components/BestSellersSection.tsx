@@ -6,7 +6,7 @@ import { useCart } from "@/contexts/CartContext";
 
 const BestSellersSection = () => {
   const [showAll, setShowAll] = useState(false);
-  const { selectedCategory, searchTerm } = useCart();
+  const { selectedCategory, searchTerm, selectedNicotineStrength } = useCart();
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const filteredProducts = bestSellers.filter((product) => {
@@ -16,15 +16,21 @@ const BestSellersSection = () => {
         product.description.toLowerCase().includes(normalizedSearch) ||
         product.category.toLowerCase().includes(normalizedSearch)
       : true;
+    const matchesNicotine = selectedNicotineStrength
+      ? product.variationGroup?.options.some(
+          (option) => option.available && option.label === selectedNicotineStrength
+        ) ?? false
+      : true;
 
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesSearch && matchesNicotine;
   });
 
   if (selectedCategory && filteredProducts.length === 0) return null;
   if (normalizedSearch && filteredProducts.length === 0) return null;
-  if (!selectedCategory && !normalizedSearch && filteredProducts.length === 0) return null;
+  if (selectedNicotineStrength && filteredProducts.length === 0) return null;
+  if (!selectedCategory && !normalizedSearch && !selectedNicotineStrength && filteredProducts.length === 0) return null;
 
-  const visible = showAll || normalizedSearch ? filteredProducts : filteredProducts.slice(0, 8);
+  const visible = showAll || normalizedSearch || selectedNicotineStrength ? filteredProducts : filteredProducts.slice(0, 8);
 
   return (
     <section id="produtos" className="py-12 md:py-16">
@@ -33,10 +39,10 @@ const BestSellersSection = () => {
           <div className="flex items-center gap-3">
             <TrendingUp className="h-6 w-6 text-primary" />
             <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">
-              {normalizedSearch ? "Resultados encontrados" : "Mais Vendidos"}
+              {normalizedSearch || selectedNicotineStrength ? "Resultados encontrados" : "Mais Vendidos"}
             </h2>
           </div>
-          {!normalizedSearch && filteredProducts.length > 8 && (
+          {!normalizedSearch && !selectedNicotineStrength && filteredProducts.length > 8 && (
             <button
               onClick={() => setShowAll(!showAll)}
               className="text-sm font-medium text-primary"
