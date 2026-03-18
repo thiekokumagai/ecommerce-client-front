@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import catDescartavel from "@/assets/cat-descartavel.webp";
 import catLifepod from "@/assets/cat-lifepod.webp";
@@ -25,6 +26,7 @@ const categories = [
 ];
 
 const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
+  const navigate = useNavigate();
   const {
     selectedCategory,
     setSelectedCategory,
@@ -32,6 +34,15 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
   } = useCart();
 
   if (!open) return null;
+
+  const scrollToProducts = () => {
+    requestAnimationFrame(() => {
+      const target = document.getElementById("produtos") || document.getElementById("promocoes");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-[75] flex justify-end">
@@ -68,6 +79,12 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
                     setSelectedNicotineStrength(null);
                   }
                   onClose();
+                  if (window.location.pathname !== "/") {
+                    navigate("/#produtos");
+                    setTimeout(scrollToProducts, 50);
+                    return;
+                  }
+                  scrollToProducts();
                 }}
                 className={cn(
                   "flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left transition-colors",
