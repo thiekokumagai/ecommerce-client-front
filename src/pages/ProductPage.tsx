@@ -115,7 +115,16 @@ const ProductPage = () => {
               onSelectNicotine={setNicotineStrength}
               onShowMore={() => setShowFullDescription(true)}
             />
-
+            <ProductActions
+              quantity={quantity}
+              priceLabel={formatPrice(product.price)}
+              canAddToCart={canAddToCart}
+              isUnavailable={isUnavailable}
+              onDecrease={handleDecreaseQuantity}
+              onIncrease={handleIncreaseQuantity}
+              onAddToCart={handleAddToCart}
+              onBackToStore={handleBackToStore}
+            />
             <ProductFreightCalculator
               zipCode={zipCode}
               addressNumber={addressNumber}
@@ -129,16 +138,7 @@ const ProductPage = () => {
               onChange={setNote}
             />
 
-            <ProductActions
-              quantity={quantity}
-              priceLabel={formatPrice(product.price)}
-              canAddToCart={canAddToCart}
-              isUnavailable={isUnavailable}
-              onDecrease={handleDecreaseQuantity}
-              onIncrease={handleIncreaseQuantity}
-              onAddToCart={handleAddToCart}
-              onBackToStore={handleBackToStore}
-            />
+            
 
             <ProductContact />
           </div>
@@ -182,7 +182,17 @@ const ProductPage = () => {
                 onSelectNicotine={setNicotineStrength}
                 onShowMore={() => setShowFullDescription(true)}
               />
-
+              <ProductActions
+                quantity={quantity}
+                priceLabel={formatPrice(product.price)}
+                canAddToCart={canAddToCart}
+                isUnavailable={isUnavailable}
+                isDesktop
+                onDecrease={handleDecreaseQuantity}
+                onIncrease={handleIncreaseQuantity}
+                onAddToCart={handleAddToCart}
+                onBackToStore={handleBackToStore}
+              />
               <ProductFreightCalculator
                 zipCode={zipCode}
                 addressNumber={addressNumber}
@@ -200,17 +210,7 @@ const ProductPage = () => {
                 onChange={setNote}
               />
 
-              <ProductActions
-                quantity={quantity}
-                priceLabel={formatPrice(product.price)}
-                canAddToCart={canAddToCart}
-                isUnavailable={isUnavailable}
-                isDesktop
-                onDecrease={handleDecreaseQuantity}
-                onIncrease={handleIncreaseQuantity}
-                onAddToCart={handleAddToCart}
-                onBackToStore={handleBackToStore}
-              />
+              
 
               <ProductContact isDesktop />
             </div>

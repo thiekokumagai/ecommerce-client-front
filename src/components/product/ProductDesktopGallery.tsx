@@ -18,7 +18,7 @@ const ProductDesktopGallery = ({
   onOpenModal,
 }: ProductDesktopGalleryProps) => {
   return (
-    <div className={`grid items-start gap-4 pt-16 ${isNicSalt ? "grid-cols-1" : "grid-cols-[82px_1fr]"}`}>
+    <div className={`grid items-start gap-4 pt-16 grid-cols-[82px_1fr]`}>
       {!isNicSalt && (
         <div className="flex flex-col gap-3">
           <button
@@ -48,7 +48,7 @@ const ProductDesktopGallery = ({
         </div>
       )}
 
-      <div className={`relative w-full overflow-hidden bg-[#f6f5f3] ${isNicSalt ? "max-w-[450px] rounded-[18px]" : "max-w-[440px] rounded-[14px]"}`}>
+      <div className={`relative w-full overflow-hidden bg-[#f6f5f3] max-w-[440px] rounded-[14px]`}>
         <button
           type="button"
           onClick={onOpenModal}
