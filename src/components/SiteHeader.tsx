@@ -49,18 +49,6 @@ const SiteHeader = () => {
             </Link>
           </div>
 
-          <nav className="hidden items-center gap-6 lg:flex">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-
           <div className="flex items-center gap-1 md:gap-2">
             <div className="hidden items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 md:flex">
               <input
