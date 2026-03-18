@@ -19,7 +19,20 @@ const categories = [
 ];
 
 const CategoriesSection = () => {
-  const { selectedCategory, setSelectedCategory } = useCart();
+  const {
+    selectedCategory,
+    setSelectedCategory,
+    setSelectedNicotineStrength,
+  } = useCart();
+
+  const handleCategoryChange = (category: string, isActive: boolean) => {
+    const nextCategory = isActive ? null : category;
+    setSelectedCategory(nextCategory);
+
+    if (nextCategory !== "NicSalt") {
+      setSelectedNicotineStrength(null);
+    }
+  };
 
   return (
     <section id="categorias" className="py-10 md:py-14">
@@ -31,7 +44,10 @@ const CategoriesSection = () => {
           {selectedCategory && (
             <button
               type="button"
-              onClick={() => setSelectedCategory(null)}
+              onClick={() => {
+                setSelectedCategory(null);
+                setSelectedNicotineStrength(null);
+              }}
               className="rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground"
             >
               Limpar filtro
@@ -47,7 +63,7 @@ const CategoriesSection = () => {
               <button
                 key={cat.name}
                 type="button"
-                onClick={() => setSelectedCategory(isActive ? null : cat.name)}
+                onClick={() => handleCategoryChange(cat.name, isActive)}
                 className="flex shrink-0 flex-col items-center gap-2"
               >
                 <div

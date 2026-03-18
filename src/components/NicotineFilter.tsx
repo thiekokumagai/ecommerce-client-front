@@ -4,23 +4,31 @@ import { allProducts } from "@/data/products";
 import { cn } from "@/lib/utils";
 
 const NicotineFilter = () => {
-  const { selectedNicotineStrength, setSelectedNicotineStrength } = useCart();
+  const {
+    selectedCategory,
+    selectedNicotineStrength,
+    setSelectedNicotineStrength,
+  } = useCart();
 
   const options = useMemo(() => {
     const strengths = new Set<string>();
 
-    allProducts.forEach((product) => {
-      product.variationGroup?.options.forEach((option) => {
-        if (option.available) {
-          strengths.add(option.label);
-        }
+    allProducts
+      .filter((product) => product.category === "NicSalt")
+      .forEach((product) => {
+        product.variationGroup?.options.forEach((option) => {
+          if (option.available) {
+            strengths.add(option.label);
+          }
+        });
       });
-    });
 
-    return Array.from(strengths).sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
+    return Array.from(strengths).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { numeric: true })
+    );
   }, []);
 
-  if (options.length === 0) return null;
+  if (selectedCategory !== "NicSalt" || options.length === 0) return null;
 
   return (
     <section className="py-4 md:py-6">

@@ -25,7 +25,11 @@ const categories = [
 ];
 
 const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
-  const { selectedCategory, setSelectedCategory } = useCart();
+  const {
+    selectedCategory,
+    setSelectedCategory,
+    setSelectedNicotineStrength,
+  } = useCart();
 
   if (!open) return null;
 
@@ -60,6 +64,9 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
                 type="button"
                 onClick={() => {
                   setSelectedCategory(category.name);
+                  if (category.name !== "NicSalt") {
+                    setSelectedNicotineStrength(null);
+                  }
                   onClose();
                 }}
                 className={cn(
