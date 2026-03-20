@@ -62,6 +62,7 @@ const ProductPage = () => {
   const notePlaceholder = isNicSalt
     ? "Inclua algum detalhe para este produto (opcional)"
     : "Observações";
+  const totalPrice = product.price * quantity;
 
   const handleAddToCart = () => {
     if (!canAddToCart) return;
@@ -123,7 +124,7 @@ const ProductPage = () => {
               </div>
 
               <div className="text-[20px] font-semibold text-[#5a5a5a]">
-                {formatPrice(product.price)}
+                {formatPrice(totalPrice)}
               </div>
             </div>
 
@@ -211,7 +212,7 @@ const ProductPage = () => {
                 </div>
 
                 <div className="text-[28px] font-semibold text-[#555555]">
-                  {formatPrice(product.price)}
+                  {formatPrice(totalPrice)}
                 </div>
               </div>
 
