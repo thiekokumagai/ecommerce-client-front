@@ -21,6 +21,7 @@ const ProductVariationModal = ({
   const { items, updateQuantity, removeFromCart } = useCart();
   const autoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [shouldAutoClose, setShouldAutoClose] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
   if (!product.variationGroup) return null;
 
@@ -38,13 +39,15 @@ const ProductVariationModal = ({
     return cartItem?.quantity ?? 0;
   }, [items, product.id, selectedOption]);
 
+  const visibleQuantity = justAdded && selectedOption ? Math.max(quantityInCart, 1) : quantityInCart;
+
   useEffect(() => {
     if (autoCloseTimeoutRef.current) {
       clearTimeout(autoCloseTimeoutRef.current);
       autoCloseTimeoutRef.current = null;
     }
 
-    if (shouldAutoClose && quantityInCart > 0) {
+    if (shouldAutoClose && visibleQuantity > 0) {
       autoCloseTimeoutRef.current = setTimeout(() => {
         onClose();
       }, 3000);
@@ -56,14 +59,21 @@ const ProductVariationModal = ({
         autoCloseTimeoutRef.current = null;
       }
     };
-  }, [shouldAutoClose, quantityInCart, onClose]);
+  }, [shouldAutoClose, visibleQuantity, onClose]);
+
+  useEffect(() => {
+    if (quantityInCart > 0) {
+      setJustAdded(false);
+    }
+  }, [quantityInCart]);
 
   const handleDecrease = () => {
-    if (!selectedOption || quantityInCart === 0) return;
+    if (!selectedOption || visibleQuantity === 0) return;
 
-    if (quantityInCart === 1) {
+    if (quantityInCart <= 1) {
       removeFromCart(product.id, selectedOption);
       setShouldAutoClose(false);
+      setJustAdded(false);
       return;
     }
 
@@ -73,6 +83,13 @@ const ProductVariationModal = ({
   const handleIncrease = () => {
     if (!selectedOption) return;
 
+    if (quantityInCart === 0) {
+      onConfirm();
+      setShouldAutoClose(true);
+      setJustAdded(true);
+      return;
+    }
+
     updateQuantity(product.id, quantityInCart + 1, selectedOption);
   };
 
@@ -80,6 +97,7 @@ const ProductVariationModal = ({
     if (!selectedOption) return;
     onConfirm();
     setShouldAutoClose(true);
+    setJustAdded(true);
   };
 
   return (
@@ -138,7 +156,7 @@ const ProductVariationModal = ({
           </p>
         )}
 
-        {quantityInCart > 0 ? (
+        {visibleQuantity > 0 ? (
           <div className="mt-6 space-y-3">
             <div className="flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-primary-foreground">
               <button
@@ -150,7 +168,7 @@ const ProductVariationModal = ({
                 <Minus className="h-4 w-4" />
               </button>
 
-              <span className="text-base font-semibold">{quantityInCart}</span>
+              <span className="text-base font-semibold">{visibleQuantity}</span>
 
               <button
                 type="button"
