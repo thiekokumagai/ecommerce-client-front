@@ -25,6 +25,9 @@ const Index = () => {
   const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
 
   const hasResults = allProducts.some((product) => {
+    const hasAvailableVariations = product.variationGroup
+      ? product.variationGroup.options.some((option) => option.available)
+      : true;
     const matchesSearch = normalizedSearch
       ? product.name.toLowerCase().includes(normalizedSearch) ||
         product.description.toLowerCase().includes(normalizedSearch) ||
@@ -37,7 +40,7 @@ const Index = () => {
         ) ?? false
       : true;
 
-    return matchesSearch && matchesNicotine;
+    return hasAvailableVariations && matchesSearch && matchesNicotine;
   });
 
   const handleClearSearch = () => {

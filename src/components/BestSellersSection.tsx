@@ -10,6 +10,9 @@ const BestSellersSection = () => {
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const filteredProducts = bestSellers.filter((product) => {
+    const hasAvailableVariations = product.variationGroup
+      ? product.variationGroup.options.some((option) => option.available)
+      : true;
     const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
     const matchesSearch = normalizedSearch
       ? product.name.toLowerCase().includes(normalizedSearch) ||
@@ -22,7 +25,7 @@ const BestSellersSection = () => {
         ) ?? false
       : true;
 
-    return matchesCategory && matchesSearch && matchesNicotine;
+    return hasAvailableVariations && matchesCategory && matchesSearch && matchesNicotine;
   });
 
   if (selectedCategory && filteredProducts.length === 0) return null;

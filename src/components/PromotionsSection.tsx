@@ -8,6 +8,9 @@ const PromotionsSection = () => {
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const visibleProducts = promoProducts.filter((product) => {
+    const hasAvailableVariations = product.variationGroup
+      ? product.variationGroup.options.some((option) => option.available)
+      : true;
     const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
     const matchesSearch = normalizedSearch
       ? product.name.toLowerCase().includes(normalizedSearch) ||
@@ -20,7 +23,7 @@ const PromotionsSection = () => {
         ) ?? false
       : true;
 
-    return matchesCategory && matchesSearch && matchesNicotine;
+    return hasAvailableVariations && matchesCategory && matchesSearch && matchesNicotine;
   });
 
   if (visibleProducts.length === 0) return null;
