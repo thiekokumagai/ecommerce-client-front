@@ -5,7 +5,6 @@ import SiteFooter from "@/components/SiteFooter";
 import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import MobileTopCartBar from "@/components/MobileTopCartBar";
 import { useCart } from "@/contexts/CartContext";
 
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
@@ -42,11 +41,9 @@ const OrdersPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <MobileTopCartBar />
-      <div className="md:block hidden">
+      <div className="hidden md:block">
         <SiteHeader />
       </div>
-      <div className="md:hidden pt-10" />
 
       <main className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
         <div className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-8">

@@ -9,7 +9,6 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import MobileTopCartBar from "@/components/MobileTopCartBar";
 import { useCart } from "@/contexts/CartContext";
 import { allProducts } from "@/data/products";
 
@@ -50,8 +49,6 @@ const Index = () => {
       <div className="hidden md:block">
         <SiteHeader />
       </div>
-      <MobileTopCartBar />
-      <div className="md:hidden pt-10" />
       <HeroBanner />
       <CategoriesSection />
       <NicotineFilter />
