@@ -9,8 +9,7 @@ const SESSION_PHONE_KEY = "podemais-checkout-phone";
 
 const STORE_ORIGIN = "Rua Glauce Rocha, 539, Campo Grande - MS";
 
-const formatPrice = (price: number) =>
-  `R$${price.toFixed(2).replace(".", ",")}`;
+const formatPrice = (price: number) => `R$${price.toFixed(2).replace(".", ",")}`;
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -34,10 +33,7 @@ const formatCurrencyInput = (value: string) => {
 };
 
 const normalizeAddress = (address: string) =>
-  address
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+  address.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 const estimateDistanceFromAddress = (destinationAddress: string) => {
   const normalizedDestination = normalizeAddress(destinationAddress);
@@ -55,8 +51,7 @@ const estimateDistanceFromAddress = (destinationAddress: string) => {
 
   const matchedZone = zones.find((zone) =>
     zone.keywords.some(
-      (keyword) =>
-        normalizedDestination.includes(keyword) && !normalizedOrigin.includes(keyword)
+      (keyword) => normalizedDestination.includes(keyword) && !normalizedOrigin.includes(keyword)
     )
   );
 
@@ -79,7 +74,17 @@ const getDynamicDeliveryFee = (distanceKm: number) => {
 type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
 
 const CartSidebar = () => {
-  const { items, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
+  const {
+    items,
+    isCartOpen,
+    setIsCartOpen,
+    updateQuantity,
+    removeFromCart,
+    totalPrice,
+    totalItems,
+    addOrder,
+    clearCart,
+  } = useCart();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -121,14 +126,8 @@ const CartSidebar = () => {
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
   const discountedProductsTotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
-  const estimatedDistanceKm = useMemo(
-    () => estimateDistanceFromAddress(savedAddress || address),
-    [savedAddress, address]
-  );
-  const deliveryFee = useMemo(
-    () => getDynamicDeliveryFee(estimatedDistanceKm),
-    [estimatedDistanceKm]
-  );
+  const estimatedDistanceKm = useMemo(() => estimateDistanceFromAddress(savedAddress || address), [savedAddress, address]);
+  const deliveryFee = useMemo(() => getDynamicDeliveryFee(estimatedDistanceKm), [estimatedDistanceKm]);
   const finalTotal = discountedProductsTotal + deliveryFee;
 
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
@@ -146,7 +145,6 @@ const CartSidebar = () => {
 
   const handleSaveAddress = () => {
     const trimmedAddress = address.trim();
-
     if (!trimmedAddress) return;
 
     sessionStorage.setItem(SESSION_ADDRESS_KEY, trimmedAddress);
@@ -167,14 +165,46 @@ const CartSidebar = () => {
     }
   };
 
+  const handleCheckout = () => {
+    if (!items.length) {
+      toast.info("Escolha os produtos para continuar.");
+      return;
+    }
+
+    const trimmedPhone = phone.trim();
+    if (!trimmedPhone) {
+      toast.info("Preencha seu telefone para continuar.");
+      return;
+    }
+
+    addOrder({
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      customerName: name.trim(),
+      customerPhone: trimmedPhone,
+      customerAddress: savedAddress || address,
+      paymentMethod,
+      deliveryFee,
+      subtotal: totalPrice,
+      total: finalTotal,
+      items: items.map((item) => ({ ...item })),
+    });
+
+    window.open(whatsappHref, "_blank", "noopener,noreferrer");
+    clearCart();
+    setIsCartOpen(false);
+    toast.success("Pedido salvo com sucesso. Você pode acompanhá-lo em Pedidos.");
+  };
+
   const checkoutMessage = useMemo(
     () =>
       encodeURIComponent(
         [
           "Olá! Gostaria de finalizar meu pedido:",
           "",
-          ...items.map((item) =>
-            `${item.quantity}x ${item.product.name}${item.selectedVariation ? ` (${item.product.variationGroup?.name}: ${item.selectedVariation})` : ""} - ${formatPrice(item.product.price * item.quantity)}`
+          ...items.map(
+            (item) =>
+              `${item.quantity}x ${item.product.name}${item.selectedVariation ? ` (${item.product.variationGroup?.name}: ${item.selectedVariation})` : ""} - ${formatPrice(item.product.price * item.quantity)}`
           ),
           "",
           `Nome: ${name || "-"}`,
@@ -186,10 +216,10 @@ const CartSidebar = () => {
           paymentMethod === "pix"
             ? `Forma de pagamento: Pix - Total dos produtos com desconto: ${formatPrice(totalWithPixDiscount)}`
             : paymentMethod === "debito"
-              ? `Forma de pagamento: Débito`
+              ? "Forma de pagamento: Débito"
               : paymentMethod === "credito"
-                ? `Forma de pagamento: Crédito`
-                : `Forma de pagamento: Dinheiro`,
+                ? "Forma de pagamento: Crédito"
+                : "Forma de pagamento: Dinheiro",
           ...(paymentMethod === "dinheiro"
             ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor || "-"}`] : [])]
             : []),
@@ -197,31 +227,15 @@ const CartSidebar = () => {
           `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
       ),
-    [
-      items,
-      name,
-      phone,
-      savedAddress,
-      totalPrice,
-      paymentMethod,
-      pixDiscount,
-      totalWithPixDiscount,
-      needsChange,
-      changeFor,
-      deliveryFee,
-      finalTotal,
-    ]
+    [items, name, phone, savedAddress, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
   );
 
-  const whatsappHref = useMemo(
-    () => `https://wa.me/5567991032937?text=${checkoutMessage}`,
-    [checkoutMessage]
-  );
+  const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
 
   if (!isCartOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex justify-end">
+    <div className="fixed inset-0 z-[90] flex justify-end">
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={closeCart} />
       <div className="relative flex h-full w-full max-w-md flex-col bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border bg-primary px-5 py-4">
@@ -278,22 +292,12 @@ const CartSidebar = () => {
               <div className="space-y-4 rounded-2xl border border-border p-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">Nome</label>
-                  <input
-                    value={name}
-                    onChange={(event) => handleNameChange(event.target.value)}
-                    placeholder="Seu nome"
-                    className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                  />
+                  <input value={name} onChange={(event) => handleNameChange(event.target.value)} placeholder="Seu nome" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
-                  <input
-                    value={phone}
-                    onChange={(event) => handlePhoneChange(event.target.value)}
-                    placeholder="(67) 99999-9999"
-                    className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                  />
+                  <input value={phone} onChange={(event) => handlePhoneChange(event.target.value)} placeholder="(67) 99999-9999" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
                 </div>
 
                 <div>
@@ -301,22 +305,8 @@ const CartSidebar = () => {
 
                   {isEditingAddress ? (
                     <div className="space-y-3">
-                      <textarea
-                        value={address}
-                        onChange={(event) => setAddress(event.target.value)}
-                        placeholder="Rua, número, bairro, complemento e referência"
-                        className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSaveAddress}
-                        disabled={!address.trim()}
-                        className={`w-full rounded-xl py-3 text-sm font-semibold ${
-                          address.trim()
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
+                      <textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Rua, número, bairro, complemento e referência" className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
+                      <button type="button" onClick={handleSaveAddress} disabled={!address.trim()} className={`w-full rounded-xl py-3 text-sm font-semibold ${address.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                         Salvar endereço
                       </button>
                     </div>
@@ -329,11 +319,7 @@ const CartSidebar = () => {
                             <p className="text-sm text-foreground">{savedAddress}</p>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleEditAddress}
-                          className="inline-flex items-center gap-1 text-sm font-medium text-primary"
-                        >
+                        <button type="button" onClick={handleEditAddress} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
                           <Pencil className="h-4 w-4" />
                           Alterar
                         </button>
@@ -351,32 +337,16 @@ const CartSidebar = () => {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">Forma de pagamento</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("pix")}
-                      className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "pix" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}
-                    >
+                    <button type="button" onClick={() => setPaymentMethod("pix")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "pix" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>
                       Pix (5% off)
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("debito")}
-                      className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "debito" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}
-                    >
+                    <button type="button" onClick={() => setPaymentMethod("debito")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "debito" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>
                       Débito
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("credito")}
-                      className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "credito" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}
-                    >
+                    <button type="button" onClick={() => setPaymentMethod("credito")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "credito" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>
                       Crédito
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod("dinheiro")}
-                      className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "dinheiro" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}
-                    >
+                    <button type="button" onClick={() => setPaymentMethod("dinheiro")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${paymentMethod === "dinheiro" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>
                       Dinheiro
                     </button>
                   </div>
@@ -387,18 +357,10 @@ const CartSidebar = () => {
                     <div>
                       <label className="mb-2 block text-sm font-medium text-foreground">Precisa de troco?</label>
                       <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setNeedsChange("sim")}
-                          className={`rounded-xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}
-                        >
+                        <button type="button" onClick={() => setNeedsChange("sim")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>
                           Sim
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setNeedsChange("não")}
-                          className={`rounded-xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}
-                        >
+                        <button type="button" onClick={() => setNeedsChange("não")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground"}`}>
                           Não
                         </button>
                       </div>
@@ -407,12 +369,7 @@ const CartSidebar = () => {
                     {needsChange === "sim" && (
                       <div>
                         <label className="mb-2 block text-sm font-medium text-foreground">Troco para quanto?</label>
-                        <input
-                          value={changeFor}
-                          onChange={(event) => setChangeFor(formatCurrencyInput(event.target.value))}
-                          placeholder="Ex: 100,00"
-                          className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                        />
+                        <input value={changeFor} onChange={(event) => setChangeFor(formatCurrencyInput(event.target.value))} placeholder="Ex: 100,00" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
                       </div>
                     )}
                   </div>
@@ -447,22 +404,13 @@ const CartSidebar = () => {
                 <span className="text-xl font-bold text-primary">{formatPrice(finalTotal)}</span>
               </div>
             </div>
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground"
-            >
+            <button type="button" onClick={handleCheckout} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
               Finalizar Pedido via WhatsApp
-            </a>
+            </button>
           </div>
         ) : (
           <div className="border-t border-border p-5">
-            <button
-              type="button"
-              onClick={() => toast.info("Escolha os produtos para continuar.")}
-              className="w-full rounded-xl bg-muted py-3.5 text-sm font-bold text-muted-foreground"
-            >
+            <button type="button" onClick={() => toast.info("Escolha os produtos para continuar.")} className="w-full rounded-xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
               Escolha os produtos para continuar
             </button>
           </div>

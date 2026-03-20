@@ -1,10 +1,23 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { Product, SelectedProduct } from "@/data/products";
 
 export interface CartItem {
   product: Product;
   quantity: number;
   selectedVariation?: string;
+}
+
+export interface SavedOrder {
+  id: string;
+  createdAt: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  paymentMethod: "pix" | "debito" | "credito" | "dinheiro";
+  deliveryFee: number;
+  subtotal: number;
+  total: number;
+  items: CartItem[];
 }
 
 interface CartContextType {
@@ -26,9 +39,12 @@ interface CartContextType {
   setSearchTerm: (term: string) => void;
   selectedNicotineStrength: string | null;
   setSelectedNicotineStrength: (strength: string | null) => void;
+  orders: SavedOrder[];
+  addOrder: (order: SavedOrder) => void;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
+const ORDERS_STORAGE_KEY = "podemais-orders";
 
 export const useCart = () => {
   const ctx = useContext(CartContext);
@@ -52,6 +68,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNicotineStrength, setSelectedNicotineStrength] = useState<string | null>(null);
+  const [orders, setOrders] = useState<SavedOrder[]>([]);
+
+  useEffect(() => {
+    const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
+    if (!storedOrders) return;
+
+    try {
+      const parsedOrders = JSON.parse(storedOrders) as SavedOrder[];
+      setOrders(parsedOrders);
+    } catch {
+      setOrders([]);
+    }
+  }, []);
 
   const addToCart = useCallback((item: Product | SelectedProduct) => {
     const normalizedItem = normalizeItem(item);
@@ -121,6 +150,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = useCallback(() => setItems([]), []);
 
+  const addOrder = useCallback((order: SavedOrder) => {
+    setOrders((prev) => {
+      const nextOrders = [order, ...prev];
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(nextOrders));
+      return nextOrders;
+    });
+  }, []);
+
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
@@ -145,6 +182,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setSearchTerm,
         selectedNicotineStrength,
         setSelectedNicotineStrength,
+        orders,
+        addOrder,
       }}
     >
       {children}

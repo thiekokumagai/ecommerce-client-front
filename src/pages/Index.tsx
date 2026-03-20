@@ -8,6 +8,8 @@ import SiteFooter from "@/components/SiteFooter";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import MobileTopCartBar from "@/components/MobileTopCartBar";
 import { useCart } from "@/contexts/CartContext";
 import { allProducts } from "@/data/products";
 
@@ -44,8 +46,12 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
+    <div className="min-h-screen bg-background pb-24 md:pb-0">
+      <div className="hidden md:block">
+        <SiteHeader />
+      </div>
+      <MobileTopCartBar />
+      <div className="md:hidden pt-10" />
       <HeroBanner />
       <CategoriesSection />
       <NicotineFilter />
@@ -69,9 +75,12 @@ const Index = () => {
       <PromotionsSection />
       <BestSellersSection />
       <SiteFooter />
-      <WhatsAppButton />
+      <div className="hidden md:block">
+        <WhatsAppButton />
+      </div>
       <CartSidebar />
       <AddedToCartModal />
+      <MobileBottomNav />
     </div>
   );
 };
