@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { CheckCircle2, Minus, Plus, ShoppingCart } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import ProductVariationModal from "@/components/ProductVariationModal";
@@ -23,6 +23,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
     (item) => item.product.id === product.id && item.selectedVariation === undefined
   );
   const quantityInCart = cartItem?.quantity ?? 0;
+
+  const variationItemsInCart = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.product.id === product.id && item.selectedVariation !== undefined
+      ),
+    [items, product.id]
+  );
+
+  const hasVariationInCart = variationItemsInCart.length > 0;
+  const variationQuantityInCart = variationItemsInCart.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
 
   const handleBuy = () => {
     if (product.variationGroup) {
@@ -117,6 +132,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
                     </span>
                   ))}
                 </div>
+
+                {hasVariationInCart && (
+                  <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-2 text-xs font-medium text-primary">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span>
+                      Adicionado ao carrinho ({variationQuantityInCart} {variationQuantityInCart === 1 ? "item" : "itens"})
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -144,7 +168,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               }`}
             >
               <ShoppingCart className="h-4 w-4" />
-              {availableOptions.length === 0 ? "Indisponível" : "Comprar"}
+              {availableOptions.length === 0 ? "Indisponível" : hasVariationInCart ? "Adicionar mais" : "Comprar"}
             </button>
           ) : quantityInCart > 0 ? (
             <div className="mt-2 flex h-12 items-center justify-between rounded-xl bg-primary px-4 text-primary-foreground">
