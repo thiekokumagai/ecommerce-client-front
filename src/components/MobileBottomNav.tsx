@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/pedidos", label: "Pedidos", icon: Package },
+  { to: "/pedidos", label: "Pedidos anteriores", icon: Package },
 ];
 
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
@@ -37,7 +37,7 @@ const MobileBottomNav = () => {
                 key={link.to}
                 to={link.to}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2 text-xs",
+                  "flex flex-col items-center justify-center gap-1 py-2 text-[11px]",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >

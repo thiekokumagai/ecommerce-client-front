@@ -165,47 +165,50 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const normalizedItem = normalizeItem(item);
 
     setItems((prev) => {
+      const shouldShowAddedModal = prev.length === 0;
       const existing = prev.find(
         (cartItem) =>
           cartItem.product.id === normalizedItem.product.id &&
           cartItem.selectedVariation === normalizedItem.selectedVariation
       );
 
-      if (existing) {
-        return prev.map((cartItem) =>
-          cartItem.product.id === normalizedItem.product.id &&
-          cartItem.selectedVariation === normalizedItem.selectedVariation
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
+      const nextItems = existing
+        ? prev.map((cartItem) =>
+            cartItem.product.id === normalizedItem.product.id &&
+            cartItem.selectedVariation === normalizedItem.selectedVariation
+              ? { ...cartItem, quantity: cartItem.quantity + 1 }
+              : cartItem
+          )
+        : [
+            ...prev,
+            {
+              product: normalizedItem.product,
+              quantity: 1,
+              selectedVariation: normalizedItem.selectedVariation,
+            },
+          ];
+
+      setLastAdded({
+        product: normalizedItem.product,
+        quantity: 1,
+        selectedVariation: normalizedItem.selectedVariation,
+      });
+
+      if (addedModalTimeoutRef.current) {
+        clearTimeout(addedModalTimeoutRef.current);
+        addedModalTimeoutRef.current = null;
       }
 
-      return [
-        ...prev,
-        {
-          product: normalizedItem.product,
-          quantity: 1,
-          selectedVariation: normalizedItem.selectedVariation,
-        },
-      ];
+      if (shouldShowAddedModal) {
+        setShowAddedModal(false);
+        addedModalTimeoutRef.current = setTimeout(() => {
+          setShowAddedModal(true);
+          addedModalTimeoutRef.current = null;
+        }, 3000);
+      }
+
+      return nextItems;
     });
-
-    setLastAdded({
-      product: normalizedItem.product,
-      quantity: 1,
-      selectedVariation: normalizedItem.selectedVariation,
-    });
-
-    setShowAddedModal(false);
-
-    if (addedModalTimeoutRef.current) {
-      clearTimeout(addedModalTimeoutRef.current);
-    }
-
-    addedModalTimeoutRef.current = setTimeout(() => {
-      setShowAddedModal(true);
-      addedModalTimeoutRef.current = null;
-    }, 3000);
   }, []);
 
   const removeFromCart = useCallback((productId: number, selectedVariation?: string) => {

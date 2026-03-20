@@ -50,7 +50,7 @@ const OrdersPage = () => {
               <Package className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Meus pedidos</h1>
+              <h1 className="text-2xl font-bold text-foreground">Pedidos anteriores</h1>
               <p className="text-sm text-muted-foreground">Entre com seu telefone para ver os pedidos já feitos.</p>
             </div>
           </div>

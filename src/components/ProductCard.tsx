@@ -84,7 +84,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <>
-      <div className="group relative flex flex-col overflow-hidden rounded-2xl">
+      <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl">
         {product.isPromo && product.oldPrice && (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
             -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
@@ -102,8 +102,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         </Link>
 
-        <div className="flex flex-1 flex-col justify-between gap-2 p-4 pt-2">
-          <div>
+        <div className="flex flex-1 flex-col p-4 pt-2">
+          <div className="flex-1">
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               {product.category}
             </span>
@@ -145,13 +145,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
             )}
           </div>
 
-          <div className="mt-1">
+          <div className="mt-4 min-h-[62px]">
             {product.oldPrice && (
-              <span className="text-xs text-muted-foreground line-through">
+              <span className="block text-xs text-muted-foreground line-through">
                 {formatPrice(product.oldPrice)}
               </span>
             )}
-            <p className="text-lg font-bold text-primary">
+            <p className="text-lg font-bold leading-tight text-primary">
               {formatPrice(product.price)}
             </p>
           </div>
