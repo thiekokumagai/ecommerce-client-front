@@ -20,8 +20,7 @@ const ProductVariationModal = ({
 }: ProductVariationModalProps) => {
   const { items, updateQuantity, removeFromCart } = useCart();
   const autoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [shouldAutoClose, setShouldAutoClose] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
+  const [displayQuantity, setDisplayQuantity] = useState(0);
 
   if (!product.variationGroup) return null;
 
@@ -39,65 +38,74 @@ const ProductVariationModal = ({
     return cartItem?.quantity ?? 0;
   }, [items, product.id, selectedOption]);
 
-  const visibleQuantity = justAdded && selectedOption ? Math.max(quantityInCart, 1) : quantityInCart;
+  useEffect(() => {
+    if (!selectedOption) {
+      setDisplayQuantity(0);
+      return;
+    }
+
+    if (quantityInCart > 0) {
+      setDisplayQuantity(quantityInCart);
+    }
+  }, [quantityInCart, selectedOption]);
 
   useEffect(() => {
+    return () => {
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const startAutoClose = () => {
     if (autoCloseTimeoutRef.current) {
       clearTimeout(autoCloseTimeoutRef.current);
-      autoCloseTimeoutRef.current = null;
     }
 
-    if (shouldAutoClose && visibleQuantity > 0) {
-      autoCloseTimeoutRef.current = setTimeout(() => {
-        onClose();
-      }, 3000);
-    }
+    autoCloseTimeoutRef.current = setTimeout(() => {
+      onClose();
+    }, 3000);
+  };
 
-    return () => {
+  const handleDecrease = () => {
+    if (!selectedOption || displayQuantity === 0) return;
+
+    const nextQuantity = displayQuantity - 1;
+    setDisplayQuantity(nextQuantity);
+
+    if (nextQuantity <= 0) {
+      removeFromCart(product.id, selectedOption);
       if (autoCloseTimeoutRef.current) {
         clearTimeout(autoCloseTimeoutRef.current);
         autoCloseTimeoutRef.current = null;
       }
-    };
-  }, [shouldAutoClose, visibleQuantity, onClose]);
-
-  useEffect(() => {
-    if (quantityInCart > 0) {
-      setJustAdded(false);
-    }
-  }, [quantityInCart]);
-
-  const handleDecrease = () => {
-    if (!selectedOption || visibleQuantity === 0) return;
-
-    if (quantityInCart <= 1) {
-      removeFromCart(product.id, selectedOption);
-      setShouldAutoClose(false);
-      setJustAdded(false);
       return;
     }
 
-    updateQuantity(product.id, quantityInCart - 1, selectedOption);
+    updateQuantity(product.id, nextQuantity, selectedOption);
   };
 
   const handleIncrease = () => {
     if (!selectedOption) return;
 
+    const nextQuantity = displayQuantity + 1;
+    setDisplayQuantity(nextQuantity);
+
     if (quantityInCart === 0) {
       onConfirm();
-      setShouldAutoClose(true);
-      setJustAdded(true);
+      startAutoClose();
       return;
     }
 
-    updateQuantity(product.id, quantityInCart + 1, selectedOption);
+    updateQuantity(product.id, nextQuantity, selectedOption);
   };
 
   const handleBuy = () => {
     if (!selectedOption) return;
+
+    setDisplayQuantity(1);
     onConfirm();
-    setShouldAutoClose(true);
-    setJustAdded(true);
+    startAutoClose();
   };
 
   return (
@@ -156,7 +164,7 @@ const ProductVariationModal = ({
           </p>
         )}
 
-        {visibleQuantity > 0 ? (
+        {displayQuantity > 0 ? (
           <div className="mt-6 space-y-3">
             <div className="flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-primary-foreground">
               <button
@@ -168,7 +176,7 @@ const ProductVariationModal = ({
                 <Minus className="h-4 w-4" />
               </button>
 
-              <span className="text-base font-semibold">{visibleQuantity}</span>
+              <span className="text-base font-semibold">{displayQuantity}</span>
 
               <button
                 type="button"
@@ -180,11 +188,9 @@ const ProductVariationModal = ({
               </button>
             </div>
 
-            {shouldAutoClose && (
-              <p className="text-center text-sm text-muted-foreground">
-                Produto adicionado. Fechando...
-              </p>
-            )}
+            <p className="text-center text-sm text-muted-foreground">
+              Produto adicionado. Fechando...
+            </p>
           </div>
         ) : (
           <button
