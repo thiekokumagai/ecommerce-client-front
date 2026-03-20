@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { Product, SelectedProduct } from "@/data/products";
 
 export interface CartItem {
@@ -69,6 +69,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNicotineStrength, setSelectedNicotineStrength] = useState<string | null>(null);
   const [orders, setOrders] = useState<SavedOrder[]>([]);
+  const addedModalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -80,6 +81,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       setOrders([]);
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (addedModalTimeoutRef.current) {
+        clearTimeout(addedModalTimeoutRef.current);
+      }
+    };
   }, []);
 
   const addToCart = useCallback((item: Product | SelectedProduct) => {
@@ -116,7 +125,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       quantity: 1,
       selectedVariation: normalizedItem.selectedVariation,
     });
-    setShowAddedModal(true);
+
+    setShowAddedModal(false);
+
+    if (addedModalTimeoutRef.current) {
+      clearTimeout(addedModalTimeoutRef.current);
+    }
+
+    addedModalTimeoutRef.current = setTimeout(() => {
+      setShowAddedModal(true);
+    }, 3000);
   }, []);
 
   const removeFromCart = useCallback((productId: number, selectedVariation?: string) => {
