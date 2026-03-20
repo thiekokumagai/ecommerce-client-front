@@ -16,11 +16,13 @@ const Index = () => {
   const {
     searchTerm,
     setSearchTerm,
+    selectedCategory,
     setSelectedCategory,
     selectedNicotineStrength,
     setSelectedNicotineStrength,
   } = useCart();
   const normalizedSearch = searchTerm.trim().toLowerCase();
+  const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
 
   const hasResults = allProducts.some((product) => {
     const matchesSearch = normalizedSearch
@@ -47,7 +49,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SiteHeader />
-      <HeroBanner />
+      {showBanner && <HeroBanner />}
       <CategoriesSection />
       <NicotineFilter />
       {!hasResults && (normalizedSearch || selectedNicotineStrength) && (
