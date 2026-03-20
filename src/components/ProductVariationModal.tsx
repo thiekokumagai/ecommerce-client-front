@@ -1,5 +1,7 @@
 import type { Product } from "@/data/products";
-import { X } from "lucide-react";
+import { useMemo } from "react";
+import { Minus, Plus, ShoppingCart, X } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 interface ProductVariationModalProps {
   product: Product;
@@ -16,9 +18,45 @@ const ProductVariationModal = ({
   onClose,
   onConfirm,
 }: ProductVariationModalProps) => {
+  const { items, updateQuantity, removeFromCart } = useCart();
+
   if (!product.variationGroup) return null;
 
   const availableOptions = product.variationGroup.options.filter((option) => option.available);
+
+  const quantityInCart = useMemo(() => {
+    if (!selectedOption) return 0;
+
+    const cartItem = items.find(
+      (item) =>
+        item.product.id === product.id &&
+        item.selectedVariation === selectedOption
+    );
+
+    return cartItem?.quantity ?? 0;
+  }, [items, product.id, selectedOption]);
+
+  const handleDecrease = () => {
+    if (!selectedOption || quantityInCart === 0) return;
+
+    if (quantityInCart === 1) {
+      removeFromCart(product.id, selectedOption);
+      return;
+    }
+
+    updateQuantity(product.id, quantityInCart - 1, selectedOption);
+  };
+
+  const handleIncrease = () => {
+    if (!selectedOption) return;
+
+    updateQuantity(product.id, quantityInCart + 1, selectedOption);
+  };
+
+  const handleBuy = () => {
+    if (!selectedOption) return;
+    onConfirm();
+  };
 
   return (
     <div
@@ -76,18 +114,43 @@ const ProductVariationModal = ({
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={!selectedOption || availableOptions.length === 0}
-          className={`mt-6 w-full rounded-xl py-3 text-sm font-bold ${
-            selectedOption && availableOptions.length > 0
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          Adicionar ao carrinho
-        </button>
+        {quantityInCart > 0 ? (
+          <div className="mt-6 flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-primary-foreground">
+            <button
+              type="button"
+              onClick={handleDecrease}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
+              aria-label="Diminuir quantidade"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+
+            <span className="text-base font-semibold">{quantityInCart}</span>
+
+            <button
+              type="button"
+              onClick={handleIncrease}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
+              aria-label="Aumentar quantidade"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleBuy}
+            disabled={!selectedOption || availableOptions.length === 0}
+            className={`mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold ${
+              selectedOption && availableOptions.length > 0
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Comprar
+          </button>
+        )}
       </div>
     </div>
   );
