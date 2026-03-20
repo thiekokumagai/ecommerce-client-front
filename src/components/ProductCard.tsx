@@ -137,7 +137,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               type="button"
               onClick={handleBuy}
               disabled={availableOptions.length === 0}
-              className={`mt-2 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${
+              className={`mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold ${
                 availableOptions.length === 0
                   ? "bg-muted text-muted-foreground"
                   : "bg-primary text-primary-foreground"
@@ -147,7 +147,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               {availableOptions.length === 0 ? "Indisponível" : "Comprar"}
             </button>
           ) : quantityInCart > 0 ? (
-            <div className="mt-2 flex items-center justify-between rounded-xl bg-primary px-4 py-2.5 text-primary-foreground">
+            <div className="mt-2 flex h-12 items-center justify-between rounded-xl bg-primary px-4 text-primary-foreground">
               <button
                 type="button"
                 onClick={handleDecrease}
@@ -172,7 +172,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <button
               type="button"
               onClick={handleBuy}
-              className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
             >
               <ShoppingCart className="h-4 w-4" />
               Comprar
