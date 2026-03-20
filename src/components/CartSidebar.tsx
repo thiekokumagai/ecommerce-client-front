@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil, ChevronLeft, Check, User, Phone } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil, ChevronLeft, Check, User, Phone, Ticket, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 
@@ -487,6 +487,23 @@ const CartSidebar = () => {
             <div className="space-y-5 p-5">
               <div className="space-y-4 rounded-2xl border border-border p-4">
                 <h3 className="text-sm font-semibold text-foreground">Forma de pagamento</h3>
+
+                <button
+                  type="button"
+                  onClick={() => toast.info("Campo de cupom adicionado somente no visual por enquanto.")}
+                  className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                      <Ticket className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Tem um cupom?</p>
+                      <p className="text-xs text-muted-foreground">Clique e insira o código</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
 
                 <div className="space-y-2">
                   <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagar online</h4>
