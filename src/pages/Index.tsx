@@ -46,9 +46,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <div className="hidden md:block">
-        <SiteHeader />
-      </div>
+      <SiteHeader />
       <HeroBanner />
       <CategoriesSection />
       <NicotineFilter />

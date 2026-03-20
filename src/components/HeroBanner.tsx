@@ -2,7 +2,7 @@ import bannerImage from "@/assets/banner.jpg";
 
 const HeroBanner = () => {
   return (
-    <section className="bg-background pt-4 md:pt-8">
+    <section className="bg-background pt-[108px] md:pt-8">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="overflow-hidden rounded-sm md:rounded-sm">
           <img

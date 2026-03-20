@@ -1,4 +1,4 @@
-import { Home, Package, ShoppingBag, User } from "lucide-react";
+import { Home, Package, ShoppingBag } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { to: "/", label: "Home", icon: Home },
   { to: "/pedidos", label: "Pedidos", icon: Package },
-  { to: "/perfil", label: "Perfil", icon: User },
 ];
 
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
@@ -28,7 +27,7 @@ const MobileBottomNav = () => {
       </button>
 
       <nav className="border-t border-border bg-background">
-        <div className="grid grid-cols-3">
+        <div className="grid grid-cols-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
