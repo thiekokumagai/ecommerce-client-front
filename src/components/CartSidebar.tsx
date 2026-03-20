@@ -595,15 +595,19 @@ const CartSidebar = () => {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("pix")}
-                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors ${paymentMethod === "pix" ? "border-primary bg-primary/5 text-foreground" : "border-border text-foreground"}`}
+                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors ${
+                    paymentMethod === "pix"
+                      ? "border-primary bg-primary/5 text-foreground"
+                      : "border-border text-foreground"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <span>Pix</span>
                     <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">5% desconto</span>
                   </div>
-                  <div className={`h-5 w-5 rounded-full border-2 ${paymentMethod === "pix" ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>
-                    {paymentMethod === "pix" && <Check className="h-full w-full p-0.5 text-primary-foreground" />}
-                  </div>
+                  {paymentMethod === "pix" && (
+                    <span className="text-xs font-semibold text-primary">Selecionado</span>
+                  )}
                 </button>
 
                 <div className="space-y-2">
