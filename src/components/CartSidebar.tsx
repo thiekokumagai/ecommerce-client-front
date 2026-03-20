@@ -159,6 +159,10 @@ const CartSidebar = () => {
   const deliveryFee = useMemo(() => getDynamicDeliveryFee(estimatedDistanceKm), [estimatedDistanceKm]);
   const finalTotal = discountedProductsTotal + deliveryFee;
 
+  const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
+  const isAddressValid = savedAddress.trim().length > 0;
+  const isPaymentValid = paymentMethod !== "dinheiro" || needsChange === "não" || changeFor.trim().length > 0;
+
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
 
   const handleNameChange = (value: string) => {
@@ -174,14 +178,27 @@ const CartSidebar = () => {
 
   const handleSaveAddress = () => {
     const trimmedAddress = address.trim();
-    if (!trimmedAddress) return;
+    if (!trimmedAddress) {
+      toast.info("Preencha o endereço para continuar.");
+      return;
+    }
+
     sessionStorage.setItem(SESSION_ADDRESS_KEY, trimmedAddress);
     setSavedAddress(trimmedAddress);
     setIsEditingAddress(false);
   };
 
   const handleSaveContact = () => {
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim()) {
+      toast.info("Preencha seu nome para continuar.");
+      return;
+    }
+
+    if (phone.replace(/\D/g, "").length < 10) {
+      toast.info("Preencha um telefone válido para continuar.");
+      return;
+    }
+
     setIsEditingContact(false);
   };
 
@@ -199,14 +216,35 @@ const CartSidebar = () => {
   };
 
   const goToPayment = () => {
-    if (!name.trim() || !phone.trim()) {
-      toast.info("Preencha nome e telefone para continuar.");
+    if (isEditingContact) {
+      toast.info("Salve suas informações de contato para continuar.");
       return;
     }
+
+    if (!isContactValid) {
+      toast.info("Preencha nome e telefone válidos para continuar.");
+      return;
+    }
+
+    if (isEditingAddress) {
+      toast.info("Salve o endereço de entrega para continuar.");
+      return;
+    }
+
+    if (!isAddressValid) {
+      toast.info("Preencha o endereço de entrega para continuar.");
+      return;
+    }
+
     setStep("payment");
   };
 
   const goToConfirmation = () => {
+    if (!isPaymentValid) {
+      toast.info("Informe o troco para continuar.");
+      return;
+    }
+
     setStep("confirmation");
   };
 
@@ -247,6 +285,11 @@ const CartSidebar = () => {
   const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
 
   const handleCheckout = () => {
+    if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0) {
+      toast.info("Preencha todas as etapas obrigatórias para finalizar.");
+      return;
+    }
+
     addOrder({
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
@@ -369,11 +412,14 @@ const CartSidebar = () => {
                       <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
                       <input value={phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="(67) 99999-9999" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
                     </div>
-                    {name.trim() && phone.trim() && (
-                      <button type="button" onClick={handleSaveContact} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground">
-                        Salvar contato
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={handleSaveContact}
+                      disabled={!isContactValid}
+                      className={`w-full rounded-xl py-3 text-sm font-semibold ${isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    >
+                      Salvar contato
+                    </button>
                   </>
                 ) : (
                   <div className="rounded-xl border border-border bg-background p-4">
@@ -402,7 +448,12 @@ const CartSidebar = () => {
                 {isEditingAddress ? (
                   <div className="space-y-3">
                     <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, bairro, complemento e referência" className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
-                    <button type="button" onClick={handleSaveAddress} disabled={!address.trim()} className={`w-full rounded-xl py-3 text-sm font-semibold ${address.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                    <button
+                      type="button"
+                      onClick={handleSaveAddress}
+                      disabled={!address.trim()}
+                      className={`w-full rounded-xl py-3 text-sm font-semibold ${address.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    >
                       Salvar endereço
                     </button>
                   </div>
@@ -614,15 +665,26 @@ const CartSidebar = () => {
             <button
               type="button"
               onClick={goToPayment}
-              disabled={!name.trim() || !phone.trim()}
-              className={`w-full rounded-xl py-3.5 text-sm font-bold ${name.trim() && phone.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+              disabled={!isContactValid || !isAddressValid || isEditingContact || isEditingAddress}
+              className={`w-full rounded-xl py-3.5 text-sm font-bold ${
+                isContactValid && isAddressValid && !isEditingContact && !isEditingAddress
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
             >
               Continuar
             </button>
           )}
 
           {step === "payment" && (
-            <button type="button" onClick={goToConfirmation} className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
+            <button
+              type="button"
+              onClick={goToConfirmation}
+              disabled={!isPaymentValid}
+              className={`w-full rounded-xl py-3.5 text-sm font-bold ${
+                isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
               Continuar
             </button>
           )}
