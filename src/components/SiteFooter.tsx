@@ -1,4 +1,4 @@
-import { Clock, MapPin, CreditCard, BadgeDollarSign, MessageCircle } from "lucide-react";
+import { Clock, MapPin, CreditCard, BadgeDollarSign, MessageCircle, Instagram } from "lucide-react";
 import logo from "@/assets/logo.webp";
 
 const SiteFooter = () => {
@@ -68,9 +68,10 @@ const SiteFooter = () => {
             href="https://instagram.com/podemais.cg"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            aria-label="Instagram da Pod & Mais"
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:text-primary"
           >
-            @podemais.cg
+            <Instagram className="h-5 w-5" />
           </a>
         </div>
       </div>
