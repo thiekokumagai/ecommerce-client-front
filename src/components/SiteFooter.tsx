@@ -5,7 +5,7 @@ const SiteFooter = () => {
   return (
     <footer id="contato" className="border-t border-border bg-secondary/50">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-8 md:py-16">
-        <div className="rounded-2xl bg-background px-5 py-5 text-center shadow-sm">
+        <div className="rounded-2xl bg-background px-5 py-5 text-center shadow-sm md:hidden">
           <h3 className="text-lg font-semibold text-foreground">Formas de pagamento aceitas</h3>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -47,7 +47,7 @@ const SiteFooter = () => {
           </div>
 
           <div className="hidden h-full w-full items-center justify-center md:flex">
-            <div className="w-full rounded-2xl border-2 border-primary/80 bg-background px-8 py-8 shadow-sm">
+            <div className="w-full rounded-2xl bg-background px-8 py-8 shadow-sm">
               <h3 className="text-center font-display text-lg font-bold text-primary">
                 Formas de pagamento
               </h3>
