@@ -20,13 +20,13 @@ const MobileBottomNav = () => {
       <button
         type="button"
         onClick={() => setIsCartOpen(true)}
-        className="flex h-10 w-full items-center justify-between bg-primary px-4 text-sm text-primary-foreground"
+        className="relative flex h-10 w-full items-center justify-center bg-primary px-4 text-sm text-primary-foreground"
       >
         <div className="flex items-center gap-2">
           <ShoppingBag className="h-4 w-4" />
           <span>Ver sacola</span>
         </div>
-        <span>{formatPrice(totalPrice)}</span>
+        <span className="absolute right-4">{formatPrice(totalPrice)}</span>
       </button>
 
       <nav className="border-t border-border bg-background">
