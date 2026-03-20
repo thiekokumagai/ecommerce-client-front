@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { to: "/", label: "Home", icon: Home },
   { to: "/pedidos", label: "Pedidos", icon: Package },
-  { to: "/perfil", label: "Perfil", icon: User },
 ];
 
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
