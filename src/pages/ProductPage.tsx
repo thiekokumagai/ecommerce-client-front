@@ -7,6 +7,7 @@ import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import ProductImageModal from "@/components/ProductImageModal";
 import ProductActions from "@/components/product/ProductActions";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import ProductContact from "@/components/product/ProductContact";
 import ProductDesktopGallery from "@/components/product/ProductDesktopGallery";
 import ProductFreightCalculator from "@/components/product/ProductFreightCalculator";
