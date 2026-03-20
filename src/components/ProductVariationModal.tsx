@@ -16,12 +16,11 @@ const ProductVariationModal = ({
   selectedOption,
   onSelect,
   onClose,
-  onConfirm,
 }: ProductVariationModalProps) => {
   const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal } = useCart();
   const autoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [displayQuantity, setDisplayQuantity] = useState(0);
-  const [isCheckoutFlowActive, setIsCheckoutFlowActive] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   if (!product.variationGroup) return null;
 
@@ -42,16 +41,19 @@ const ProductVariationModal = ({
   useEffect(() => {
     if (!selectedOption) {
       setDisplayQuantity(0);
-      setIsCheckoutFlowActive(false);
+      setIsLocked(false);
       return;
     }
 
     if (quantityInCart > 0) {
       setDisplayQuantity(quantityInCart);
-    } else if (!isCheckoutFlowActive) {
+      return;
+    }
+
+    if (!isLocked) {
       setDisplayQuantity(0);
     }
-  }, [quantityInCart, selectedOption, isCheckoutFlowActive]);
+  }, [quantityInCart, selectedOption, isLocked]);
 
   useEffect(() => {
     return () => {
@@ -61,17 +63,13 @@ const ProductVariationModal = ({
     };
   }, []);
 
-  const clearAutoClose = () => {
+  const startAutoClose = (variation: string) => {
     if (autoCloseTimeoutRef.current) {
       clearTimeout(autoCloseTimeoutRef.current);
-      autoCloseTimeoutRef.current = null;
     }
-  };
 
-  const startAutoClose = () => {
-    clearAutoClose();
     autoCloseTimeoutRef.current = setTimeout(() => {
-      triggerAddedModal({ product, selectedVariation: selectedOption ?? undefined });
+      triggerAddedModal({ product, selectedVariation: variation });
       onClose();
     }, 3000);
   };
@@ -80,9 +78,9 @@ const ProductVariationModal = ({
     if (!selectedOption) return;
 
     setDisplayQuantity(1);
-    setIsCheckoutFlowActive(true);
+    setIsLocked(true);
     addToCart({ product, selectedVariation: selectedOption });
-    startAutoClose();
+    startAutoClose(selectedOption);
   };
 
   const handleDecrease = () => {
@@ -92,13 +90,11 @@ const ProductVariationModal = ({
     setDisplayQuantity(nextQuantity);
 
     if (nextQuantity <= 0) {
-      clearAutoClose();
-      setIsCheckoutFlowActive(false);
+      setIsLocked(false);
       removeFromCart(product.id, selectedOption);
       return;
     }
 
-    clearAutoClose();
     updateQuantity(product.id, nextQuantity, selectedOption);
   };
 
@@ -107,7 +103,6 @@ const ProductVariationModal = ({
 
     const nextQuantity = displayQuantity + 1;
     setDisplayQuantity(nextQuantity);
-    clearAutoClose();
     updateQuantity(product.id, nextQuantity, selectedOption);
   };
 
