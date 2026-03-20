@@ -18,7 +18,6 @@ const SiteHeader = () => {
 
   return (
     <>
-      {/* Mobile: fixed top bar with logo centered + search below */}
       <div className="fixed inset-x-0 top-0 z-[70] border-b border-border bg-background/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur-md md:hidden">
         <div className="mx-auto max-w-7xl space-y-2.5">
           <div className="flex items-center justify-between">
@@ -55,13 +54,12 @@ const SiteHeader = () => {
               value={searchTerm}
               onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Faça sua busca"
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              className="w-full bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
             />
           </div>
         </div>
       </div>
 
-      {/* Desktop header */}
       <header className="sticky top-0 z-50 hidden border-b border-border bg-background/95 shadow-sm backdrop-blur-md md:block">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
           <div className="flex items-center gap-6">

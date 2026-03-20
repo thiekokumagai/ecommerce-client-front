@@ -21,9 +21,14 @@ const categories = [
 const CategoriesSection = () => {
   const {
     selectedCategory,
+    searchTerm,
+    selectedNicotineStrength,
     setSelectedCategory,
     setSelectedNicotineStrength,
   } = useCart();
+
+  const normalizedSearch = searchTerm.trim();
+  const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
 
   const handleCategoryChange = (category: string, isActive: boolean) => {
     const nextCategory = isActive ? null : category;
@@ -35,7 +40,13 @@ const CategoriesSection = () => {
   };
 
   return (
-    <section id="categorias" className="py-10 md:py-14">
+    <section
+      id="categorias"
+      className={cn(
+        "py-10 md:py-14",
+        !showBanner && "pt-6 md:pt-14"
+      )}
+    >
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="flex items-center justify-between gap-4">
           <h2 className="font-display text-2xl font-bold text-foreground md:text-3xl">

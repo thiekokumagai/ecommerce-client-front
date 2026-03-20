@@ -277,7 +277,6 @@ const CartSidebar = () => {
     <div className="fixed inset-0 z-[90] flex justify-end">
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={closeCart} />
       <div className="relative flex h-full w-full max-w-md flex-col bg-card shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-border bg-primary px-5 py-4">
           <div className="flex items-center gap-2">
             {step !== "cart" && (
@@ -301,16 +300,13 @@ const CartSidebar = () => {
           </button>
         </div>
 
-        {/* Step indicator */}
         {step !== "cart" && items.length > 0 && (
           <div className="border-b border-border">
             <StepIndicator currentStep={step} />
           </div>
         )}
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {/* STEP: CART */}
           {step === "cart" && (
             <div className="p-5">
               {items.length === 0 ? (
@@ -358,10 +354,8 @@ const CartSidebar = () => {
             </div>
           )}
 
-          {/* STEP: DELIVERY */}
           {step === "delivery" && (
             <div className="space-y-5 p-5">
-              {/* Contact info */}
               <div className="space-y-4 rounded-2xl border border-border p-4">
                 <h3 className="text-sm font-semibold text-foreground">Informações de contato</h3>
 
@@ -369,11 +363,11 @@ const CartSidebar = () => {
                   <>
                     <div>
                       <label className="mb-2 block text-sm font-medium text-foreground">Nome</label>
-                      <input value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Seu nome" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
+                      <input value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Seu nome" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
                     </div>
                     <div>
                       <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
-                      <input value={phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="(67) 99999-9999" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
+                      <input value={phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="(67) 99999-9999" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
                     </div>
                     {name.trim() && phone.trim() && (
                       <button type="button" onClick={handleSaveContact} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground">
@@ -402,13 +396,12 @@ const CartSidebar = () => {
                 )}
               </div>
 
-              {/* Address */}
               <div className="space-y-4 rounded-2xl border border-border p-4">
                 <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
 
                 {isEditingAddress ? (
                   <div className="space-y-3">
-                    <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, bairro, complemento e referência" className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
+                    <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, bairro, complemento e referência" className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
                     <button type="button" onClick={handleSaveAddress} disabled={!address.trim()} className={`w-full rounded-xl py-3 text-sm font-semibold ${address.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                       Salvar endereço
                     </button>
@@ -436,14 +429,13 @@ const CartSidebar = () => {
             </div>
           )}
 
-          {/* STEP: PAYMENT */}
           {step === "payment" && (
             <div className="space-y-5 p-5">
               <div className="space-y-4 rounded-2xl border border-border p-4">
                 <h3 className="text-sm font-semibold text-foreground">Forma de pagamento</h3>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pagar online</h4>
+                  <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagar online</h4>
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("pix")}
@@ -460,7 +452,7 @@ const CartSidebar = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pagar na entrega</h4>
+                  <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagar na entrega</h4>
 
                   {(["debito", "credito", "dinheiro"] as const).map((method) => {
                     const labels = { debito: "Débito", credito: "Crédito", dinheiro: "Dinheiro" };
@@ -496,14 +488,13 @@ const CartSidebar = () => {
                     {needsChange === "sim" && (
                       <div>
                         <label className="mb-2 block text-sm font-medium text-foreground">Troco para quanto?</label>
-                        <input value={changeFor} onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))} placeholder="Ex: 100,00" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none" />
+                        <input value={changeFor} onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))} placeholder="Ex: 100,00" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Summary */}
               <div className="space-y-2 rounded-2xl border border-border p-4 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -529,10 +520,8 @@ const CartSidebar = () => {
             </div>
           )}
 
-          {/* STEP: CONFIRMATION */}
           {step === "confirmation" && (
             <div className="space-y-5 p-5">
-              {/* Contact */}
               <div className="rounded-2xl border border-border p-4">
                 <h3 className="mb-3 text-sm font-semibold text-foreground">Informações para entrega</h3>
                 <div className="space-y-2">
@@ -551,7 +540,6 @@ const CartSidebar = () => {
                 </div>
               </div>
 
-              {/* Items */}
               <div className="rounded-2xl border border-border p-4">
                 <h3 className="mb-3 text-sm font-semibold text-foreground">Detalhes do pedido</h3>
                 <div className="space-y-2">
@@ -567,7 +555,6 @@ const CartSidebar = () => {
                 </div>
               </div>
 
-              {/* Payment & totals */}
               <div className="space-y-2 rounded-2xl border border-border p-4 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Pagamento</span>
@@ -604,7 +591,6 @@ const CartSidebar = () => {
           )}
         </div>
 
-        {/* Footer */}
         <div className="border-t border-border p-5">
           {step === "cart" && (
             items.length > 0 ? (
