@@ -116,8 +116,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
             {product.variationGroup
               ? availableOptions.length === 0
                 ? "Indisponível"
-                : "Escolher opção"
+                : "Comprar"
               : "Comprar"}
+
           </button>
         </div>
       </div>
