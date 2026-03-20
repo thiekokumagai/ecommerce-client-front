@@ -23,7 +23,7 @@ const SiteFooter = () => {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center gap-10 text-center md:grid md:grid-cols-2 md:text-left">
+        <div className="mt-10 flex flex-col items-center gap-10 text-center md:flex-row md:items-start md:justify-between md:text-left">
           <div className="flex flex-col items-center space-y-4 md:items-start">
             <div className="flex items-center justify-center gap-2 md:justify-start">
               <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain" />
@@ -46,11 +46,11 @@ const SiteFooter = () => {
             </a>
           </div>
 
-          <div className="flex flex-col items-center space-y-4 md:items-start">
+          <div className="flex flex-col items-center space-y-4 md:items-end">
             <h3 className="font-display text-sm font-bold uppercase tracking-wider text-foreground">
               Horário de Funcionamento
             </h3>
-            <div className="flex items-start justify-center gap-2 text-center text-sm text-muted-foreground md:justify-start md:text-left">
+            <div className="flex items-start justify-center gap-2 text-center text-sm text-muted-foreground md:justify-end md:text-right">
               <Clock className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <p>Segunda à Sábado</p>
