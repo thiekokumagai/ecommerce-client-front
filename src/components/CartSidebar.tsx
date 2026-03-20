@@ -123,6 +123,9 @@ const CartSidebar = () => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
   const [needsChange, setNeedsChange] = useState("não");
   const [changeFor, setChangeFor] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [savedCouponCode, setSavedCouponCode] = useState("");
+  const [isEditingCoupon, setIsEditingCoupon] = useState(false);
   const previousTotalItems = useRef(totalItems);
 
   useEffect(() => {
@@ -202,6 +205,27 @@ const CartSidebar = () => {
     setIsEditingContact(false);
   };
 
+  const handleSaveCoupon = () => {
+    const trimmedCoupon = couponCode.trim();
+
+    if (!trimmedCoupon) {
+      toast.info("Digite um cupom para salvar.");
+      return;
+    }
+
+    setSavedCouponCode(trimmedCoupon);
+    setCouponCode(trimmedCoupon);
+    setIsEditingCoupon(false);
+    toast.success("Cupom salvo.");
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("");
+    setSavedCouponCode("");
+    setIsEditingCoupon(false);
+    toast.success("Cupom removido.");
+  };
+
   const handleRemoveItem = (productId: number, selectedVariation?: string) => {
     removeFromCart(productId, selectedVariation);
     if (totalItems <= 1) toast.info("Escolha os produtos para continuar.");
@@ -262,6 +286,7 @@ const CartSidebar = () => {
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
           `Endereço completo: ${savedAddress || "-"}`,
+          ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
           ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
@@ -282,7 +307,7 @@ const CartSidebar = () => {
           `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
       ),
-    [items, name, phone, savedAddress, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
+    [items, name, phone, savedAddress, savedCouponCode, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
   );
 
   const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
@@ -488,22 +513,84 @@ const CartSidebar = () => {
               <div className="space-y-4 rounded-2xl border border-border p-4">
                 <h3 className="text-sm font-semibold text-foreground">Forma de pagamento</h3>
 
-                <button
-                  type="button"
-                  onClick={() => toast.info("Campo de cupom adicionado somente no visual por enquanto.")}
-                  className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                      <Ticket className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Tem um cupom?</p>
-                      <p className="text-xs text-muted-foreground">Clique e insira o código</p>
+                {isEditingCoupon ? (
+                  <div className="rounded-xl border border-border bg-background p-4">
+                    <label className="mb-2 block text-sm font-medium text-foreground">Cupom</label>
+                    <input
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="Digite seu cupom"
+                      className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                    />
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveCoupon}
+                        disabled={!couponCode.trim()}
+                        className={`flex-1 rounded-xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                      >
+                        Salvar cupom
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (savedCouponCode) {
+                            setCouponCode(savedCouponCode);
+                            setIsEditingCoupon(false);
+                            return;
+                          }
+                          setCouponCode("");
+                          setIsEditingCoupon(false);
+                        }}
+                        className="rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground"
+                      >
+                        Cancelar
+                      </button>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
+                ) : savedCouponCode ? (
+                  <div className="rounded-xl border border-border bg-background p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 text-sm text-foreground">
+                        <Ticket className="h-4 w-4 text-primary" />
+                        <span>{savedCouponCode}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingCoupon(true)}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingCoupon(true)}
+                    className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                        <Ticket className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Tem um cupom?</p>
+                        <p className="text-xs text-muted-foreground">Clique e insira o código</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                )}
 
                 <div className="space-y-2">
                   <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagar online</h4>
@@ -631,6 +718,12 @@ const CartSidebar = () => {
                   <span className="text-muted-foreground">Pagamento</span>
                   <span className="font-medium text-foreground">{paymentLabel}</span>
                 </div>
+                {savedCouponCode && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cupom</span>
+                    <span className="font-medium text-foreground">{savedCouponCode}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
