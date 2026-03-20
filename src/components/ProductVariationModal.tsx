@@ -1,5 +1,5 @@
 import type { Product } from "@/data/products";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
@@ -20,6 +20,7 @@ const ProductVariationModal = ({
 }: ProductVariationModalProps) => {
   const { items, updateQuantity, removeFromCart } = useCart();
   const autoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [shouldAutoClose, setShouldAutoClose] = useState(false);
 
   if (!product.variationGroup) return null;
 
@@ -43,7 +44,7 @@ const ProductVariationModal = ({
       autoCloseTimeoutRef.current = null;
     }
 
-    if (quantityInCart > 0) {
+    if (shouldAutoClose && quantityInCart > 0) {
       autoCloseTimeoutRef.current = setTimeout(() => {
         onClose();
       }, 3000);
@@ -55,13 +56,14 @@ const ProductVariationModal = ({
         autoCloseTimeoutRef.current = null;
       }
     };
-  }, [quantityInCart, onClose]);
+  }, [shouldAutoClose, quantityInCart, onClose]);
 
   const handleDecrease = () => {
     if (!selectedOption || quantityInCart === 0) return;
 
     if (quantityInCart === 1) {
       removeFromCart(product.id, selectedOption);
+      setShouldAutoClose(false);
       return;
     }
 
@@ -77,6 +79,7 @@ const ProductVariationModal = ({
   const handleBuy = () => {
     if (!selectedOption) return;
     onConfirm();
+    setShouldAutoClose(true);
   };
 
   return (
@@ -159,9 +162,11 @@ const ProductVariationModal = ({
               </button>
             </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Produto adicionado. Fechando...
-            </p>
+            {shouldAutoClose && (
+              <p className="text-center text-sm text-muted-foreground">
+                Produto adicionado. Fechando...
+              </p>
+            )}
           </div>
         ) : (
           <button
