@@ -29,13 +29,13 @@ const ProductFreightCalculator = ({
           value={zipCode}
           onChange={(event) => onZipCodeChange(event.target.value.replace(/[^\d-]/g, ""))}
           placeholder="Insira o CEP"
-          className="h-10 rounded-full bg-[#f3f2f2] px-4 text-sm text-foreground placeholder:text-[#c0c0c0] focus:outline-none"
+          className="h-10 rounded-full bg-[#f3f2f2] px-4 text-base text-foreground placeholder:text-[#c0c0c0] focus:outline-none md:text-sm"
         />
         <input
           value={addressNumber}
           onChange={(event) => onAddressNumberChange(event.target.value.replace(/[^\d]/g, ""))}
           placeholder={isDesktop ? "Número" : "Nº"}
-          className="h-10 rounded-full bg-[#f3f2f2] px-4 text-sm text-foreground placeholder:text-[#c0c0c0] focus:outline-none"
+          className="h-10 rounded-full bg-[#f3f2f2] px-4 text-base text-foreground placeholder:text-[#c0c0c0] focus:outline-none md:text-sm"
         />
         <button
           type="button"

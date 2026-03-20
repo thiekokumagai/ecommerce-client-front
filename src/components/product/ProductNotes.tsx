@@ -24,7 +24,7 @@ const ProductNotes = ({
             ? `w-full bg-[#f3f2f2] p-4 text-sm text-foreground placeholder:text-[#b6b6b6] focus:outline-none ${
                 isNicSalt ? "min-h-[92px] rounded-2xl" : "min-h-[106px] rounded-lg"
               }`
-            : "min-h-[72px] w-full rounded-2xl bg-[#f3f2f2] p-4 text-sm text-foreground placeholder:text-[#b6b6b6] focus:outline-none"
+            : "min-h-[72px] w-full rounded-2xl bg-[#f3f2f2] p-4 text-base text-foreground placeholder:text-[#b6b6b6] focus:outline-none md:text-sm"
         }
       />
     </div>

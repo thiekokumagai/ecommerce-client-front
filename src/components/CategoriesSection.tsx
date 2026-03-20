@@ -44,7 +44,7 @@ const CategoriesSection = () => {
       id="categorias"
       className={cn(
         "py-10 md:py-14",
-        !showBanner && "pt-6 md:pt-14"
+        !showBanner && "pt-28 md:pt-14"
       )}
     >
       <div className="mx-auto max-w-7xl px-4 md:px-8">

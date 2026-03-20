@@ -66,7 +66,7 @@ const OrdersPage = () => {
                   value={phone}
                   onChange={(event) => setPhone(formatPhone(event.target.value))}
                   placeholder="(67) 99999-9999"
-                  className="h-12 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  className="h-12 w-full bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
                 />
               </div>
               <button
