@@ -1,5 +1,5 @@
 import type { Product } from "@/data/products";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 
@@ -19,6 +19,7 @@ const ProductVariationModal = ({
   onConfirm,
 }: ProductVariationModalProps) => {
   const { items, updateQuantity, removeFromCart } = useCart();
+  const autoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (!product.variationGroup) return null;
 
@@ -35,6 +36,26 @@ const ProductVariationModal = ({
 
     return cartItem?.quantity ?? 0;
   }, [items, product.id, selectedOption]);
+
+  useEffect(() => {
+    if (autoCloseTimeoutRef.current) {
+      clearTimeout(autoCloseTimeoutRef.current);
+      autoCloseTimeoutRef.current = null;
+    }
+
+    if (quantityInCart > 0) {
+      autoCloseTimeoutRef.current = setTimeout(() => {
+        onClose();
+      }, 3000);
+    }
+
+    return () => {
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+        autoCloseTimeoutRef.current = null;
+      }
+    };
+  }, [quantityInCart, onClose]);
 
   const handleDecrease = () => {
     if (!selectedOption || quantityInCart === 0) return;
@@ -115,26 +136,32 @@ const ProductVariationModal = ({
         )}
 
         {quantityInCart > 0 ? (
-          <div className="mt-6 flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-primary-foreground">
-            <button
-              type="button"
-              onClick={handleDecrease}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
-              aria-label="Diminuir quantidade"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
+          <div className="mt-6 space-y-3">
+            <div className="flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-primary-foreground">
+              <button
+                type="button"
+                onClick={handleDecrease}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
+                aria-label="Diminuir quantidade"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
 
-            <span className="text-base font-semibold">{quantityInCart}</span>
+              <span className="text-base font-semibold">{quantityInCart}</span>
 
-            <button
-              type="button"
-              onClick={handleIncrease}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
-              aria-label="Aumentar quantidade"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={handleIncrease}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
+                aria-label="Aumentar quantidade"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Produto adicionado. Fechando...
+            </p>
           </div>
         ) : (
           <button

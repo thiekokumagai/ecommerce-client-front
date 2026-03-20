@@ -134,6 +134,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     addedModalTimeoutRef.current = setTimeout(() => {
       setShowAddedModal(true);
+      addedModalTimeoutRef.current = null;
     }, 3000);
   }, []);
 
@@ -166,7 +167,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  const clearCart = useCallback(() => {
+    if (addedModalTimeoutRef.current) {
+      clearTimeout(addedModalTimeoutRef.current);
+      addedModalTimeoutRef.current = null;
+    }
+    setShowAddedModal(false);
+    setItems([]);
+  }, []);
 
   const addOrder = useCallback((order: SavedOrder) => {
     setOrders((prev) => {
