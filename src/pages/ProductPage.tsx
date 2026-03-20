@@ -104,6 +104,10 @@ const ProductPage = () => {
 
     if (cartItem) {
       updateQuantity(product.id, quantity, selectedVariation);
+      triggerAddedModal({
+        product,
+        selectedVariation,
+      });
       setHasJustUpdated(true);
       handleNavigateToList();
       return;
