@@ -77,9 +77,17 @@ const ProductVariationModal = ({
   const handleBuy = () => {
     if (!selectedOption) return;
 
+    const hadItemsInCart = items.length > 0;
+
     setDisplayQuantity(1);
     setIsLocked(true);
     addToCart({ product, selectedVariation: selectedOption });
+
+    if (hadItemsInCart) {
+      onClose();
+      return;
+    }
+
     startAutoClose(selectedOption);
   };
 
@@ -186,9 +194,11 @@ const ProductVariationModal = ({
               </button>
             </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Produto adicionado. Fechando...
-            </p>
+            {items.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground">
+                Produto adicionado. Fechando...
+              </p>
+            )}
           </div>
         ) : (
           <button
