@@ -120,7 +120,7 @@ const CartSidebar = () => {
   const [savedAddress, setSavedAddress] = useState("");
   const [isEditingAddress, setIsEditingAddress] = useState(true);
   const [isEditingContact, setIsEditingContact] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pix");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [needsChange, setNeedsChange] = useState("não");
   const [changeFor, setChangeFor] = useState("");
   const [couponCode, setCouponCode] = useState("");
@@ -144,7 +144,12 @@ const CartSidebar = () => {
   }, []);
 
   useEffect(() => {
-    if (!isCartOpen) setStep("cart");
+    if (!isCartOpen) {
+      setStep("cart");
+      setPaymentMethod(null);
+      setNeedsChange("não");
+      setChangeFor("");
+    }
   }, [isCartOpen]);
 
   useEffect(() => {
@@ -164,7 +169,10 @@ const CartSidebar = () => {
 
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
   const isAddressValid = savedAddress.trim().length > 0;
-  const isPaymentValid = paymentMethod !== "dinheiro" || needsChange === "não" || changeFor.trim().length > 0;
+  const hasSelectedPaymentMethod = paymentMethod !== null;
+  const isPaymentValid =
+    hasSelectedPaymentMethod &&
+    (paymentMethod !== "dinheiro" || needsChange === "não" || changeFor.trim().length > 0);
 
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
 
@@ -260,10 +268,18 @@ const CartSidebar = () => {
       return;
     }
 
+    setPaymentMethod(null);
+    setNeedsChange("não");
+    setChangeFor("");
     setStep("payment");
   };
 
   const goToConfirmation = () => {
+    if (!hasSelectedPaymentMethod) {
+      toast.info("Selecione uma forma de pagamento para continuar.");
+      return;
+    }
+
     if (!isPaymentValid) {
       toast.info("Informe o troco para continuar.");
       return;
@@ -313,7 +329,7 @@ const CartSidebar = () => {
   const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
 
   const handleCheckout = () => {
-    if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0) {
+    if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod) {
       toast.info("Preencha todas as etapas obrigatórias para finalizar.");
       return;
     }
@@ -342,7 +358,8 @@ const CartSidebar = () => {
   const paymentLabel =
     paymentMethod === "pix" ? "Pix (5% desconto)" :
     paymentMethod === "debito" ? "Débito" :
-    paymentMethod === "credito" ? "Crédito" : "Dinheiro";
+    paymentMethod === "credito" ? "Crédito" :
+    paymentMethod === "dinheiro" ? "Dinheiro" : "-";
 
   return (
     <div className="fixed inset-0 z-[90] flex justify-end">
@@ -595,7 +612,9 @@ const CartSidebar = () => {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod("pix")}
-                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors ${paymentMethod === "pix" ? "border-primary bg-primary/5 text-foreground" : "border-border text-foreground"}`}
+                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors ${
+                    paymentMethod === "pix" ? "border-primary bg-primary/5 text-foreground" : "border-border text-foreground"
+                  }`}
                 >
                   <div className="flex items-center gap-3">
                     <span>Pix</span>
