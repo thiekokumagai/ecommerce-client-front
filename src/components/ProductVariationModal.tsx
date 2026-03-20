@@ -18,9 +18,10 @@ const ProductVariationModal = ({
   onClose,
   onConfirm,
 }: ProductVariationModalProps) => {
-  const { items, updateQuantity, removeFromCart } = useCart();
+  const { items, addToCart, updateQuantity, removeFromCart } = useCart();
   const autoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [displayQuantity, setDisplayQuantity] = useState(0);
+  const [isRecentlyAdded, setIsRecentlyAdded] = useState(false);
 
   if (!product.variationGroup) return null;
 
@@ -41,13 +42,14 @@ const ProductVariationModal = ({
   useEffect(() => {
     if (!selectedOption) {
       setDisplayQuantity(0);
+      setIsRecentlyAdded(false);
       return;
     }
 
-    if (quantityInCart > 0) {
+    if (!isRecentlyAdded) {
       setDisplayQuantity(quantityInCart);
     }
-  }, [quantityInCart, selectedOption]);
+  }, [quantityInCart, selectedOption, isRecentlyAdded]);
 
   useEffect(() => {
     return () => {
@@ -57,14 +59,31 @@ const ProductVariationModal = ({
     };
   }, []);
 
-  const startAutoClose = () => {
+  const clearAutoClose = () => {
     if (autoCloseTimeoutRef.current) {
       clearTimeout(autoCloseTimeoutRef.current);
+      autoCloseTimeoutRef.current = null;
     }
+  };
 
+  const startAutoClose = () => {
+    clearAutoClose();
     autoCloseTimeoutRef.current = setTimeout(() => {
       onClose();
     }, 3000);
+  };
+
+  const handleBuy = () => {
+    if (!selectedOption) return;
+
+    setDisplayQuantity(1);
+    setIsRecentlyAdded(true);
+    addToCart({ product, selectedVariation: selectedOption });
+    startAutoClose();
+
+    requestAnimationFrame(() => {
+      setIsRecentlyAdded(false);
+    });
   };
 
   const handleDecrease = () => {
@@ -74,38 +93,23 @@ const ProductVariationModal = ({
     setDisplayQuantity(nextQuantity);
 
     if (nextQuantity <= 0) {
+      clearAutoClose();
+      setIsRecentlyAdded(false);
       removeFromCart(product.id, selectedOption);
-      if (autoCloseTimeoutRef.current) {
-        clearTimeout(autoCloseTimeoutRef.current);
-        autoCloseTimeoutRef.current = null;
-      }
       return;
     }
 
+    clearAutoClose();
     updateQuantity(product.id, nextQuantity, selectedOption);
   };
 
   const handleIncrease = () => {
-    if (!selectedOption) return;
+    if (!selectedOption || displayQuantity === 0) return;
 
     const nextQuantity = displayQuantity + 1;
     setDisplayQuantity(nextQuantity);
-
-    if (quantityInCart === 0) {
-      onConfirm();
-      startAutoClose();
-      return;
-    }
-
+    clearAutoClose();
     updateQuantity(product.id, nextQuantity, selectedOption);
-  };
-
-  const handleBuy = () => {
-    if (!selectedOption) return;
-
-    setDisplayQuantity(1);
-    onConfirm();
-    startAutoClose();
   };
 
   return (
@@ -141,15 +145,15 @@ const ProductVariationModal = ({
                 <button
                   key={option.label}
                   type="button"
-                  onClick={() => option.available && onSelect(option.label)}
-                  disabled={!option.available}
+                  onClick={() => option.available && displayQuantity === 0 && onSelect(option.label)}
+                  disabled={!option.available || displayQuantity > 0}
                   className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
                     option.available
                       ? isSelected
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border bg-background text-foreground hover:bg-secondary"
                       : "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-60"
-                  }`}
+                  } ${displayQuantity > 0 && !isSelected ? "opacity-60" : ""}`}
                 >
                   {option.label}
                 </button>
