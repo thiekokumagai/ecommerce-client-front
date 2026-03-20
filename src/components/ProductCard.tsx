@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart } from "lucide-react";
+import { Minus, Plus, ShoppingCart } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import ProductVariationModal from "@/components/ProductVariationModal";
@@ -14,11 +14,15 @@ const formatPrice = (price: number) =>
   `R$${price.toFixed(2).replace(".", ",")}`;
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const { addToCart } = useCart();
+  const { items, addToCart, updateQuantity, removeFromCart } = useCart();
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [showVariationModal, setShowVariationModal] = useState(false);
 
   const availableOptions = product.variationGroup?.options.filter((option) => option.available) ?? [];
+  const cartItem = items.find(
+    (item) => item.product.id === product.id && item.selectedVariation === undefined
+  );
+  const quantityInCart = cartItem?.quantity ?? 0;
 
   const handleBuy = () => {
     if (product.variationGroup) {
@@ -35,6 +39,32 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
     addToCart({ product, selectedVariation });
     setShowVariationModal(false);
+  };
+
+  const handleDecrease = () => {
+    if (!cartItem) return;
+
+    if (cartItem.quantity <= 1) {
+      removeFromCart(product.id);
+      return;
+    }
+
+    updateQuantity(product.id, cartItem.quantity - 1);
+  };
+
+  const handleIncrease = () => {
+    if (product.variationGroup) {
+      setSelectedVariation(null);
+      setShowVariationModal(true);
+      return;
+    }
+
+    if (cartItem) {
+      updateQuantity(product.id, cartItem.quantity + 1);
+      return;
+    }
+
+    addToCart(product);
   };
 
   return (
@@ -102,24 +132,52 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleBuy}
-            disabled={product.variationGroup !== undefined && availableOptions.length === 0}
-            className={`mt-2 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${
-              product.variationGroup !== undefined && availableOptions.length === 0
-                ? "bg-muted text-muted-foreground"
-                : "bg-primary text-primary-foreground"
-            }`}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            {product.variationGroup
-              ? availableOptions.length === 0
-                ? "Indisponível"
-                : "Comprar"
-              : "Comprar"}
+          {product.variationGroup ? (
+            <button
+              type="button"
+              onClick={handleBuy}
+              disabled={availableOptions.length === 0}
+              className={`mt-2 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${
+                availableOptions.length === 0
+                  ? "bg-muted text-muted-foreground"
+                  : "bg-primary text-primary-foreground"
+              }`}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {availableOptions.length === 0 ? "Indisponível" : "Comprar"}
+            </button>
+          ) : quantityInCart > 0 ? (
+            <div className="mt-2 flex items-center justify-between rounded-xl bg-primary px-4 py-2.5 text-primary-foreground">
+              <button
+                type="button"
+                onClick={handleDecrease}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20"
+                aria-label="Diminuir quantidade"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
 
-          </button>
+              <span className="text-base font-semibold">{quantityInCart}</span>
+
+              <button
+                type="button"
+                onClick={handleIncrease}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20"
+                aria-label="Aumentar quantidade"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleBuy}
+              className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Comprar
+            </button>
+          )}
         </div>
       </div>
 
