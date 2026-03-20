@@ -100,7 +100,7 @@ const ProductPage = () => {
   };
 
   const handleAddOrUpdateCart = () => {
-    if (!canAddToCart) return;
+    if (!canAddToCart || isUnavailable) return;
 
     if (cartItem) {
       updateQuantity(product.id, quantity, selectedVariation);
@@ -142,10 +142,16 @@ const ProductPage = () => {
   const handleDecreaseQuantity = () => setQuantity((current) => Math.max(1, current - 1));
   const handleIncreaseQuantity = () => setQuantity((current) => current + 1);
 
-  const primaryButtonLabel = isInCart ? "Atualizar" : hasJustUpdated ? "Adicionado" : "Adicionar ao Pedido";
+  const primaryButtonLabel = isUnavailable
+    ? "Indisponível"
+    : !canAddToCart
+      ? "Selecione"
+      : isInCart
+        ? "Atualizar"
+        : "Adicionar ao Pedido";
 
   return (
-    <div className="min-h-screen bg-background pb-[148px] lg:pb-0">
+    <div className="min-h-screen bg-background pb-[204px] lg:pb-0">
       <div className="hidden lg:block">
         <SiteHeader />
       </div>
@@ -221,21 +227,8 @@ const ProductPage = () => {
               onChange={setNote}
             />
 
-            <div className="mt-6 space-y-3">
-              <button
-                type="button"
-                onClick={handleAddOrUpdateCart}
-                disabled={!canAddToCart || isUnavailable}
-                className={`w-full rounded-xl px-6 py-3.5 text-base font-bold ${
-                  !canAddToCart || isUnavailable
-                    ? "bg-[#c7c7c7] text-white"
-                    : "bg-primary text-primary-foreground"
-                }`}
-              >
-                {isUnavailable ? "Indisponível" : canAddToCart ? primaryButtonLabel : "Selecione"}
-              </button>
-
-              {isInCart && (
+            {isInCart && (
+              <div className="mt-6">
                 <button
                   type="button"
                   onClick={handleRemoveFromCart}
@@ -243,9 +236,11 @@ const ProductPage = () => {
                 >
                   Remover do carrinho
                 </button>
-              )}
+              </div>
+            )}
 
-              {!isInCart && (
+            {!isInCart && (
+              <div className="mt-6">
                 <button
                   type="button"
                   onClick={handleBackToStore}
@@ -253,8 +248,8 @@ const ProductPage = () => {
                 >
                   Voltar pra loja
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <ProductContact />
           </div>
@@ -346,7 +341,7 @@ const ProductPage = () => {
                       : "bg-primary text-primary-foreground"
                   }`}
                 >
-                  {isUnavailable ? "Indisponível" : canAddToCart ? primaryButtonLabel : "Selecione"}
+                  {primaryButtonLabel}
                 </button>
 
                 {isInCart ? (
@@ -373,6 +368,21 @@ const ProductPage = () => {
           </div>
         </section>
       </main>
+
+      <div className="fixed inset-x-0 bottom-10 z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden">
+        <button
+          type="button"
+          onClick={handleAddOrUpdateCart}
+          disabled={!canAddToCart || isUnavailable}
+          className={`w-full rounded-xl px-6 py-3.5 text-base font-bold ${
+            !canAddToCart || isUnavailable
+              ? "bg-[#c7c7c7] text-white"
+              : "bg-primary text-primary-foreground"
+          }`}
+        >
+          {primaryButtonLabel}
+        </button>
+      </div>
 
       <SiteFooter />
       <div className="hidden lg:block">
