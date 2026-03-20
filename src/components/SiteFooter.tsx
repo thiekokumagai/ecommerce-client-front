@@ -23,7 +23,7 @@ const SiteFooter = () => {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center gap-10 text-center md:flex-row md:items-start md:justify-between md:text-left">
+        <div className="mt-10 flex flex-col items-center gap-10 text-center md:grid md:grid-cols-[1fr_minmax(320px,1.4fr)_1fr] md:items-start md:text-left">
           <div className="flex flex-col items-center space-y-4 md:items-start">
             <div className="flex items-center justify-center gap-2 md:justify-start">
               <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain" />
@@ -44,6 +44,28 @@ const SiteFooter = () => {
               <MessageCircle className="h-4 w-4" />
               Fale com vendedor
             </a>
+          </div>
+
+          <div className="hidden h-full w-full items-center justify-center md:flex">
+            <div className="w-full rounded-2xl border-2 border-primary/80 bg-background px-8 py-8 shadow-sm">
+              <h3 className="text-center font-display text-lg font-bold text-primary">
+                Formas de pagamento
+              </h3>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
+                <div className="flex items-center gap-2 rounded-full border border-primary/20 px-4 py-2 text-primary">
+                  <CreditCard className="h-5 w-5" />
+                  <span className="text-sm font-semibold">Cartão</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-full border border-primary/20 px-4 py-2 text-primary">
+                  <BadgeDollarSign className="h-5 w-5" />
+                  <span className="text-sm font-semibold">Pix</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-full border border-primary/20 px-4 py-2 text-primary">
+                  <span className="text-xl leading-none">💵</span>
+                  <span className="text-sm font-semibold">Dinheiro</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex flex-col items-center space-y-4 md:items-end">
