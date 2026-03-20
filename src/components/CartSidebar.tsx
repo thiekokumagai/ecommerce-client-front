@@ -273,7 +273,10 @@ const CartSidebar = () => {
                 ? "Forma de pagamento: Crédito"
                 : "Forma de pagamento: Dinheiro",
           ...(paymentMethod === "dinheiro"
-            ? [`Precisa de troco: ${needsChange}`, ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor || "-"}`] : [])]
+            ? [
+                `Precisa de troco: ${needsChange}`,
+                ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor}`] : []),
+              ]
             : []),
           `Taxa do motoboy: ${formatPrice(deliveryFee)}`,
           `Total final com entrega: ${formatPrice(finalTotal)}`,
