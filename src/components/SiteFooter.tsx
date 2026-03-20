@@ -23,23 +23,23 @@ const SiteFooter = () => {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-10 text-center md:grid-cols-2 md:text-left">
+        <div className="mt-10 flex flex-col items-center gap-10 text-center md:grid md:grid-cols-2 md:text-left">
           <div className="flex flex-col items-center space-y-4 md:items-start">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2 md:justify-start">
               <img src={logo} alt="Pod & Mais" className="h-12 w-12 object-contain" />
               <span className="font-display text-lg font-bold text-foreground">
                 Pod <span className="text-gradient">&</span> Mais
               </span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground md:justify-start">
               <MapPin className="h-4 w-4 shrink-0" />
-              Campo Grande - MS
+              <span>Campo Grande - MS</span>
             </div>
             <a
               href="https://wa.me/5567991032937"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
             >
               <MessageCircle className="h-4 w-4" />
               Fale com vendedor
@@ -50,7 +50,7 @@ const SiteFooter = () => {
             <h3 className="font-display text-sm font-bold uppercase tracking-wider text-foreground">
               Horário de Funcionamento
             </h3>
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <div className="flex items-start justify-center gap-2 text-center text-sm text-muted-foreground md:justify-start md:text-left">
               <Clock className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <p>Segunda à Sábado</p>
