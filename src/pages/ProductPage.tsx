@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -23,7 +23,7 @@ const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, triggerAddedModal } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [zipCode, setZipCode] = useState("");
@@ -32,8 +32,18 @@ const ProductPage = () => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [nicotineStrength, setNicotineStrength] = useState<string | null>(null);
+  const [hasJustAdded, setHasJustAdded] = useState(false);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const product = useMemo(() => getProductById(Number(id)), [id]);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!product) {
     return (
@@ -67,18 +77,37 @@ const ProductPage = () => {
   const handleAddToCart = () => {
     if (!canAddToCart) return;
 
+    const selectedVariation = nicotineStrength ?? undefined;
+
     for (let i = 0; i < quantity; i += 1) {
       addToCart({
         product,
-        selectedVariation: nicotineStrength ?? undefined,
+        selectedVariation,
       });
     }
+
+    triggerAddedModal({
+      product,
+      selectedVariation,
+    });
+
+    setHasJustAdded(true);
+
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+    }
+
+    redirectTimeoutRef.current = setTimeout(() => {
+      navigate("/");
+    }, 1200);
   };
 
   const handleBackToStore = () => navigate("/");
   const handleGoBack = () => navigate(-1);
   const handleDecreaseQuantity = () => setQuantity((current) => Math.max(1, current - 1));
   const handleIncreaseQuantity = () => setQuantity((current) => current + 1);
+
+  const actionButtonLabel = hasJustAdded ? "Adicionado" : undefined;
 
   return (
     <div className="min-h-screen bg-background pb-[148px] lg:pb-0">
@@ -168,11 +197,20 @@ const ProductPage = () => {
             <ProductContact />
           </div>
 
-          <ProductStickyBar
-            canAddToCart={canAddToCart}
-            isUnavailable={isUnavailable}
-            onAddToCart={handleAddToCart}
-          />
+          <div className="fixed inset-x-0 bottom-[92px] z-50 border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:bottom-0 md:pb-[calc(env(safe-area-inset-bottom)+16px)] md:pt-4">
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={!canAddToCart || isUnavailable || hasJustAdded}
+              className={`mx-auto block w-full max-w-[240px] rounded-xl px-6 py-3.5 text-base font-bold ${
+                hasJustAdded
+                  ? "bg-primary/80 text-primary-foreground"
+                  : "bg-primary text-primary-foreground disabled:bg-[#c7c7c7] disabled:text-white"
+              }`}
+            >
+              {isUnavailable ? "Indisponível" : hasJustAdded ? "Adicionado" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+            </button>
+          </div>
         </section>
 
         <section className="hidden lg:block">
@@ -253,10 +291,14 @@ const ProductPage = () => {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={!canAddToCart || isUnavailable}
-                className="mt-6 w-full rounded-lg bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground disabled:bg-[#bfbfbf] disabled:text-white"
+                disabled={!canAddToCart || isUnavailable || hasJustAdded}
+                className={`mt-6 w-full rounded-lg px-6 py-3.5 text-base font-bold ${
+                  hasJustAdded
+                    ? "bg-primary/80 text-primary-foreground"
+                    : "bg-primary text-primary-foreground disabled:bg-[#bfbfbf] disabled:text-white"
+                }`}
               >
-                {isUnavailable ? "Indisponível" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
+                {isUnavailable ? "Indisponível" : hasJustAdded ? "Adicionado" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
               </button>
 
               <button
