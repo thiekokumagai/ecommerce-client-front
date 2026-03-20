@@ -41,11 +41,9 @@ const OrdersPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <div className="hidden md:block">
-        <SiteHeader />
-      </div>
+      <SiteHeader />
 
-      <main className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
+      <main className="mx-auto max-w-3xl px-4 py-28 md:px-8 md:py-10">
         <div className="rounded-3xl border border-border bg-card p-5 shadow-sm md:p-8">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl bg-primary/10 p-3 text-primary">
