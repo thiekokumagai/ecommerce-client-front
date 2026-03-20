@@ -16,7 +16,7 @@ const ProductStickyBar = ({
       : "Selecione";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
+    <div className="fixed inset-x-0 bottom-[92px] z-50 border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:bottom-0 md:pb-[calc(env(safe-area-inset-bottom)+16px)] md:pt-4">
       <button
         type="button"
         onClick={onAddToCart}

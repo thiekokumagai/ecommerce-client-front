@@ -7,6 +7,7 @@ import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import ProductImageModal from "@/components/ProductImageModal";
 import ProductActions from "@/components/product/ProductActions";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import ProductContact from "@/components/product/ProductContact";
 import ProductDesktopGallery from "@/components/product/ProductDesktopGallery";
 import ProductFreightCalculator from "@/components/product/ProductFreightCalculator";
@@ -79,7 +80,7 @@ const ProductPage = () => {
   const handleIncreaseQuantity = () => setQuantity((current) => current + 1);
 
   return (
-    <div className="min-h-screen bg-background pb-28 lg:pb-0">
+    <div className="min-h-screen bg-background pb-[148px] lg:pb-0">
       <div className="hidden lg:block">
         <SiteHeader />
       </div>
@@ -277,6 +278,7 @@ const ProductPage = () => {
       </div>
       <CartSidebar />
       <AddedToCartModal />
+      <MobileBottomNav />
       {isImageModalOpen && (
         <ProductImageModal
           images={details.gallery}
