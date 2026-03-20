@@ -8,6 +8,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import { useCart } from "@/contexts/CartContext";
 
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
+const EXAMPLE_PHONE = "(67) 99112-2210";
 
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
 
@@ -39,6 +40,12 @@ const OrdersPage = () => {
     sessionStorage.setItem(SESSION_PHONE_KEY, formatted);
   };
 
+  const handleUseExamplePhone = () => {
+    setPhone(EXAMPLE_PHONE);
+    setSubmittedPhone(EXAMPLE_PHONE);
+    sessionStorage.setItem(SESSION_PHONE_KEY, EXAMPLE_PHONE);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SiteHeader />
@@ -53,6 +60,19 @@ const OrdersPage = () => {
               <h1 className="text-2xl font-bold text-foreground">Meus pedidos</h1>
               <p className="text-sm text-muted-foreground">Entre com seu telefone para ver os pedidos já feitos.</p>
             </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl bg-secondary p-4 text-sm text-foreground">
+            <p>
+              Número de exemplo para consulta:{" "}
+              <button
+                type="button"
+                onClick={handleUseExamplePhone}
+                className="font-semibold text-primary underline underline-offset-4"
+              >
+                {EXAMPLE_PHONE}
+              </button>
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-3">
