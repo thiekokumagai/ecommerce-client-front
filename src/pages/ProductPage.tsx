@@ -6,7 +6,6 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import ProductImageModal from "@/components/ProductImageModal";
-import ProductActions from "@/components/product/ProductActions";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ProductContact from "@/components/product/ProductContact";
 import ProductDesktopGallery from "@/components/product/ProductDesktopGallery";
@@ -14,7 +13,6 @@ import ProductFreightCalculator from "@/components/product/ProductFreightCalcula
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductMobileGallery from "@/components/product/ProductMobileGallery";
 import ProductNotes from "@/components/product/ProductNotes";
-import ProductStickyBar from "@/components/product/ProductStickyBar";
 import { getProductById, getProductMockDetails } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 
@@ -23,7 +21,7 @@ const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart, triggerAddedModal } = useCart();
+  const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [zipCode, setZipCode] = useState("");
@@ -32,7 +30,7 @@ const ProductPage = () => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [nicotineStrength, setNicotineStrength] = useState<string | null>(null);
-  const [hasJustAdded, setHasJustAdded] = useState(false);
+  const [hasJustUpdated, setHasJustUpdated] = useState(false);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const product = useMemo(() => getProductById(Number(id)), [id]);
@@ -72,12 +70,44 @@ const ProductPage = () => {
   const notePlaceholder = isNicSalt
     ? "Inclua algum detalhe para este produto (opcional)"
     : "Observações";
+
+  const selectedVariation = nicotineStrength ?? undefined;
+  const cartItem = items.find(
+    (item) =>
+      item.product.id === product.id &&
+      item.selectedVariation === selectedVariation
+  );
+  const isInCart = !!cartItem;
   const totalPrice = product.price * quantity;
 
-  const handleAddToCart = () => {
+  useEffect(() => {
+    if (cartItem) {
+      setQuantity(cartItem.quantity);
+      return;
+    }
+
+    setQuantity(1);
+  }, [cartItem]);
+
+  const handleNavigateToList = () => {
+    if (redirectTimeoutRef.current) {
+      clearTimeout(redirectTimeoutRef.current);
+    }
+
+    redirectTimeoutRef.current = setTimeout(() => {
+      navigate("/");
+    }, 1200);
+  };
+
+  const handleAddOrUpdateCart = () => {
     if (!canAddToCart) return;
 
-    const selectedVariation = nicotineStrength ?? undefined;
+    if (cartItem) {
+      updateQuantity(product.id, quantity, selectedVariation);
+      setHasJustUpdated(true);
+      handleNavigateToList();
+      return;
+    }
 
     for (let i = 0; i < quantity; i += 1) {
       addToCart({
@@ -91,15 +121,16 @@ const ProductPage = () => {
       selectedVariation,
     });
 
-    setHasJustAdded(true);
+    setHasJustUpdated(true);
+    handleNavigateToList();
+  };
 
-    if (redirectTimeoutRef.current) {
-      clearTimeout(redirectTimeoutRef.current);
-    }
+  const handleRemoveFromCart = () => {
+    if (!cartItem) return;
 
-    redirectTimeoutRef.current = setTimeout(() => {
-      navigate("/");
-    }, 1200);
+    removeFromCart(product.id, selectedVariation);
+    setHasJustUpdated(false);
+    setQuantity(1);
   };
 
   const handleBackToStore = () => navigate("/");
@@ -107,7 +138,7 @@ const ProductPage = () => {
   const handleDecreaseQuantity = () => setQuantity((current) => Math.max(1, current - 1));
   const handleIncreaseQuantity = () => setQuantity((current) => current + 1);
 
-  const actionButtonLabel = hasJustAdded ? "Adicionado" : undefined;
+  const primaryButtonLabel = isInCart ? "Atualizar" : hasJustUpdated ? "Adicionado" : "Adicionar ao Pedido";
 
   return (
     <div className="min-h-screen bg-background pb-[148px] lg:pb-0">
@@ -186,30 +217,42 @@ const ProductPage = () => {
               onChange={setNote}
             />
 
-            <button
-              type="button"
-              onClick={handleBackToStore}
-              className="mx-auto mt-6 block w-full rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
-            >
-              Voltar pra loja
-            </button>
+            <div className="mt-6 space-y-3">
+              <button
+                type="button"
+                onClick={handleAddOrUpdateCart}
+                disabled={!canAddToCart || isUnavailable}
+                className={`w-full rounded-xl px-6 py-3.5 text-base font-bold ${
+                  !canAddToCart || isUnavailable
+                    ? "bg-[#c7c7c7] text-white"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                {isUnavailable ? "Indisponível" : canAddToCart ? primaryButtonLabel : "Selecione"}
+              </button>
+
+              {isInCart && (
+                <button
+                  type="button"
+                  onClick={handleRemoveFromCart}
+                  className="w-full rounded-xl bg-black px-6 py-3.5 text-base font-bold text-white"
+                >
+                  Remover do carrinho
+                </button>
+              )}
+
+              {!isInCart && (
+                <button
+                  type="button"
+                  onClick={handleBackToStore}
+                  className="w-full rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
+                >
+                  Voltar pra loja
+                </button>
+              )}
+            </div>
 
             <ProductContact />
-          </div>
-
-          <div className="fixed inset-x-0 bottom-[92px] z-50 border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:bottom-0 md:pb-[calc(env(safe-area-inset-bottom)+16px)] md:pt-4">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              disabled={!canAddToCart || isUnavailable || hasJustAdded}
-              className={`mx-auto block w-full max-w-[240px] rounded-xl px-6 py-3.5 text-base font-bold ${
-                hasJustAdded
-                  ? "bg-primary/80 text-primary-foreground"
-                  : "bg-primary text-primary-foreground disabled:bg-[#c7c7c7] disabled:text-white"
-              }`}
-            >
-              {isUnavailable ? "Indisponível" : hasJustAdded ? "Adicionado" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
-            </button>
           </div>
         </section>
 
@@ -288,26 +331,38 @@ const ProductPage = () => {
                 onChange={setNote}
               />
 
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={!canAddToCart || isUnavailable || hasJustAdded}
-                className={`mt-6 w-full rounded-lg px-6 py-3.5 text-base font-bold ${
-                  hasJustAdded
-                    ? "bg-primary/80 text-primary-foreground"
-                    : "bg-primary text-primary-foreground disabled:bg-[#bfbfbf] disabled:text-white"
-                }`}
-              >
-                {isUnavailable ? "Indisponível" : hasJustAdded ? "Adicionado" : canAddToCart ? "Adicionar ao Pedido" : "Selecione"}
-              </button>
+              <div className="mt-6 space-y-3">
+                <button
+                  type="button"
+                  onClick={handleAddOrUpdateCart}
+                  disabled={!canAddToCart || isUnavailable}
+                  className={`w-full rounded-lg px-6 py-3.5 text-base font-bold ${
+                    !canAddToCart || isUnavailable
+                      ? "bg-[#bfbfbf] text-white"
+                      : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  {isUnavailable ? "Indisponível" : canAddToCart ? primaryButtonLabel : "Selecione"}
+                </button>
 
-              <button
-                type="button"
-                onClick={handleBackToStore}
-                className="mt-2.5 w-full rounded-lg border border-primary px-6 py-3 text-base font-medium text-primary"
-              >
-                Voltar pra loja
-              </button>
+                {isInCart ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveFromCart}
+                    className="w-full rounded-lg bg-black px-6 py-3.5 text-base font-bold text-white"
+                  >
+                    Remover do carrinho
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleBackToStore}
+                    className="w-full rounded-lg border border-primary px-6 py-3 text-base font-medium text-primary"
+                  >
+                    Voltar pra loja
+                  </button>
+                )}
+              </div>
 
               <ProductContact isDesktop />
             </div>
