@@ -239,6 +239,11 @@ const CartSidebar = () => {
     if (totalItems <= 1) toast.info("Escolha os produtos para continuar.");
   };
 
+  const handleClearCart = () => {
+    clearCart();
+    toast.success("Sacola limpa.");
+  };
+
   const goToDelivery = () => {
     if (!items.length) {
       toast.info("Escolha os produtos para continuar.");
@@ -405,6 +410,16 @@ const CartSidebar = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={handleClearCart}
+                      className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
+                    >
+                      Limpar sacola
+                    </button>
+                  </div>
+
                   {items.map((item) => (
                     <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex gap-3 rounded-xl border border-border bg-background p-3">
                       <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-lg bg-secondary/30 object-contain" loading="lazy" />
