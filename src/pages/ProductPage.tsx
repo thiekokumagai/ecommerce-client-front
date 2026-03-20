@@ -151,7 +151,7 @@ const ProductPage = () => {
         : "Adicionar ao Pedido";
 
   return (
-    <div className="min-h-screen bg-background pb-[270px] lg:pb-0">
+    <div className="min-h-screen bg-background pb-[250px] lg:pb-0">
       <div className="hidden lg:block">
         <SiteHeader />
       </div>
@@ -369,19 +369,21 @@ const ProductPage = () => {
         </section>
       </main>
 
-      <div className="fixed inset-x-0 bottom-[76px] z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden">
-        <button
-          type="button"
-          onClick={handleAddOrUpdateCart}
-          disabled={!canAddToCart || isUnavailable}
-          className={`w-full rounded-xl px-6 py-3.5 text-base font-bold ${
-            !canAddToCart || isUnavailable
-              ? "bg-[#c7c7c7] text-white"
-              : "bg-primary text-primary-foreground"
-          }`}
-        >
-          {primaryButtonLabel}
-        </button>
+      <div className="fixed inset-x-0 bottom-10 z-[79] px-4 md:hidden">
+        <div className="rounded-t-[22px] bg-primary px-4 pb-3 pt-3 shadow-[0_-8px_24px_rgba(0,0,0,0.16)]">
+          <button
+            type="button"
+            onClick={handleAddOrUpdateCart}
+            disabled={!canAddToCart || isUnavailable}
+            className={`w-full rounded-2xl px-6 py-3.5 text-base font-bold transition-opacity ${
+              !canAddToCart || isUnavailable
+                ? "bg-white/30 text-white"
+                : "bg-primary-foreground text-primary"
+            }`}
+          >
+            {primaryButtonLabel}
+          </button>
+        </div>
       </div>
 
       <SiteFooter />
