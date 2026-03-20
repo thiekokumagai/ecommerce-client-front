@@ -47,22 +47,20 @@ const SiteFooter = () => {
           </div>
 
           <div className="hidden h-full w-full items-center justify-center md:flex">
-            <div className="w-full rounded-2xl bg-background px-8 py-8 shadow-sm">
-              <h3 className="text-center font-display text-lg font-bold text-primary">
-                Formas de pagamento
-              </h3>
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
-                <div className="flex items-center gap-2 rounded-full border border-primary/20 px-4 py-2 text-primary">
-                  <CreditCard className="h-5 w-5" />
-                  <span className="text-sm font-semibold">Cartão</span>
+            <div className="w-full rounded-2xl bg-background px-5 py-5 text-center shadow-sm">
+              <h3 className="text-lg font-semibold text-foreground">Formas de pagamento aceitas</h3>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CreditCard className="h-7 w-7" />
+                  <span className="text-sm font-medium">Cartão</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-full border border-primary/20 px-4 py-2 text-primary">
-                  <BadgeDollarSign className="h-5 w-5" />
-                  <span className="text-sm font-semibold">Pix</span>
+                <div className="flex items-center gap-2 text-[#32BCAD]">
+                  <BadgeDollarSign className="h-7 w-7" />
+                  <span className="text-sm font-medium">Pix</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-full border border-primary/20 px-4 py-2 text-primary">
-                  <span className="text-xl leading-none">💵</span>
-                  <span className="text-sm font-semibold">Dinheiro</span>
+                <div className="flex items-center gap-2 text-[#2EAD4A]">
+                  <span className="text-3xl leading-none">💵</span>
+                  <span className="text-sm font-medium">Dinheiro</span>
                 </div>
               </div>
             </div>
