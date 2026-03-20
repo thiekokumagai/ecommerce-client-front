@@ -33,6 +33,7 @@ interface CartContextType {
   lastAdded: CartItem | null;
   showAddedModal: boolean;
   setShowAddedModal: (show: boolean) => void;
+  triggerAddedModal: (item: Product | SelectedProduct) => void;
   selectedCategory: string | null;
   setSelectedCategory: (category: string | null) => void;
   searchTerm: string;
@@ -89,6 +90,23 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         clearTimeout(addedModalTimeoutRef.current);
       }
     };
+  }, []);
+
+  const triggerAddedModal = useCallback((item: Product | SelectedProduct) => {
+    const normalizedItem = normalizeItem(item);
+
+    setLastAdded({
+      product: normalizedItem.product,
+      quantity: 1,
+      selectedVariation: normalizedItem.selectedVariation,
+    });
+
+    if (addedModalTimeoutRef.current) {
+      clearTimeout(addedModalTimeoutRef.current);
+      addedModalTimeoutRef.current = null;
+    }
+
+    setShowAddedModal(true);
   }, []);
 
   const addToCart = useCallback((item: Product | SelectedProduct) => {
@@ -202,6 +220,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         lastAdded,
         showAddedModal,
         setShowAddedModal,
+        triggerAddedModal,
         selectedCategory,
         setSelectedCategory,
         searchTerm,

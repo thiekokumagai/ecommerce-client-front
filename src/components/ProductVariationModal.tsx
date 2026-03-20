@@ -18,10 +18,10 @@ const ProductVariationModal = ({
   onClose,
   onConfirm,
 }: ProductVariationModalProps) => {
-  const { items, addToCart, updateQuantity, removeFromCart } = useCart();
+  const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal } = useCart();
   const autoCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [displayQuantity, setDisplayQuantity] = useState(0);
-  const [isRecentlyAdded, setIsRecentlyAdded] = useState(false);
+  const [isCheckoutFlowActive, setIsCheckoutFlowActive] = useState(false);
 
   if (!product.variationGroup) return null;
 
@@ -42,14 +42,16 @@ const ProductVariationModal = ({
   useEffect(() => {
     if (!selectedOption) {
       setDisplayQuantity(0);
-      setIsRecentlyAdded(false);
+      setIsCheckoutFlowActive(false);
       return;
     }
 
-    if (!isRecentlyAdded) {
+    if (quantityInCart > 0) {
       setDisplayQuantity(quantityInCart);
+    } else if (!isCheckoutFlowActive) {
+      setDisplayQuantity(0);
     }
-  }, [quantityInCart, selectedOption, isRecentlyAdded]);
+  }, [quantityInCart, selectedOption, isCheckoutFlowActive]);
 
   useEffect(() => {
     return () => {
@@ -69,6 +71,7 @@ const ProductVariationModal = ({
   const startAutoClose = () => {
     clearAutoClose();
     autoCloseTimeoutRef.current = setTimeout(() => {
+      triggerAddedModal({ product, selectedVariation: selectedOption ?? undefined });
       onClose();
     }, 3000);
   };
@@ -77,13 +80,9 @@ const ProductVariationModal = ({
     if (!selectedOption) return;
 
     setDisplayQuantity(1);
-    setIsRecentlyAdded(true);
+    setIsCheckoutFlowActive(true);
     addToCart({ product, selectedVariation: selectedOption });
     startAutoClose();
-
-    requestAnimationFrame(() => {
-      setIsRecentlyAdded(false);
-    });
   };
 
   const handleDecrease = () => {
@@ -94,7 +93,7 @@ const ProductVariationModal = ({
 
     if (nextQuantity <= 0) {
       clearAutoClose();
-      setIsRecentlyAdded(false);
+      setIsCheckoutFlowActive(false);
       removeFromCart(product.id, selectedOption);
       return;
     }
