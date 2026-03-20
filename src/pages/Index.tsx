@@ -16,6 +16,7 @@ const Index = () => {
   const {
     searchTerm,
     setSearchTerm,
+    selectedCategory,
     setSelectedCategory,
     selectedNicotineStrength,
     setSelectedNicotineStrength,
