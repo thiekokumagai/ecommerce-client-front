@@ -22,6 +22,7 @@ const Index = () => {
     setSelectedNicotineStrength,
   } = useCart();
   const normalizedSearch = searchTerm.trim().toLowerCase();
+  const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
 
   const hasResults = allProducts.some((product) => {
     const matchesSearch = normalizedSearch
