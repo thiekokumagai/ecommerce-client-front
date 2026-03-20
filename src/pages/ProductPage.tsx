@@ -369,7 +369,7 @@ const ProductPage = () => {
         </section>
       </main>
 
-      <div className="fixed inset-x-0 bottom-[76px] z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden">
+      <div className="fixed inset-x-0 bottom-[97px] z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden">
         <button
           type="button"
           onClick={handleAddOrUpdateCart}
