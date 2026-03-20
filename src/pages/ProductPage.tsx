@@ -278,6 +278,7 @@ const ProductPage = () => {
       </div>
       <CartSidebar />
       <AddedToCartModal />
+      <MobileBottomNav />
       {isImageModalOpen && (
         <ProductImageModal
           images={details.gallery}
