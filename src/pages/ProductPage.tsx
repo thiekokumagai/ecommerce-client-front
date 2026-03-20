@@ -151,7 +151,7 @@ const ProductPage = () => {
         : "Adicionar ao Pedido";
 
   return (
-    <div className="min-h-screen bg-background pb-[204px] lg:pb-0">
+    <div className="min-h-screen bg-background pb-[270px] lg:pb-0">
       <div className="hidden lg:block">
         <SiteHeader />
       </div>
@@ -369,7 +369,7 @@ const ProductPage = () => {
         </section>
       </main>
 
-      <div className="fixed inset-x-0 bottom-10 z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden">
+      <div className="fixed inset-x-0 bottom-[76px] z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden">
         <button
           type="button"
           onClick={handleAddOrUpdateCart}
