@@ -49,7 +49,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <SiteHeader />
-      <HeroBanner />
+      {showBanner && <HeroBanner />}
       <CategoriesSection />
       <NicotineFilter />
       {!hasResults && (normalizedSearch || selectedNicotineStrength) && (
