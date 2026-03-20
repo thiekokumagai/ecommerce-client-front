@@ -50,11 +50,12 @@ const SiteFooter = () => {
             <h3 className="font-display text-sm font-bold uppercase tracking-wider text-foreground">
               Horário de Funcionamento
             </h3>
-            <div className="flex items-start justify-center gap-2 text-center text-sm text-muted-foreground md:justify-end md:text-right">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0" />
-              <div>
-                <p>Segunda à Sábado</p>
-                <p>08:00 – 12:00 | 13:00 – 20:00</p>
+            <div className="flex items-start justify-center gap-3 text-center md:justify-end md:text-right">
+              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <div className="text-sm text-muted-foreground">
+                <p className="font-semibold text-foreground">Sexta</p>
+                <p>08:00 às 12:00</p>
+                <p>13:00 às 20:00</p>
               </div>
             </div>
           </div>
