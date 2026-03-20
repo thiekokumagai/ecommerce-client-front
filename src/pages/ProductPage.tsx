@@ -80,7 +80,7 @@ const ProductPage = () => {
   const handleIncreaseQuantity = () => setQuantity((current) => current + 1);
 
   return (
-    <div className="min-h-screen bg-background pb-28 lg:pb-0">
+    <div className="min-h-screen bg-background pb-[148px] lg:pb-0">
       <div className="hidden lg:block">
         <SiteHeader />
       </div>
