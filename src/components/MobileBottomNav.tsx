@@ -27,7 +27,7 @@ const MobileBottomNav = () => {
       </button>
 
       <nav className="border-t border-border bg-background">
-        <div className="grid grid-cols-3">
+        <div className="grid grid-cols-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = location.pathname === link.to;
