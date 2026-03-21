@@ -197,8 +197,9 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           <ChevronLeft className="h-5 w-5" />
         </button>
 
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+        <div className="relative flex-1 touch-manipulation">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+          
           <input
             ref={inputRef}
             type="search"
@@ -207,22 +208,33 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Buscar endereço e número"
-            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0"
+            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-[16px] text-foreground placeholder:text-muted-foreground outline-none appearance-none shadow-none transition-none focus:outline-none focus:ring-0 focus:shadow-none focus:scale-100 active:outline-none active:ring-0 active:shadow-none active:scale-100"
+            style={{
+              WebkitAppearance: "none",
+              WebkitTapHighlightColor: "transparent",
+              WebkitUserSelect: "text",
+              transform: "translateZ(0)",
+            }}
           />
-          {query && (
+
+          {query && !isLoading && (
             <button
               type="button"
               onClick={() => {
                 setQuery("");
                 setPredictions([]);
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-none active:scale-100"
+              style={{ WebkitTapHighlightColor: "transparent" }}
               aria-label="Limpar busca"
             >
               <X className="h-4 w-4" />
             </button>
           )}
-          {isLoading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
+
+          {isLoading && (
+            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          )}
         </div>
       </div>
 
