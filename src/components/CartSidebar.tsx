@@ -130,14 +130,16 @@ const CartSidebar = () => {
   const previousTotalItems = useRef(totalItems);
 
   useEffect(() => {
-    const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY) ?? "";
+    const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY);
     const storedName = sessionStorage.getItem(SESSION_NAME_KEY) ?? "";
     const storedPhone = sessionStorage.getItem(SESSION_PHONE_KEY) ?? "";
 
     if (storedAddress) {
-      setSavedAddress(storedAddress);
-      setAddress(storedAddress);
-      setIsEditingAddress(false);
+      try {
+        const parsed = JSON.parse(storedAddress) as StructuredAddress;
+        setStructuredAddress(parsed);
+        setIsEditingAddress(false);
+      } catch { /* ignore */ }
     }
     if (storedName) setName(storedName);
     if (storedPhone) setPhone(storedPhone);
