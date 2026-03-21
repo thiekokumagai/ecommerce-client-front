@@ -153,19 +153,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       selectedVariation: normalizedItem.selectedVariation,
     });
 
-    if (addedModalTimeoutRef.current) {
-      clearTimeout(addedModalTimeoutRef.current);
-      addedModalTimeoutRef.current = null;
-    }
-
-    setShowAddedModal(true);
+    setShowAddedModal(false);
   }, []);
 
   const addToCart = useCallback((item: Product | SelectedProduct) => {
     const normalizedItem = normalizeItem(item);
 
     setItems((prev) => {
-      const shouldShowAddedModal = prev.length === 0;
+      const isFirstProduct = prev.length === 0;
       const existing = prev.find(
         (cartItem) =>
           cartItem.product.id === normalizedItem.product.id &&
@@ -194,17 +189,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         selectedVariation: normalizedItem.selectedVariation,
       });
 
-      if (addedModalTimeoutRef.current) {
-        clearTimeout(addedModalTimeoutRef.current);
-        addedModalTimeoutRef.current = null;
-      }
+      setShowAddedModal(false);
 
-      if (shouldShowAddedModal) {
-        setShowAddedModal(false);
-        addedModalTimeoutRef.current = setTimeout(() => {
-          setShowAddedModal(true);
-          addedModalTimeoutRef.current = null;
-        }, 3000);
+      if (isFirstProduct && typeof window !== "undefined" && window.innerWidth >= 768) {
+        setIsCartOpen(true);
       }
 
       return nextItems;
