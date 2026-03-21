@@ -207,7 +207,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Buscar endereço e número"
-            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0"
+            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none"
           />
           {query && (
             <button
