@@ -25,28 +25,6 @@ const formatCurrencyInput = (value: string) => {
   return numberValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const normalizeAddress = (address: string) =>
-  address.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-const estimateDistanceFromAddress = (destinationAddress: string) => {
-  const normalizedDestination = normalizeAddress(destinationAddress);
-  const normalizedOrigin = normalizeAddress(STORE_ORIGIN);
-  if (!normalizedDestination.trim()) return 0;
-
-  const zones = [
-    { keywords: ["centro", "amambai", "sao francisco", "jardim dos estados"], distance: 3 },
-    { keywords: ["caiçara", "caicara", "caranda bosque", "vila carlota", "rita vieira"], distance: 5 },
-    { keywords: ["tiradentes", "universitario", "parati", "nova lima", "coronel antonino"], distance: 7 },
-    { keywords: ["moreninhas", "aero rancho", "anhanduizinho", "noroeste", "lageado"], distance: 10 },
-    { keywords: ["indubrasil"], distance: 13 },
-  ];
-
-  const matchedZone = zones.find((zone) =>
-    zone.keywords.some((keyword) => normalizedDestination.includes(keyword) && !normalizedOrigin.includes(keyword))
-  );
-  return matchedZone?.distance ?? 6;
-};
-
 const getDynamicDeliveryFee = (distanceKm: number) => {
   if (distanceKm <= 0) return 0;
   if (distanceKm <= 4) return 10;
