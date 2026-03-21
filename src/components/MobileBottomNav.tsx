@@ -56,33 +56,27 @@ const MobileBottomNav = () => {
 
   const isCartRouteVisible = location.pathname === "/" || location.pathname.startsWith("/produto/");
 
-  const addressText = useMemo(() => {
-    if (!savedAddress) return "Adicione seu endereço para calcular a entrega";
-    return [savedAddress.mainText, savedAddress.secondaryText].filter(Boolean).join(", ");
-  }, [savedAddress]);
-
   const totalWithDelivery = totalPrice + deliveryFee;
 
   if (!isCartRouteVisible || totalItems === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-background/95 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 backdrop-blur md:hidden">
-      <div className="mx-auto max-w-md space-y-1.5">
-        <p className="truncate px-1 text-[10px] text-muted-foreground">{addressText}</p>
+    <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-background px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-3 md:hidden">
+      <div className="mx-auto flex max-w-md items-center justify-between gap-3">
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          className="flex w-full items-center justify-between rounded-[20px] bg-background shadow-[0_-3px_14px_rgba(0,0,0,0.05)]"
+          className="flex w-full items-center justify-between"
         >
-          <div className="flex min-w-0 flex-1 flex-col px-4 py-2.5 text-left">
-            <span className="text-[11px] text-muted-foreground">Total com a entrega</span>
-            <span className="truncate text-xl font-bold leading-tight text-foreground">
-              {formatPrice(totalWithDelivery)}
+          <div className="min-w-0 flex-1 pr-3 text-left">
+            <span className="block text-[12px] font-medium text-muted-foreground">{savedAddress ? "Total com a entrega" : "Total sem a entrega"}</span>
+            <span className="truncate text-[23px] font-bold leading-tight text-foreground">
+              {formatPrice(savedAddress ? totalWithDelivery : totalPrice)}
               <span className="ml-1 text-sm font-medium text-muted-foreground">/ {totalItems} {totalItems === 1 ? "item" : "itens"}</span>
             </span>
           </div>
-          <div className="m-2 flex min-h-[56px] min-w-[38%] items-center justify-center rounded-[18px] bg-primary px-5 text-base font-bold text-primary-foreground">
-            Continuar
+          <div className="flex min-h-[52px] min-w-[36%] items-center justify-center rounded-[18px] bg-primary px-6 text-base font-bold text-primary-foreground">
+            Ver sacola
           </div>
         </button>
       </div>
