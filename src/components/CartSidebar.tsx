@@ -57,6 +57,7 @@ const formatCurrencyInput = (value: string) => {
 
 type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
 type CheckoutStep = "cart" | "delivery" | "payment" | "confirmation";
+type CreditMode = "avista" | "parcelado";
 
 const STEPS: { key: CheckoutStep; label: string }[] = [
   { key: "cart", label: "Sacola" },
@@ -159,6 +160,7 @@ const CartSidebar = () => {
   const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [creditMode, setCreditMode] = useState<CreditMode>("avista");
   const [creditInstallments, setCreditInstallments] = useState(1);
   const [needsChange, setNeedsChange] = useState("não");
   const [changeFor, setChangeFor] = useState("");
@@ -220,6 +222,7 @@ const CartSidebar = () => {
     if (!isCartOpen) {
       setStep("cart");
       setPaymentMethod(null);
+      setCreditMode("avista");
       setCreditInstallments(1);
       setNeedsChange("não");
       setChangeFor("");
@@ -239,8 +242,10 @@ const CartSidebar = () => {
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
 
+  const effectiveCreditInstallments = paymentMethod === "credito" && creditMode === "parcelado" ? creditInstallments : 1;
+
   const selectedInstallment = CREDIT_INSTALLMENTS.find(
-    (installment) => installment.value === creditInstallments
+    (installment) => installment.value === effectiveCreditInstallments
   ) ?? CREDIT_INSTALLMENTS[0];
 
   const creditTotal = useMemo(() => {
@@ -442,6 +447,7 @@ const CartSidebar = () => {
     }
 
     setPaymentMethod(null);
+    setCreditMode("avista");
     setCreditInstallments(1);
     setNeedsChange("não");
     setChangeFor("");
@@ -462,7 +468,7 @@ const CartSidebar = () => {
     setStep("confirmation");
   };
 
-  const installmentPerMonth = creditTotal / creditInstallments;
+  const installmentPerMonth = creditTotal / effectiveCreditInstallments;
 
   const checkoutMessage = useMemo(
     () =>
@@ -484,8 +490,13 @@ const CartSidebar = () => {
           ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
           ...(paymentMethod === "credito"
             ? [
-                `Parcelamento: ${creditInstallments}x`,
-                ...(selectedInstallment.interest > 0 ? [`Juros do crédito: +${selectedInstallment.interest.toFixed(2).replace(".", ",")}%`] : []),
+                `Crédito: ${creditMode === "avista" ? "À vista" : "Parcelado"}`,
+                ...(creditMode === "parcelado"
+                  ? [
+                      `Parcelamento: ${effectiveCreditInstallments}x`,
+                      ...(selectedInstallment.interest > 0 ? [`Juros do crédito: +${selectedInstallment.interest.toFixed(2).replace(".", ",")}%`] : []),
+                    ]
+                  : []),
               ]
             : []),
           paymentMethod === "pix"
@@ -493,7 +504,9 @@ const CartSidebar = () => {
             : paymentMethod === "debito"
               ? "Forma de pagamento: Débito"
               : paymentMethod === "credito"
-                ? `Forma de pagamento: Crédito - ${creditInstallments}x de ${formatPrice(installmentPerMonth)}`
+                ? creditMode === "parcelado"
+                  ? `Forma de pagamento: Crédito parcelado - ${effectiveCreditInstallments}x de ${formatPrice(installmentPerMonth)}`
+                  : "Forma de pagamento: Crédito à vista"
                 : "Forma de pagamento: Dinheiro",
           ...(paymentMethod === "dinheiro"
             ? [
@@ -515,7 +528,8 @@ const CartSidebar = () => {
       paymentMethod,
       pixDiscount,
       totalWithPixDiscount,
-      creditInstallments,
+      creditMode,
+      effectiveCreditInstallments,
       selectedInstallment.interest,
       installmentPerMonth,
       needsChange,
@@ -560,7 +574,9 @@ const CartSidebar = () => {
       : paymentMethod === "debito"
         ? "Cartão de débito"
         : paymentMethod === "credito"
-          ? `Cartão de crédito${creditInstallments > 1 ? ` - ${creditInstallments}x` : ""}`
+          ? creditMode === "parcelado"
+            ? `Cartão de crédito - ${effectiveCreditInstallments}x`
+            : "Cartão de crédito à vista"
           : paymentMethod === "dinheiro"
             ? "Dinheiro"
             : "-";
@@ -938,7 +954,13 @@ const CartSidebar = () => {
                         <button
                           key={option.value}
                           type="button"
-                          onClick={() => setPaymentMethod(option.value)}
+                          onClick={() => {
+                            setPaymentMethod(option.value);
+                            if (option.value === "credito") {
+                              setCreditMode("avista");
+                              setCreditInstallments(1);
+                            }
+                          }}
                           className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${
                             isSelected ? "border-primary bg-primary/5" : "border-border bg-background"
                           }`}
@@ -969,39 +991,72 @@ const CartSidebar = () => {
 
                   {paymentMethod === "credito" && (
                     <div className="mt-4 rounded-2xl bg-secondary p-4">
-                      <label className="mb-2 block text-sm font-medium text-foreground">Parcelamento</label>
-                      <div className="space-y-2">
-                        {CREDIT_INSTALLMENTS.map((installment) => {
-                          const totalInstallmentPrice = totalPrice * (1 + installment.interest / 100);
-                          const perInstallment = totalInstallmentPrice / installment.value;
-                          const isSelected = creditInstallments === installment.value;
-
-                          return (
-                            <button
-                              key={installment.value}
-                              type="button"
-                              onClick={() => setCreditInstallments(installment.value)}
-                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${
-                                isSelected ? "border-primary bg-background" : "border-border bg-background/70"
-                              }`}
-                            >
-                              <div>
-                                <p className="text-sm font-semibold text-foreground">
-                                  {installment.value}x de {formatPrice(perInstallment)}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {installment.value === 1
-                                    ? "Sem juros"
-                                    : `+ ${installment.interest.toFixed(2).replace(".", ",")}%`}
-                                </p>
-                              </div>
-                              <span className="text-sm font-medium text-foreground">
-                                {formatPrice(totalInstallmentPrice)}
-                              </span>
-                            </button>
-                          );
-                        })}
+                      <label className="mb-2 block text-sm font-medium text-foreground">No crédito</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreditMode("avista");
+                            setCreditInstallments(1);
+                          }}
+                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
+                            creditMode === "avista"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground"
+                          }`}
+                        >
+                          À vista
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCreditMode("parcelado");
+                            if (creditInstallments < 2) {
+                              setCreditInstallments(2);
+                            }
+                          }}
+                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
+                            creditMode === "parcelado"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground"
+                          }`}
+                        >
+                          Parcelado
+                        </button>
                       </div>
+
+                      {creditMode === "parcelado" && (
+                        <div className="mt-4 space-y-2">
+                          {CREDIT_INSTALLMENTS.filter((installment) => installment.value >= 2).map((installment) => {
+                            const totalInstallmentPrice = totalPrice * (1 + installment.interest / 100);
+                            const perInstallment = totalInstallmentPrice / installment.value;
+                            const isSelected = creditInstallments === installment.value;
+
+                            return (
+                              <button
+                                key={installment.value}
+                                type="button"
+                                onClick={() => setCreditInstallments(installment.value)}
+                                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${
+                                  isSelected ? "border-primary bg-background" : "border-border bg-background/70"
+                                }`}
+                              >
+                                <div>
+                                  <p className="text-sm font-semibold text-foreground">
+                                    {installment.value}x de {formatPrice(perInstallment)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    + {installment.interest.toFixed(2).replace(".", ",")}%
+                                  </p>
+                                </div>
+                                <span className="text-sm font-medium text-foreground">
+                                  {formatPrice(totalInstallmentPrice)}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1054,7 +1109,7 @@ const CartSidebar = () => {
                         <span className="font-medium">-{formatPrice(pixDiscount)}</span>
                       </div>
                     )}
-                    {paymentMethod === "credito" && selectedInstallment.interest > 0 && (
+                    {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
                       <div className="flex justify-between text-primary">
                         <span>Juros do parcelamento</span>
                         <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
@@ -1069,9 +1124,9 @@ const CartSidebar = () => {
                         <span className="font-semibold text-foreground">Total</span>
                         <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
                       </div>
-                      {paymentMethod === "credito" && (
+                      {paymentMethod === "credito" && creditMode === "parcelado" && (
                         <p className="mt-1 text-right text-xs text-muted-foreground">
-                          {creditInstallments}x de {formatPrice((discountedProductsTotal + deliveryFee) / creditInstallments)}
+                          {effectiveCreditInstallments}x de {formatPrice((discountedProductsTotal + deliveryFee) / effectiveCreditInstallments)}
                         </p>
                       )}
                     </div>
@@ -1122,11 +1177,11 @@ const CartSidebar = () => {
                       <span className="text-muted-foreground">Forma de pagamento</span>
                       <span className="font-medium text-foreground">{paymentLabel}</span>
                     </div>
-                    {paymentMethod === "credito" && (
+                    {paymentMethod === "credito" && creditMode === "parcelado" && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Parcelamento</span>
                         <span className="font-medium text-foreground">
-                          {creditInstallments}x de {formatPrice(finalTotal / creditInstallments)}
+                          {effectiveCreditInstallments}x de {formatPrice(finalTotal / effectiveCreditInstallments)}
                         </span>
                       </div>
                     )}
@@ -1146,7 +1201,7 @@ const CartSidebar = () => {
                         <span className="font-medium">-{formatPrice(pixDiscount)}</span>
                       </div>
                     )}
-                    {paymentMethod === "credito" && selectedInstallment.interest > 0 && (
+                    {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
                       <div className="flex justify-between text-primary">
                         <span>Juros do parcelamento</span>
                         <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
