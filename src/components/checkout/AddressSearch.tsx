@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { MapPin, Search, Loader2, Check, ChevronLeft, X, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,7 +45,6 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   const [noComplement, setNoComplement] = useState(initialAddress?.noComplement || false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const inputRef = useRef<HTMLInputElement>(null);
-
 
   const fetchPredictions = useCallback(async (input: string) => {
     if (input.trim().length < 3) {
@@ -198,15 +197,13 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             type="text"
             inputMode="search"
             autoComplete="street-address"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Buscar endereço e número"
-            className="h-12 w-full appearance-none rounded-xl border-0 bg-transparent pl-11 pr-10 text-base text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground caret-foreground [-webkit-tap-highlight-color:transparent] focus:border-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:outline-none"
-            style={{
-              WebkitAppearance: "none",
-              boxShadow: "none",
-              WebkitTapHighlightColor: "transparent",
-            }}
+            className="h-12 w-full rounded-xl border-0 bg-transparent pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0"
           />
           {query && !isLoading && (
             <button
@@ -214,6 +211,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               onClick={() => {
                 setQuery("");
                 setPredictions([]);
+                inputRef.current?.blur();
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               aria-label="Limpar busca"
@@ -221,7 +219,9 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               <X className="h-4 w-4" />
             </button>
           )}
-          {isLoading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
+          {isLoading && (
+            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          )}
         </div>
       </div>
 
