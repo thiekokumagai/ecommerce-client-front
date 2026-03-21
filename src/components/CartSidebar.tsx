@@ -346,7 +346,7 @@ const CartSidebar = () => {
       createdAt: new Date().toISOString(),
       customerName: name.trim(),
       customerPhone: phone.trim(),
-      customerAddress: savedAddress || address,
+      customerAddress: savedAddressDisplay,
       paymentMethod,
       deliveryFee,
       subtotal: totalPrice,
