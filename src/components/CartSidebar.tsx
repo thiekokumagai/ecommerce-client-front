@@ -400,10 +400,10 @@ const CartSidebar = () => {
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
           `Endereço completo: ${savedAddressDisplay || "-"}`,
-          ...(deliveryDistanceKm !== null ? [`Distância da rota: ${deliveryDistanceKm.toFixed(1).replace(".", ",")} km`] : []),
           ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
+
           ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
           paymentMethod === "pix"
             ? `Forma de pagamento: Pix - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
@@ -721,23 +721,14 @@ const CartSidebar = () => {
                   ) : deliveryError ? (
                     <div className="space-y-1 text-sm">
                       <p className="font-semibold text-destructive">{deliveryError}</p>
-                      {deliveryDistanceKm !== null && (
-                        <p className="text-muted-foreground">
-                          Distância calculada: {deliveryDistanceKm.toFixed(1).replace(".", ",")} km
-                        </p>
-                      )}
                     </div>
                   ) : (
                     <div className="space-y-1 text-sm text-foreground">
                       <p>
                         Taxa do motoboy: <span className="font-bold text-primary">{deliveryFeeLabel(deliveryFee)}</span>
                       </p>
-                      {deliveryDistanceKm !== null && (
-                        <p className="text-muted-foreground">
-                          Distância da rota: {deliveryDistanceKm.toFixed(1).replace(".", ",")} km
-                        </p>
-                      )}
                     </div>
+
                   )}
                 </div>
               </div>
@@ -955,12 +946,8 @@ const CartSidebar = () => {
                     <MapPin className="mt-0.5 h-4 w-4 text-primary" />
                     <span>{savedAddressDisplay || "-"}</span>
                   </div>
-                  {deliveryDistanceKm !== null && (
-                    <p className="text-xs text-muted-foreground">
-                      Distância da rota: {deliveryDistanceKm.toFixed(1).replace(".", ",")} km
-                    </p>
-                  )}
                 </div>
+
               </div>
 
               <div className="rounded-3xl bg-card p-4 shadow-sm">
