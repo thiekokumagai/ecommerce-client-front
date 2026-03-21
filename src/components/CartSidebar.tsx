@@ -1,13 +1,13 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil, ChevronLeft, Check, User, Phone, Ticket, ChevronRight } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil, ChevronLeft, Check, User, Phone, Ticket, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
 const SESSION_NAME_KEY = "podemais-checkout-name";
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
-
-const STORE_ORIGIN = "Rua Glauce Rocha, 539, Campo Grande - MS";
 
 const formatPrice = (price: number) => `R$${price.toFixed(2).replace(".", ",")}`;
 
@@ -23,28 +23,6 @@ const formatCurrencyInput = (value: string) => {
   if (!digits) return "";
   const numberValue = Number(digits) / 100;
   return numberValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
-
-const normalizeAddress = (address: string) =>
-  address.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-const estimateDistanceFromAddress = (destinationAddress: string) => {
-  const normalizedDestination = normalizeAddress(destinationAddress);
-  const normalizedOrigin = normalizeAddress(STORE_ORIGIN);
-  if (!normalizedDestination.trim()) return 0;
-
-  const zones = [
-    { keywords: ["centro", "amambai", "sao francisco", "jardim dos estados"], distance: 3 },
-    { keywords: ["caiçara", "caicara", "caranda bosque", "vila carlota", "rita vieira"], distance: 5 },
-    { keywords: ["tiradentes", "universitario", "parati", "nova lima", "coronel antonino"], distance: 7 },
-    { keywords: ["moreninhas", "aero rancho", "anhanduizinho", "noroeste", "lageado"], distance: 10 },
-    { keywords: ["indubrasil"], distance: 13 },
-  ];
-
-  const matchedZone = zones.find((zone) =>
-    zone.keywords.some((keyword) => normalizedDestination.includes(keyword) && !normalizedOrigin.includes(keyword))
-  );
-  return matchedZone?.distance ?? 6;
 };
 
 const getDynamicDeliveryFee = (distanceKm: number) => {
@@ -116,9 +94,10 @@ const CartSidebar = () => {
   const [step, setStep] = useState<CheckoutStep>("cart");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [savedAddress, setSavedAddress] = useState("");
+  const [structuredAddress, setStructuredAddress] = useState<StructuredAddress | null>(null);
   const [isEditingAddress, setIsEditingAddress] = useState(true);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [needsChange, setNeedsChange] = useState("não");
@@ -129,14 +108,21 @@ const CartSidebar = () => {
   const previousTotalItems = useRef(totalItems);
 
   useEffect(() => {
-    const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY) ?? "";
+    const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY);
     const storedName = sessionStorage.getItem(SESSION_NAME_KEY) ?? "";
     const storedPhone = sessionStorage.getItem(SESSION_PHONE_KEY) ?? "";
 
     if (storedAddress) {
-      setSavedAddress(storedAddress);
-      setAddress(storedAddress);
-      setIsEditingAddress(false);
+      try {
+        const parsed = JSON.parse(storedAddress) as StructuredAddress;
+        setStructuredAddress(parsed);
+        setIsEditingAddress(false);
+        // Calculate freight for restored address
+        const fullDest = [parsed.fullText, parsed.complement].filter(Boolean).join(", ");
+        supabase.functions.invoke("calculate-freight", { body: { destination: fullDest } })
+          .then(({ data }) => { if (data?.freightPrice) setDeliveryFee(data.freightPrice); })
+          .catch(() => {});
+      } catch { /* ignore */ }
     }
     if (storedName) setName(storedName);
     if (storedPhone) setPhone(storedPhone);
@@ -163,12 +149,38 @@ const CartSidebar = () => {
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
   const discountedProductsTotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
-  const estimatedDistanceKm = useMemo(() => estimateDistanceFromAddress(savedAddress || address), [savedAddress, address]);
-  const deliveryFee = useMemo(() => getDynamicDeliveryFee(estimatedDistanceKm), [estimatedDistanceKm]);
   const finalTotal = discountedProductsTotal + deliveryFee;
 
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
-  const isAddressValid = savedAddress.trim().length > 0;
+  const isAddressValid = structuredAddress !== null;
+
+  const savedAddressDisplay = useMemo(() => {
+    if (!structuredAddress) return "";
+    const parts = [structuredAddress.mainText, structuredAddress.secondaryText];
+    if (structuredAddress.complement) parts.push(`Compl: ${structuredAddress.complement}`);
+    if (structuredAddress.reference) parts.push(`Ref: ${structuredAddress.reference}`);
+    return parts.join(", ");
+  }, [structuredAddress]);
+
+  const calculateDeliveryFee = useCallback(async (addr: StructuredAddress) => {
+    setIsCalculatingFee(true);
+    try {
+      const fullDest = [addr.fullText, addr.complement].filter(Boolean).join(", ");
+      const { data } = await supabase.functions.invoke("calculate-freight", {
+        body: { destination: fullDest },
+      });
+      if (data?.freightPrice) {
+        setDeliveryFee(data.freightPrice);
+      } else {
+        setDeliveryFee(0);
+        if (data?.error) toast.info(data.error);
+      }
+    } catch {
+      setDeliveryFee(0);
+    } finally {
+      setIsCalculatingFee(false);
+    }
+  }, []);
   const hasSelectedPaymentMethod = paymentMethod !== null;
   const isPaymentValid =
     hasSelectedPaymentMethod &&
@@ -187,17 +199,12 @@ const CartSidebar = () => {
     sessionStorage.setItem(SESSION_PHONE_KEY, formattedPhone);
   };
 
-  const handleSaveAddress = () => {
-    const trimmedAddress = address.trim();
-    if (!trimmedAddress) {
-      toast.info("Preencha o endereço para continuar.");
-      return;
-    }
-
-    sessionStorage.setItem(SESSION_ADDRESS_KEY, trimmedAddress);
-    setSavedAddress(trimmedAddress);
+  const handleSaveAddress = useCallback((addr: StructuredAddress) => {
+    setStructuredAddress(addr);
+    sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
     setIsEditingAddress(false);
-  };
+    calculateDeliveryFee(addr);
+  }, [calculateDeliveryFee]);
 
   const handleSaveContact = () => {
     if (!name.trim()) {
@@ -306,7 +313,7 @@ const CartSidebar = () => {
           "",
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
-          `Endereço completo: ${savedAddress || "-"}`,
+          `Endereço completo: ${savedAddressDisplay || "-"}`,
           ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
@@ -328,7 +335,7 @@ const CartSidebar = () => {
           `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
       ),
-    [items, name, phone, savedAddress, savedCouponCode, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
+    [items, name, phone, savedAddressDisplay, savedCouponCode, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
   );
 
   const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
@@ -344,7 +351,7 @@ const CartSidebar = () => {
       createdAt: new Date().toISOString(),
       customerName: name.trim(),
       customerPhone: phone.trim(),
-      customerAddress: savedAddress || address,
+      customerAddress: savedAddressDisplay,
       paymentMethod,
       deliveryFee,
       subtotal: totalPrice,
@@ -506,36 +513,46 @@ const CartSidebar = () => {
                 <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
 
                 {isEditingAddress ? (
-                  <div className="space-y-3">
-                    <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, bairro, complemento e referência" className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
-                    <button
-                      type="button"
-                      onClick={handleSaveAddress}
-                      disabled={!address.trim()}
-                      className={`w-full rounded-xl py-3 text-sm font-semibold ${address.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-                    >
-                      Salvar endereço
-                    </button>
-                  </div>
+                  <AddressSearch
+                    onSave={handleSaveAddress}
+                    onCancel={() => { if (structuredAddress) setIsEditingAddress(false); }}
+                    initialAddress={structuredAddress}
+                  />
                 ) : (
                   <div className="rounded-xl border border-border bg-background p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex gap-3">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <p className="text-sm text-foreground">{savedAddress}</p>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{structuredAddress?.mainText}</p>
+                          <p className="text-xs text-muted-foreground">{structuredAddress?.secondaryText}</p>
+                          {structuredAddress?.complement && (
+                            <p className="mt-1 text-xs text-muted-foreground">Compl: {structuredAddress.complement}</p>
+                          )}
+                          {structuredAddress?.reference && (
+                            <p className="text-xs text-muted-foreground">Ref: {structuredAddress.reference}</p>
+                          )}
+                        </div>
                       </div>
-                      <button type="button" onClick={() => { setAddress(savedAddress); setIsEditingAddress(true); }} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                      <button type="button" onClick={() => setIsEditingAddress(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
                         <Pencil className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
                 )}
 
-                <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
-                  <p>
-                    Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
-                  </p>
-                </div>
+                {isCalculatingFee ? (
+                  <div className="flex items-center gap-2 rounded-xl bg-secondary p-3 text-sm text-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span>Calculando taxa de entrega...</span>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
+                    <p>
+                      Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -724,7 +741,7 @@ const CartSidebar = () => {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-foreground">
                     <MapPin className="h-4 w-4 text-primary" />
-                    <span>{savedAddress || address || "-"}</span>
+                    <span>{savedAddressDisplay || "-"}</span>
                   </div>
                 </div>
               </div>
