@@ -216,17 +216,12 @@ const CartSidebar = () => {
     sessionStorage.setItem(SESSION_PHONE_KEY, formattedPhone);
   };
 
-  const handleSaveAddress = () => {
-    const trimmedAddress = address.trim();
-    if (!trimmedAddress) {
-      toast.info("Preencha o endereço para continuar.");
-      return;
-    }
-
-    sessionStorage.setItem(SESSION_ADDRESS_KEY, trimmedAddress);
-    setSavedAddress(trimmedAddress);
+  const handleSaveAddress = useCallback((addr: StructuredAddress) => {
+    setStructuredAddress(addr);
+    sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
     setIsEditingAddress(false);
-  };
+    calculateDeliveryFee(addr);
+  }, [calculateDeliveryFee]);
 
   const handleSaveContact = () => {
     if (!name.trim()) {
