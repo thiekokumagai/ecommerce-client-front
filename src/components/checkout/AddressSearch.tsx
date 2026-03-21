@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Search, Loader2, Check } from "lucide-react";
+import { MapPin, Search, Loader2, Check, ChevronLeft, X, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AddressPrediction {
@@ -99,45 +99,43 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
   if (phase === "details" && selected) {
     return (
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-border bg-background p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex gap-3">
-              <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <MapPin className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{selected.mainText}</p>
-                <p className="text-xs text-muted-foreground">{selected.secondaryText}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setPhase("search");
-                setQuery(selected.fullText);
-              }}
-              className="text-sm font-medium text-primary"
-            >
-              Trocar
-            </button>
+      <div className="flex h-full flex-col bg-background">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-4">
+          <button
+            type="button"
+            onClick={() => setPhase("search")}
+            className="rounded-full p-1 text-muted-foreground"
+            aria-label="Voltar"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-semibold text-foreground">{selected.mainText}</p>
+            <p className="truncate text-sm text-muted-foreground">{selected.secondaryText}</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setPhase("search")}
+            className="rounded-full p-1 text-muted-foreground"
+            aria-label="Editar endereço"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-foreground">Complemento</label>
             <input
               value={complement}
               onChange={(e) => {
                 setComplement(e.target.value);
                 if (e.target.value) setNoComplement(false);
               }}
-              placeholder="Casa, apto, bloco, sala..."
+              placeholder="Complemento *"
               disabled={noComplement}
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 md:text-sm"
+              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
             />
-            <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <label className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
               <input
                 type="checkbox"
                 checked={noComplement}
@@ -145,103 +143,122 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
                   setNoComplement(e.target.checked);
                   if (e.target.checked) setComplement("");
                 }}
-                className="h-4 w-4 rounded border-border accent-primary"
+                className="h-5 w-5 rounded border-border accent-primary"
               />
               Endereço sem complemento
             </label>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-foreground">Ponto de referência</label>
             <input
               value={reference}
               onChange={(e) => setReference(e.target.value)}
-              placeholder="Opcional"
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+              placeholder="Ponto de referência (opcional)"
+              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!complement && !noComplement}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
-              complement || noComplement ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}
-          >
-            <Check className="h-4 w-4" />
-            Salvar endereço
-          </button>
+        <div className="border-t border-border p-4">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!complement && !noComplement}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
+                complement || noComplement ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Check className="h-4 w-4" />
+              Salvar endereço
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => handleInputChange(e.target.value)}
-          placeholder="Digite rua, número ou bairro"
-          className="h-12 w-full rounded-2xl border border-border bg-background pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
-        />
-        {isLoading && <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex items-center gap-3 border-b border-border px-4 py-4">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-full p-1 text-muted-foreground"
+          aria-label="Fechar busca de endereço"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => handleInputChange(e.target.value)}
+            placeholder="Buscar endereço e número"
+            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setPredictions([]);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          {isLoading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
+        </div>
       </div>
 
-      {query.length >= 3 && (
-        <p className="flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
-          powered by <span className="font-medium">Google</span>
-        </p>
-      )}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {query.length >= 3 && (
+          <p className="mb-3 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
+            powered by <span className="font-medium">Google</span>
+          </p>
+        )}
 
-      {predictions.length > 0 && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-background">
-          {predictions.map((prediction, index) => (
-            <button
-              key={prediction.placeId}
-              type="button"
-              onClick={() => handleSelect(prediction)}
-              className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary ${
-                index !== predictions.length - 1 ? "border-b border-border" : ""
-              }`}
-            >
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">{prediction.mainText}</p>
-                <p className="text-xs text-muted-foreground">{prediction.secondaryText}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+        {predictions.length > 0 && (
+          <div className="space-y-1">
+            {predictions.map((prediction, index) => (
+              <button
+                key={prediction.placeId}
+                type="button"
+                onClick={() => handleSelect(prediction)}
+                className={`flex w-full items-start gap-3 py-4 text-left ${
+                  index !== predictions.length - 1 ? "border-b border-border" : ""
+                }`}
+              >
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-foreground">{prediction.mainText}</p>
+                  <p className="text-sm text-muted-foreground">{prediction.secondaryText}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
 
-      {query.length >= 3 && predictions.length === 0 && !isLoading && (
-        <p className="rounded-2xl bg-background px-4 py-4 text-center text-sm text-muted-foreground">
-          Nenhum endereço encontrado
-        </p>
-      )}
-
-      <button
-        type="button"
-        onClick={onCancel}
-        className="w-full rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground"
-      >
-        Cancelar
-      </button>
+        {query.length >= 3 && predictions.length === 0 && !isLoading && (
+          <p className="rounded-2xl bg-background px-4 py-4 text-center text-sm text-muted-foreground">
+            Nenhum endereço encontrado
+          </p>
+        )}
+      </div>
     </div>
   );
 };

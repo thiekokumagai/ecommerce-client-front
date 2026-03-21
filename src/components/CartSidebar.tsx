@@ -142,7 +142,7 @@ const CartSidebar = () => {
   const [structuredAddress, setStructuredAddress] = useState<StructuredAddress | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<StructuredAddress[]>([]);
   const [editingAddress, setEditingAddress] = useState<StructuredAddress | null>(null);
-  const [isEditingAddress, setIsEditingAddress] = useState(true);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(null);
   const [deliveryError, setDeliveryError] = useState<string>("");
@@ -175,7 +175,6 @@ const CartSidebar = () => {
       try {
         const parsed = JSON.parse(storedAddress) as StructuredAddress;
         setStructuredAddress(parsed);
-        setIsEditingAddress(false);
 
         const fullDest = [parsed.fullText, parsed.complement].filter(Boolean).join(", ");
         supabase.functions
@@ -213,9 +212,9 @@ const CartSidebar = () => {
       setNeedsChange("não");
       setChangeFor("");
       setEditingAddress(null);
-      setIsEditingAddress(structuredAddress ? false : true);
+      setIsAddressModalOpen(false);
     }
-  }, [isCartOpen, structuredAddress]);
+  }, [isCartOpen]);
 
   useEffect(() => {
     if (previousTotalItems.current > 0 && totalItems === 0) {
@@ -308,7 +307,7 @@ const CartSidebar = () => {
       setStructuredAddress(nextAddress);
       sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(nextAddress));
       setEditingAddress(null);
-      setIsEditingAddress(false);
+      setIsAddressModalOpen(false);
       calculateDeliveryFee(nextAddress);
     },
     [calculateDeliveryFee, savedAddresses]
@@ -318,8 +317,8 @@ const CartSidebar = () => {
     (addr: StructuredAddress) => {
       setStructuredAddress(addr);
       sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
-      setIsEditingAddress(false);
       setEditingAddress(null);
+      setIsAddressModalOpen(false);
       calculateDeliveryFee(addr);
     },
     [calculateDeliveryFee]
@@ -327,7 +326,6 @@ const CartSidebar = () => {
 
   const handleEditSavedAddress = (addr: StructuredAddress) => {
     setEditingAddress(addr);
-    setIsEditingAddress(true);
   };
 
   const handleDeleteSavedAddress = (addressId: string) => {
@@ -340,7 +338,6 @@ const CartSidebar = () => {
       setDeliveryFee(0);
       setDeliveryDistanceKm(null);
       setDeliveryError("");
-      setIsEditingAddress(true);
     }
   };
 
@@ -403,13 +400,8 @@ const CartSidebar = () => {
       return;
     }
 
-    if (isEditingAddress) {
-      toast.info("Salve o endereço de entrega para continuar.");
-      return;
-    }
-
     if (!isAddressValid) {
-      toast.info("Preencha o endereço de entrega para continuar.");
+      toast.info("Selecione um endereço de entrega para continuar.");
       return;
     }
 
@@ -530,607 +522,645 @@ const CartSidebar = () => {
             ? "Dinheiro"
             : "-";
 
-  const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && !isEditingAddress && hasValidDeliveryFee;
+  const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
 
   return (
-    <div className="fixed inset-0 z-[90] flex justify-end">
-      <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={closeCart} />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-[#f7f7f7] shadow-2xl">
-        <div className="flex items-center justify-between bg-primary px-5 py-4 text-primary-foreground">
-          <div className="flex items-center gap-2">
-            {step !== "cart" && (
-              <button
-                onClick={() => {
-                  const stepOrder: CheckoutStep[] = ["cart", "delivery", "payment", "confirmation"];
-                  const idx = stepOrder.indexOf(step);
-                  if (idx > 0) setStep(stepOrder[idx - 1]);
-                }}
-                className="rounded-full p-1 text-primary-foreground/90"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-            )}
-            <div>
-              <p className="text-xs font-medium text-primary-foreground/80">Entrega rápida</p>
-              <h2 className="text-lg font-bold">{step === "cart" ? "Sua Sacola" : "Finalizar pedido"}</h2>
+    <>
+      <div className="fixed inset-0 z-[90] flex justify-end">
+        <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={closeCart} />
+        <div className="relative flex h-full w-full max-w-md flex-col bg-[#f7f7f7] shadow-2xl">
+          <div className="flex items-center justify-between bg-primary px-5 py-4 text-primary-foreground">
+            <div className="flex items-center gap-2">
+              {step !== "cart" && (
+                <button
+                  onClick={() => {
+                    const stepOrder: CheckoutStep[] = ["cart", "delivery", "payment", "confirmation"];
+                    const idx = stepOrder.indexOf(step);
+                    if (idx > 0) setStep(stepOrder[idx - 1]);
+                  }}
+                  className="rounded-full p-1 text-primary-foreground/90"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+              <div>
+                <p className="text-xs font-medium text-primary-foreground/80">Entrega rápida</p>
+                <h2 className="text-lg font-bold">{step === "cart" ? "Sua Sacola" : "Finalizar pedido"}</h2>
+              </div>
             </div>
+            <button onClick={closeCart} className="rounded-full p-1 text-primary-foreground/90">
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button onClick={closeCart} className="rounded-full p-1 text-primary-foreground/90">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
 
-        {step !== "cart" && items.length > 0 && <div className="border-b border-border bg-card"><StepIndicator currentStep={step} /></div>}
+          {step !== "cart" && items.length > 0 && <div className="border-b border-border bg-card"><StepIndicator currentStep={step} /></div>}
 
-        <div className="flex-1 overflow-y-auto">
-          {step === "cart" && (
-            <div className="space-y-4 p-4">
-              <div className="rounded-3xl bg-card p-4 shadow-sm">
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <Store className="h-5 w-5" />
+          <div className="flex-1 overflow-y-auto">
+            {step === "cart" && (
+              <div className="space-y-4 p-4">
+                <div className="rounded-3xl bg-card p-4 shadow-sm">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <Store className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Seu pedido</p>
+                        <p className="text-xs text-muted-foreground">Revise os itens antes de continuar</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Seu pedido</p>
-                      <p className="text-xs text-muted-foreground">Revise os itens antes de continuar</p>
-                    </div>
-                  </div>
-                  {items.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleClearCart}
-                      className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
-                    >
-                      Limpar
-                    </button>
-                  )}
-                </div>
-
-                {items.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
-                    <ShoppingBag className="h-12 w-12" />
-                    <p className="text-sm font-medium">Sua sacola está vazia</p>
-                    <p className="text-center text-sm">Adicione produtos para iniciar o checkout.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {items.map((item) => (
-                      <div
-                        key={`${item.product.id}-${item.selectedVariation ?? "default"}`}
-                        className="rounded-2xl border border-border bg-background p-3"
+                    {items.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearCart}
+                        className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
                       >
-                        <div className="flex gap-3">
-                          <img
-                            src={item.product.image}
-                            alt={item.product.name}
-                            className="h-16 w-16 rounded-xl bg-secondary/30 object-contain"
-                            loading="lazy"
-                          />
-                          <div className="flex flex-1 flex-col justify-between gap-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <p className="line-clamp-2 text-sm font-semibold text-foreground">{item.product.name}</p>
-                                {item.selectedVariation && (
-                                  <p className="mt-1 text-xs text-muted-foreground">
-                                    {item.product.variationGroup?.name}: {item.selectedVariation}
-                                  </p>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => handleRemoveItem(item.product.id, item.selectedVariation)}
-                                className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-secondary"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
+                        Limpar
+                      </button>
+                    )}
+                  </div>
 
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 rounded-full border border-border bg-card px-1 py-1">
+                  {items.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+                      <ShoppingBag className="h-12 w-12" />
+                      <p className="text-sm font-medium">Sua sacola está vazia</p>
+                      <p className="text-center text-sm">Adicione produtos para iniciar o checkout.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {items.map((item) => (
+                        <div
+                          key={`${item.product.id}-${item.selectedVariation ?? "default"}`}
+                          className="rounded-2xl border border-border bg-background p-3"
+                        >
+                          <div className="flex gap-3">
+                            <img
+                              src={item.product.image}
+                              alt={item.product.name}
+                              className="h-16 w-16 rounded-xl bg-secondary/30 object-contain"
+                              loading="lazy"
+                            />
+                            <div className="flex flex-1 flex-col justify-between gap-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="line-clamp-2 text-sm font-semibold text-foreground">{item.product.name}</p>
+                                  {item.selectedVariation && (
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                      {item.product.variationGroup?.name}: {item.selectedVariation}
+                                    </p>
+                                  )}
+                                </div>
                                 <button
-                                  onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariation)}
-                                  className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
+                                  onClick={() => handleRemoveItem(item.product.id, item.selectedVariation)}
+                                  className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-secondary"
                                 >
-                                  <Minus className="h-3 w-3" />
-                                </button>
-                                <span className="min-w-[28px] text-center text-sm font-semibold text-foreground">{item.quantity}</span>
-                                <button
-                                  onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)}
-                                  className="rounded-full bg-primary p-1.5 text-primary-foreground"
-                                >
-                                  <Plus className="h-3 w-3" />
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
-                              <p className="text-sm font-bold text-foreground">{formatPrice(item.product.price * item.quantity)}</p>
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1 rounded-full border border-border bg-card px-1 py-1">
+                                  <button
+                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariation)}
+                                    className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </button>
+                                  <span className="min-w-[28px] text-center text-sm font-semibold text-foreground">{item.quantity}</span>
+                                  <button
+                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)}
+                                    className="rounded-full bg-primary p-1.5 text-primary-foreground"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                <p className="text-sm font-bold text-foreground">{formatPrice(item.product.price * item.quantity)}</p>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {step === "delivery" && (
-            <div className="space-y-4 p-4">
-              <div className="rounded-3xl bg-card p-4 shadow-sm">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <User className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Seus dados</h3>
-                    <p className="text-xs text-muted-foreground">Quem vai receber o pedido?</p>
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              </div>
+            )}
 
-                {isEditingContact ? (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-foreground">Nome</label>
-                      <input
-                        value={name}
-                        onChange={(e) => handleNameChange(e.target.value)}
-                        placeholder="Seu nome"
-                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
-                      />
+            {step === "delivery" && (
+              <div className="space-y-4 p-4">
+                <div className="rounded-3xl bg-card p-4 shadow-sm">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <User className="h-5 w-5" />
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
-                      <input
-                        value={phone}
-                        onChange={(e) => handlePhoneChange(e.target.value)}
-                        placeholder="(67) 99999-9999"
-                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
-                      />
+                      <h3 className="text-sm font-semibold text-foreground">Seus dados</h3>
+                      <p className="text-xs text-muted-foreground">Quem vai receber o pedido?</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleSaveContact}
-                      disabled={!isContactValid}
-                      className={`w-full rounded-2xl py-3 text-sm font-semibold ${
-                        isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      Salvar contato
-                    </button>
                   </div>
-                ) : (
-                  <div className="rounded-2xl border border-border bg-background p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
-                          <User className="h-4 w-4 text-primary" />
-                          {name}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-foreground">
-                          <Phone className="h-4 w-4 text-primary" />
-                          {phone}
-                        </div>
+
+                  {isEditingContact ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-foreground">Nome</label>
+                        <input
+                          value={name}
+                          onChange={(e) => handleNameChange(e.target.value)}
+                          placeholder="Seu nome"
+                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                        />
                       </div>
-                      <button type="button" onClick={() => setIsEditingContact(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                        <Pencil className="h-4 w-4" />
-                        Editar
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
+                        <input
+                          value={phone}
+                          onChange={(e) => handlePhoneChange(e.target.value)}
+                          placeholder="(67) 99999-9999"
+                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveContact}
+                        disabled={!isContactValid}
+                        className={`w-full rounded-2xl py-3 text-sm font-semibold ${
+                          isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        Salvar contato
                       </button>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-3xl bg-card p-4 shadow-sm">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <MapPin className="h-5 w-5" />
+                  ) : (
+                    <div className="rounded-2xl border border-border bg-background p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-foreground">
+                            <User className="h-4 w-4 text-primary" />
+                            {name}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-foreground">
+                            <Phone className="h-4 w-4 text-primary" />
+                            {phone}
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => setIsEditingContact(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                          <Pencil className="h-4 w-4" />
+                          Editar
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
-                      <p className="text-xs text-muted-foreground">Selecione ou cadastre um endereço</p>
-                    </div>
-                  </div>
+                  )}
+                </div>
 
-                  {structuredAddress && !isEditingAddress && (
+                <div className="rounded-3xl bg-card p-4 shadow-sm">
+                  {structuredAddress ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex gap-3">
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{structuredAddress.mainText}</p>
+                          <p className="text-xs text-muted-foreground">{structuredAddress.secondaryText}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingAddress(null);
+                          setIsAddressModalOpen(true);
+                        }}
+                        className="text-sm font-medium text-primary"
+                      >
+                        Trocar
+                      </button>
+                    </div>
+                  ) : (
                     <button
                       type="button"
                       onClick={() => {
                         setEditingAddress(null);
-                        setIsEditingAddress(true);
+                        setIsAddressModalOpen(true);
                       }}
-                      className="text-sm font-medium text-primary"
+                      className="flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
                     >
-                      Trocar
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Cadastrar endereço</p>
+                        <p className="text-xs text-muted-foreground">Informe onde deseja receber seu pedido</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </button>
                   )}
                 </div>
 
-                {structuredAddress && !isEditingAddress ? (
-                  <div className="rounded-2xl border border-primary bg-primary/5 p-4">
-                    <p className="text-sm font-semibold text-foreground">{structuredAddress.mainText}</p>
-                    <p className="text-xs text-muted-foreground">{structuredAddress.secondaryText}</p>
-                    {structuredAddress.complement && (
-                      <p className="mt-1 text-xs text-muted-foreground">Compl: {structuredAddress.complement}</p>
-                    )}
-                    {structuredAddress.reference && (
-                      <p className="text-xs text-muted-foreground">Ref: {structuredAddress.reference}</p>
-                    )}
-                  </div>
-                ) : (
-                  <AddressSearch
-                    onSave={handleSaveAddress}
-                    onCancel={() => {
-                      setEditingAddress(null);
-                      setIsEditingAddress(structuredAddress ? false : true);
-                    }}
-                    initialAddress={editingAddress}
-                  />
-                )}
+                <div className="rounded-3xl bg-card p-4 shadow-sm">
+                  {isCalculatingFee ? (
+                    <div className="flex items-center gap-2 text-sm text-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span>Calculando total com entrega...</span>
+                    </div>
+                  ) : deliveryError ? (
+                    <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
+                  ) : structuredAddress ? (
+                    <div className="flex items-center justify-between text-base">
+                      <span className="font-medium text-muted-foreground">Total com entrega</span>
+                      <span className="text-lg font-bold text-primary">{formatPrice(totalWithDelivery)}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-base">
+                      <span className="font-medium text-muted-foreground">
+                        Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
+                      </span>
+                      <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
 
-              <SavedAddressesList
-                addresses={savedAddresses}
-                selectedAddressId={structuredAddress?.id}
-                onSelect={handleSelectSavedAddress}
-                onEdit={handleEditSavedAddress}
-                onDelete={handleDeleteSavedAddress}
-              />
+            {step === "payment" && (
+              <div className="space-y-4 p-4">
+                <div className="rounded-3xl bg-card p-4 shadow-sm">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Wallet className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">Pagamento</h3>
+                      <p className="text-xs text-muted-foreground">Escolha como deseja pagar</p>
+                    </div>
+                  </div>
 
-              <div className="rounded-3xl bg-card p-4 shadow-sm">
-                {isCalculatingFee ? (
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span>Calculando total com entrega...</span>
+                  {isEditingCoupon ? (
+                    <div className="mb-4 rounded-2xl border border-border bg-background p-4">
+                      <label className="mb-2 block text-sm font-medium text-foreground">Cupom</label>
+                      <input
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Digite seu cupom"
+                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                      />
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSaveCoupon}
+                          disabled={!couponCode.trim()}
+                          className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                        >
+                          Salvar cupom
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (savedCouponCode) {
+                              setCouponCode(savedCouponCode);
+                              setIsEditingCoupon(false);
+                              return;
+                            }
+                            setCouponCode("");
+                            setIsEditingCoupon(false);
+                          }}
+                          className="rounded-2xl border border-border px-4 py-3 text-sm font-medium text-foreground"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : savedCouponCode ? (
+                    <div className="mb-4 rounded-2xl border border-border bg-background p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <Ticket className="h-4 w-4 text-primary" />
+                          <span>{savedCouponCode}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingCoupon(true)}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-primary"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveCoupon}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingCoupon(true)}
+                      className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                          <Ticket className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">Adicionar cupom</p>
+                          <p className="text-xs text-muted-foreground">Se você tiver um código promocional</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+
+                  <div className="space-y-3">
+                    {paymentOptions.map((option) => {
+                      const Icon = option.icon;
+                      const isSelected = paymentMethod === option.value;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setPaymentMethod(option.value)}
+                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${
+                            isSelected ? "border-primary bg-primary/5" : "border-border bg-background"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-foreground">{option.title}</p>
+                                {option.highlight && (
+                                  <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                    {option.highlight}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{option.subtitle}</p>
+                            </div>
+                          </div>
+                          <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>
+                            {isSelected && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
-                ) : deliveryError ? (
-                  <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
-                ) : structuredAddress ? (
-                  <div className="flex items-center justify-between text-base">
-                    <span className="font-medium text-muted-foreground">
-                      Total com entrega
-                    </span>
-                    <span className="text-lg font-bold text-primary">{formatPrice(totalWithDelivery)}</span>
+
+                  {paymentMethod === "dinheiro" && (
+                    <div className="mt-4 space-y-3 rounded-2xl bg-secondary p-4">
+                      <div>
+                        <label className="mb-2 block text-sm font-medium text-foreground">Precisa de troco?</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNeedsChange("sim")}
+                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
+                          >
+                            Sim
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setNeedsChange("não")}
+                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
+                          >
+                            Não
+                          </button>
+                        </div>
+                      </div>
+                      {needsChange === "sim" && (
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-foreground">Troco para quanto?</label>
+                          <input
+                            value={changeFor}
+                            onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))}
+                            placeholder="Ex: 100,00"
+                            className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Resumo</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
+                    </div>
+                    {paymentMethod === "pix" && (
+                      <div className="flex justify-between text-primary">
+                        <span>Desconto Pix</span>
+                        <span className="font-medium">-{formatPrice(pixDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Entrega</span>
+                      <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
+                    </div>
+                    <div className="border-t border-border pt-3">
+                      <div className="flex justify-between text-base">
+                        <span className="font-semibold text-foreground">Total</span>
+                        <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-between text-base">
-                    <span className="font-medium text-muted-foreground">
+                </div>
+              </div>
+            )}
+
+            {step === "confirmation" && (
+              <div className="space-y-4 p-4">
+                <div className="rounded-3xl bg-card p-4 shadow-sm">
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Entrega</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-foreground">
+                      <User className="h-4 w-4 text-primary" />
+                      <span>{name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-foreground">
+                      <Phone className="h-4 w-4 text-primary" />
+                      <span>{phone}</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-foreground">
+                      <MapPin className="mt-0.5 h-4 w-4 text-primary" />
+                      <span>{savedAddressDisplay || "-"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl bg-card p-4 shadow-sm">
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Itens do pedido</h3>
+                  <div className="space-y-2">
+                    {items.map((item) => (
+                      <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">{item.quantity}x</span>
+                          <span className="text-foreground">{item.product.name}</span>
+                        </div>
+                        <span className="font-medium text-foreground">{formatPrice(item.product.price * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Pagamento e total</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Forma de pagamento</span>
+                      <span className="font-medium text-foreground">{paymentLabel}</span>
+                    </div>
+                    {savedCouponCode && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Cupom</span>
+                        <span className="font-medium text-foreground">{savedCouponCode}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
+                    </div>
+                    {paymentMethod === "pix" && (
+                      <div className="flex justify-between text-primary">
+                        <span>Desconto Pix</span>
+                        <span className="font-medium">-{formatPrice(pixDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Entrega</span>
+                      <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
+                    </div>
+                    {paymentMethod === "dinheiro" && needsChange === "sim" && changeFor && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Troco para</span>
+                        <span className="font-medium text-foreground">R$ {changeFor}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-border pt-3">
+                      <div className="flex justify-between text-base">
+                        <span className="font-semibold text-foreground">Total</span>
+                        <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-border bg-card p-4">
+            {step === "cart" &&
+              (items.length > 0 ? (
+                <div>
+                  <div className="mb-3 flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
                       Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
                     </span>
                     <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {step === "payment" && (
-            <div className="space-y-4 p-4">
-              <div className="rounded-3xl bg-card p-4 shadow-sm">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <Wallet className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Pagamento</h3>
-                    <p className="text-xs text-muted-foreground">Escolha como deseja pagar</p>
-                  </div>
+                  <button type="button" onClick={goToDelivery} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
+                    Continuar
+                  </button>
                 </div>
+              ) : (
+                <button type="button" className="w-full rounded-2xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
+                  Escolha os produtos para continuar
+                </button>
+              ))}
 
-                {isEditingCoupon ? (
-                  <div className="mb-4 rounded-2xl border border-border bg-background p-4">
-                    <label className="mb-2 block text-sm font-medium text-foreground">Cupom</label>
-                    <input
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="Digite seu cupom"
-                      className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
-                    />
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={handleSaveCoupon}
-                        disabled={!couponCode.trim()}
-                        className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-                      >
-                        Salvar cupom
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (savedCouponCode) {
-                            setCouponCode(savedCouponCode);
-                            setIsEditingCoupon(false);
-                            return;
-                          }
-                          setCouponCode("");
-                          setIsEditingCoupon(false);
-                        }}
-                        className="rounded-2xl border border-border px-4 py-3 text-sm font-medium text-foreground"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : savedCouponCode ? (
-                  <div className="mb-4 rounded-2xl border border-border bg-background p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <Ticket className="h-4 w-4 text-primary" />
-                        <span>{savedCouponCode}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setIsEditingCoupon(true)}
-                          className="inline-flex items-center gap-1 text-sm font-medium text-primary"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRemoveCoupon}
-                          className="inline-flex items-center gap-1 text-sm font-medium text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
+            {step === "delivery" && (
+              <button
+                type="button"
+                onClick={goToPayment}
+                disabled={!canContinueDelivery}
+                className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
+                  canContinueDelivery ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                Ir para pagamento
+              </button>
+            )}
+
+            {step === "payment" && (
+              <button
+                type="button"
+                onClick={goToConfirmation}
+                disabled={!isPaymentValid}
+                className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
+                  isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                Revisar pedido
+              </button>
+            )}
+
+            {step === "confirmation" && (
+              <button type="button" onClick={handleCheckout} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
+                Enviar pedido via WhatsApp
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {isAddressModalOpen && (
+        <div className="fixed inset-0 z-[95] bg-background">
+          <div className="mx-auto flex h-full w-full max-w-md flex-col">
+            {editingAddress ? (
+              <AddressSearch
+                onSave={handleSaveAddress}
+                onCancel={() => setEditingAddress(null)}
+                initialAddress={editingAddress}
+              />
+            ) : savedAddresses.length === 0 ? (
+              <AddressSearch
+                onSave={handleSaveAddress}
+                onCancel={() => setIsAddressModalOpen(false)}
+              />
+            ) : (
+              <>
+                <div className="flex items-center gap-3 border-b border-border px-4 py-4">
                   <button
                     type="button"
-                    onClick={() => setIsEditingCoupon(true)}
-                    className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
+                    onClick={() => setIsAddressModalOpen(false)}
+                    className="rounded-full p-1 text-muted-foreground"
+                    aria-label="Voltar"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
-                        <Ticket className="h-4 w-4" />
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">Adicionar cupom</p>
-                        <p className="text-xs text-muted-foreground">Se você tiver um código promocional</p>
-                      </div>
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <h3 className="text-base font-semibold text-foreground">Endereços</h3>
+                </div>
+
+                <div className="flex-1 overflow-y-auto bg-[#f7f7f7] p-4">
+                  <button
+                    type="button"
+                    onClick={() => setEditingAddress(null)}
+                    className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Buscar endereço e número</p>
+                      <p className="text-xs text-muted-foreground">Adicionar novo endereço</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </button>
-                )}
 
-                <div className="space-y-3">
-                  {paymentOptions.map((option) => {
-                    const Icon = option.icon;
-                    const isSelected = paymentMethod === option.value;
-
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setPaymentMethod(option.value)}
-                        className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${
-                          isSelected ? "border-primary bg-primary/5" : "border-border bg-background"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
-                            <Icon className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-foreground">{option.title}</p>
-                              {option.highlight && (
-                                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                                  {option.highlight}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">{option.subtitle}</p>
-                          </div>
-                        </div>
-                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>
-                          {isSelected && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
-                        </div>
-                      </button>
-                    );
-                  })}
+                  <SavedAddressesList
+                    addresses={savedAddresses}
+                    selectedAddressId={structuredAddress?.id}
+                    onSelect={handleSelectSavedAddress}
+                    onEdit={handleEditSavedAddress}
+                    onDelete={handleDeleteSavedAddress}
+                  />
                 </div>
-
-                {paymentMethod === "dinheiro" && (
-                  <div className="mt-4 space-y-3 rounded-2xl bg-secondary p-4">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-foreground">Precisa de troco?</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setNeedsChange("sim")}
-                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
-                        >
-                          Sim
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setNeedsChange("não")}
-                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
-                        >
-                          Não
-                        </button>
-                      </div>
-                    </div>
-                    {needsChange === "sim" && (
-                      <div>
-                        <label className="mb-2 block text-sm font-medium text-foreground">Troco para quanto?</label>
-                        <input
-                          value={changeFor}
-                          onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))}
-                          placeholder="Ex: 100,00"
-                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Resumo</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
-                  </div>
-                  {paymentMethod === "pix" && (
-                    <div className="flex justify-between text-primary">
-                      <span>Desconto Pix</span>
-                      <span className="font-medium">-{formatPrice(pixDiscount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Entrega</span>
-                    <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
-                  </div>
-                  <div className="border-t border-border pt-3">
-                    <div className="flex justify-between text-base">
-                      <span className="font-semibold text-foreground">Total</span>
-                      <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === "confirmation" && (
-            <div className="space-y-4 p-4">
-              <div className="rounded-3xl bg-card p-4 shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Entrega</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-foreground">
-                    <User className="h-4 w-4 text-primary" />
-                    <span>{name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-foreground">
-                    <Phone className="h-4 w-4 text-primary" />
-                    <span>{phone}</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-foreground">
-                    <MapPin className="mt-0.5 h-4 w-4 text-primary" />
-                    <span>{savedAddressDisplay || "-"}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-card p-4 shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Itens do pedido</h3>
-                <div className="space-y-2">
-                  {items.map((item) => (
-                    <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">{item.quantity}x</span>
-                        <span className="text-foreground">{item.product.name}</span>
-                      </div>
-                      <span className="font-medium text-foreground">{formatPrice(item.product.price * item.quantity)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Pagamento e total</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Forma de pagamento</span>
-                    <span className="font-medium text-foreground">{paymentLabel}</span>
-                  </div>
-                  {savedCouponCode && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Cupom</span>
-                      <span className="font-medium text-foreground">{savedCouponCode}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
-                  </div>
-                  {paymentMethod === "pix" && (
-                    <div className="flex justify-between text-primary">
-                      <span>Desconto Pix</span>
-                      <span className="font-medium">-{formatPrice(pixDiscount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Entrega</span>
-                    <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
-                  </div>
-                  {paymentMethod === "dinheiro" && needsChange === "sim" && changeFor && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Troco para</span>
-                      <span className="font-medium text-foreground">R$ {changeFor}</span>
-                    </div>
-                  )}
-                  <div className="border-t border-border pt-3">
-                    <div className="flex justify-between text-base">
-                      <span className="font-semibold text-foreground">Total</span>
-                      <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
-
-        <div className="border-t border-border bg-card p-4">
-          {step === "cart" &&
-            (items.length > 0 ? (
-              <div>
-                <div className="mb-3 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
-                  </span>
-                  <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
-                </div>
-                <button type="button" onClick={goToDelivery} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
-                  Continuar
-                </button>
-              </div>
-            ) : (
-              <button type="button" className="w-full rounded-2xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
-                Escolha os produtos para continuar
-              </button>
-            ))}
-
-          {step === "delivery" && (
-            <button
-              type="button"
-              onClick={goToPayment}
-              disabled={!canContinueDelivery}
-              className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
-                canContinueDelivery ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              Ir para pagamento
-            </button>
-          )}
-
-          {step === "payment" && (
-            <button
-              type="button"
-              onClick={goToConfirmation}
-              disabled={!isPaymentValid}
-              className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
-                isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              Revisar pedido
-            </button>
-          )}
-
-          {step === "confirmation" && (
-            <button type="button" onClick={handleCheckout} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
-              Enviar pedido via WhatsApp
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
