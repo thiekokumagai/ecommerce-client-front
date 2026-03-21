@@ -197,8 +197,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           <ChevronLeft className="h-5 w-5" />
         </button>
 
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+        <div className="relative flex-1 rounded-xl border border-border bg-secondary">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
           <input
             ref={inputRef}
             type="search"
@@ -207,9 +207,14 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Buscar endereço e número"
-            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:outline-none"
+            className="h-12 w-full appearance-none rounded-xl border-0 bg-transparent pl-11 pr-10 text-base text-foreground shadow-none outline-none ring-0 placeholder:text-muted-foreground caret-foreground [-webkit-tap-highlight-color:transparent] focus:border-0 focus:outline-none focus:ring-0 focus:ring-offset-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:outline-none"
+            style={{
+              WebkitAppearance: "none",
+              boxShadow: "none",
+              WebkitTapHighlightColor: "transparent",
+            }}
           />
-          {query && (
+          {query && !isLoading && (
             <button
               type="button"
               onClick={() => {
