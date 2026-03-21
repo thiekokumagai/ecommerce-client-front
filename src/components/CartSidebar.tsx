@@ -55,6 +55,12 @@ const formatCurrencyInput = (value: string) => {
   return numberValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const parseCurrencyInput = (value: string) => {
+  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
 type CheckoutStep = "cart" | "delivery" | "payment" | "confirmation";
 type CreditMode = "avista" | "parcelado";
@@ -261,6 +267,8 @@ const CartSidebar = () => {
 
   const finalTotal = discountedProductsTotal + deliveryFee;
   const totalWithDelivery = totalPrice + deliveryFee;
+  const parsedChangeFor = parseCurrencyInput(changeFor);
+  const isChangeEnough = needsChange === "não" || parsedChangeFor >= finalTotal;
 
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
   const isAddressValid = structuredAddress !== null;
@@ -313,7 +321,9 @@ const CartSidebar = () => {
   const hasSelectedPaymentMethod = paymentMethod !== null;
   const isPaymentValid =
     hasSelectedPaymentMethod &&
-    (paymentMethod !== "dinheiro" || needsChange === "não" || changeFor.trim().length > 0);
+    (paymentMethod !== "dinheiro" ||
+      needsChange === "não" ||
+      (changeFor.trim().length > 0 && isChangeEnough));
 
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
 
@@ -460,6 +470,16 @@ const CartSidebar = () => {
       return;
     }
 
+    if (paymentMethod === "dinheiro" && needsChange === "sim" && !changeFor.trim()) {
+      toast.info("Informe o valor do troco para continuar.");
+      return;
+    }
+
+    if (paymentMethod === "dinheiro" && needsChange === "sim" && !isChangeEnough) {
+      toast.info("O troco precisa ser para um valor maior ou igual ao total com entrega.");
+      return;
+    }
+
     if (!isPaymentValid) {
       toast.info("Informe o troco para continuar.");
       return;
@@ -544,6 +564,11 @@ const CartSidebar = () => {
   const handleCheckout = () => {
     if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod || !hasValidDeliveryFee) {
       toast.info("Preencha todas as etapas obrigatórias para finalizar.");
+      return;
+    }
+
+    if (paymentMethod === "dinheiro" && needsChange === "sim" && !isChangeEnough) {
+      toast.info("O troco precisa ser para um valor maior ou igual ao total com entrega.");
       return;
     }
 
@@ -1087,9 +1112,16 @@ const CartSidebar = () => {
                           <input
                             value={changeFor}
                             onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             placeholder="Ex: 100,00"
                             className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
                           />
+                          {!isChangeEnough && changeFor.trim().length > 0 && (
+                            <p className="mt-2 text-sm text-destructive">
+                              O valor do troco deve ser maior ou igual a {formatPrice(finalTotal)}.
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
