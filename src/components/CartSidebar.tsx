@@ -1,7 +1,9 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil, ChevronLeft, Check, User, Phone, Ticket, ChevronRight } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil, ChevronLeft, Check, User, Phone, Ticket, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
 const SESSION_NAME_KEY = "podemais-checkout-name";
