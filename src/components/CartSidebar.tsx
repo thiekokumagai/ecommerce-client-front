@@ -205,7 +205,6 @@ const CartSidebar = () => {
 
   useEffect(() => {
     if (previousTotalItems.current > 0 && totalItems === 0) {
-      toast.info("Seu carrinho ficou vazio. Escolha os produtos para continuar.");
       setStep("cart");
     }
     previousTotalItems.current = totalItems;
@@ -324,12 +323,10 @@ const CartSidebar = () => {
 
   const handleRemoveItem = (productId: number, selectedVariation?: string) => {
     removeFromCart(productId, selectedVariation);
-    if (totalItems <= 1) toast.info("Escolha os produtos para continuar.");
   };
 
   const handleClearCart = () => {
     clearCart();
-    toast.success("Sacola limpa.");
   };
 
   const goToDelivery = () => {
@@ -403,7 +400,6 @@ const CartSidebar = () => {
           ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
-
           ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
           paymentMethod === "pix"
             ? `Forma de pagamento: Pix - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
@@ -427,7 +423,6 @@ const CartSidebar = () => {
       name,
       phone,
       savedAddressDisplay,
-      deliveryDistanceKm,
       savedCouponCode,
       totalPrice,
       paymentMethod,
@@ -510,7 +505,7 @@ const CartSidebar = () => {
           </button>
         </div>
 
-        {step !== "cart" && items.length > 0 && <div className="bg-card border-b border-border"><StepIndicator currentStep={step} /></div>}
+        {step !== "cart" && items.length > 0 && <div className="border-b border-border bg-card"><StepIndicator currentStep={step} /></div>}
 
         <div className="flex-1 overflow-y-auto">
           {step === "cart" && (
@@ -728,7 +723,6 @@ const CartSidebar = () => {
                         Taxa do motoboy: <span className="font-bold text-primary">{deliveryFeeLabel(deliveryFee)}</span>
                       </p>
                     </div>
-
                   )}
                 </div>
               </div>
@@ -947,7 +941,6 @@ const CartSidebar = () => {
                     <span>{savedAddressDisplay || "-"}</span>
                   </div>
                 </div>
-
               </div>
 
               <div className="rounded-3xl bg-card p-4 shadow-sm">
