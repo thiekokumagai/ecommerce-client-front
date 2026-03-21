@@ -1114,64 +1114,66 @@ const CartSidebar = () => {
       </div>
 
       {isAddressModalOpen && (
-        <div className="fixed inset-0 z-[95] bg-background">
-          <div className="mx-auto flex h-full w-full max-w-md flex-col">
-            {isShowingSavedAddresses ? (
-              <>
-                <div className="flex items-center gap-3 border-b border-border px-4 py-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsAddressModalOpen(false);
-                      setIsShowingSavedAddresses(false);
-                    }}
-                    className="rounded-full p-1 text-muted-foreground"
-                    aria-label="Voltar"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <h3 className="text-base font-semibold text-foreground">Endereços</h3>
-                </div>
+        <div className="fixed inset-0 z-[95] bg-black/40 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-6">
+          <div className="h-full w-full bg-background md:h-[85vh] md:max-h-[860px] md:w-full md:max-w-md md:overflow-hidden md:rounded-[32px] md:shadow-2xl">
+            <div className="mx-auto flex h-full w-full max-w-md flex-col">
+              {isShowingSavedAddresses ? (
+                <>
+                  <div className="flex items-center gap-3 border-b border-border px-4 py-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddressModalOpen(false);
+                        setIsShowingSavedAddresses(false);
+                      }}
+                      className="rounded-full p-1 text-muted-foreground"
+                      aria-label="Voltar"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <h3 className="text-base font-semibold text-foreground">Endereços</h3>
+                  </div>
 
-                <div className="flex-1 overflow-y-auto bg-[#f7f7f7] p-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingAddress(null);
-                      setIsShowingSavedAddresses(false);
-                    }}
-                    className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Buscar novo endereço</p>
-                      <p className="text-xs text-muted-foreground">Digite e selecione pelo Google</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </button>
+                  <div className="flex-1 overflow-y-auto bg-[#f7f7f7] p-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingAddress(null);
+                        setIsShowingSavedAddresses(false);
+                      }}
+                      className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Buscar novo endereço</p>
+                        <p className="text-xs text-muted-foreground">Digite e selecione pelo Google</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </button>
 
-                  <SavedAddressesList
-                    addresses={savedAddresses}
-                    selectedAddressId={structuredAddress?.id}
-                    onSelect={handleSelectSavedAddress}
-                    onEdit={handleEditSavedAddress}
-                    onDelete={handleDeleteSavedAddress}
-                  />
-                </div>
-              </>
-            ) : (
-              <AddressSearch
-                onSave={handleSaveAddress}
-                onCancel={() => {
-                  if (savedAddresses.length > 0 && !editingAddress) {
-                    setIsShowingSavedAddresses(true);
-                    return;
-                  }
-                  setEditingAddress(null);
-                  setIsAddressModalOpen(false);
-                }}
-                initialAddress={editingAddress}
-              />
-            )}
+                    <SavedAddressesList
+                      addresses={savedAddresses}
+                      selectedAddressId={structuredAddress?.id}
+                      onSelect={handleSelectSavedAddress}
+                      onEdit={handleEditSavedAddress}
+                      onDelete={handleDeleteSavedAddress}
+                    />
+                  </div>
+                </>
+              ) : (
+                <AddressSearch
+                  onSave={handleSaveAddress}
+                  onCancel={() => {
+                    if (savedAddresses.length > 0 && !editingAddress) {
+                      setIsShowingSavedAddresses(true);
+                      return;
+                    }
+                    setEditingAddress(null);
+                    setIsAddressModalOpen(false);
+                  }}
+                  initialAddress={editingAddress}
+                />
+              )}
+            </div>
           </div>
         </div>
       )}
