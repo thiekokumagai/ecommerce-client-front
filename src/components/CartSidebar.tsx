@@ -508,25 +508,28 @@ const CartSidebar = () => {
                 <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
 
                 {isEditingAddress ? (
-                  <div className="space-y-3">
-                    <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, bairro, complemento e referência" className="min-h-[96px] w-full rounded-xl border border-border bg-background p-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
-                    <button
-                      type="button"
-                      onClick={handleSaveAddress}
-                      disabled={!address.trim()}
-                      className={`w-full rounded-xl py-3 text-sm font-semibold ${address.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-                    >
-                      Salvar endereço
-                    </button>
-                  </div>
+                  <AddressSearch
+                    onSave={handleSaveAddress}
+                    onCancel={() => { if (structuredAddress) setIsEditingAddress(false); }}
+                    initialAddress={structuredAddress}
+                  />
                 ) : (
                   <div className="rounded-xl border border-border bg-background p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex gap-3">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <p className="text-sm text-foreground">{savedAddress}</p>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{structuredAddress?.mainText}</p>
+                          <p className="text-xs text-muted-foreground">{structuredAddress?.secondaryText}</p>
+                          {structuredAddress?.complement && (
+                            <p className="mt-1 text-xs text-muted-foreground">Compl: {structuredAddress.complement}</p>
+                          )}
+                          {structuredAddress?.reference && (
+                            <p className="text-xs text-muted-foreground">Ref: {structuredAddress.reference}</p>
+                          )}
+                        </div>
                       </div>
-                      <button type="button" onClick={() => { setAddress(savedAddress); setIsEditingAddress(true); }} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                      <button type="button" onClick={() => setIsEditingAddress(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
                         <Pencil className="h-4 w-4" />
                       </button>
                     </div>
