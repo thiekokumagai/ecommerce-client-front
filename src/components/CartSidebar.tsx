@@ -117,6 +117,11 @@ const CartSidebar = () => {
         const parsed = JSON.parse(storedAddress) as StructuredAddress;
         setStructuredAddress(parsed);
         setIsEditingAddress(false);
+        // Calculate freight for restored address
+        const fullDest = [parsed.fullText, parsed.complement].filter(Boolean).join(", ");
+        supabase.functions.invoke("calculate-freight", { body: { destination: fullDest } })
+          .then(({ data }) => { if (data?.freightPrice) setDeliveryFee(data.freightPrice); })
+          .catch(() => {});
       } catch { /* ignore */ }
     }
     if (storedName) setName(storedName);
