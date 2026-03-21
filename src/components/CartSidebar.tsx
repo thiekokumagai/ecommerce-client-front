@@ -143,6 +143,7 @@ const CartSidebar = () => {
   const [savedAddresses, setSavedAddresses] = useState<StructuredAddress[]>([]);
   const [editingAddress, setEditingAddress] = useState<StructuredAddress | null>(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [isShowingSavedAddresses, setIsShowingSavedAddresses] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(null);
   const [deliveryError, setDeliveryError] = useState<string>("");
@@ -213,6 +214,7 @@ const CartSidebar = () => {
       setChangeFor("");
       setEditingAddress(null);
       setIsAddressModalOpen(false);
+      setIsShowingSavedAddresses(false);
     }
   }, [isCartOpen]);
 
@@ -308,6 +310,7 @@ const CartSidebar = () => {
       sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(nextAddress));
       setEditingAddress(null);
       setIsAddressModalOpen(false);
+      setIsShowingSavedAddresses(false);
       calculateDeliveryFee(nextAddress);
     },
     [calculateDeliveryFee, savedAddresses]
@@ -319,6 +322,7 @@ const CartSidebar = () => {
       sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
       setEditingAddress(null);
       setIsAddressModalOpen(false);
+      setIsShowingSavedAddresses(false);
       calculateDeliveryFee(addr);
     },
     [calculateDeliveryFee]
@@ -326,6 +330,7 @@ const CartSidebar = () => {
 
   const handleEditSavedAddress = (addr: StructuredAddress) => {
     setEditingAddress(addr);
+    setIsShowingSavedAddresses(false);
   };
 
   const handleDeleteSavedAddress = (addressId: string) => {
@@ -727,6 +732,7 @@ const CartSidebar = () => {
                         type="button"
                         onClick={() => {
                           setEditingAddress(null);
+                          setIsShowingSavedAddresses(savedAddresses.length > 0);
                           setIsAddressModalOpen(true);
                         }}
                         className="text-sm font-medium text-primary"
@@ -739,6 +745,7 @@ const CartSidebar = () => {
                       type="button"
                       onClick={() => {
                         setEditingAddress(null);
+                        setIsShowingSavedAddresses(false);
                         setIsAddressModalOpen(true);
                       }}
                       className="flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
@@ -1109,23 +1116,15 @@ const CartSidebar = () => {
       {isAddressModalOpen && (
         <div className="fixed inset-0 z-[95] bg-background">
           <div className="mx-auto flex h-full w-full max-w-md flex-col">
-            {editingAddress ? (
-              <AddressSearch
-                onSave={handleSaveAddress}
-                onCancel={() => setEditingAddress(null)}
-                initialAddress={editingAddress}
-              />
-            ) : savedAddresses.length === 0 ? (
-              <AddressSearch
-                onSave={handleSaveAddress}
-                onCancel={() => setIsAddressModalOpen(false)}
-              />
-            ) : (
+            {isShowingSavedAddresses ? (
               <>
                 <div className="flex items-center gap-3 border-b border-border px-4 py-4">
                   <button
                     type="button"
-                    onClick={() => setIsAddressModalOpen(false)}
+                    onClick={() => {
+                      setIsAddressModalOpen(false);
+                      setIsShowingSavedAddresses(false);
+                    }}
                     className="rounded-full p-1 text-muted-foreground"
                     aria-label="Voltar"
                   >
@@ -1137,12 +1136,15 @@ const CartSidebar = () => {
                 <div className="flex-1 overflow-y-auto bg-[#f7f7f7] p-4">
                   <button
                     type="button"
-                    onClick={() => setEditingAddress(null)}
+                    onClick={() => {
+                      setEditingAddress(null);
+                      setIsShowingSavedAddresses(false);
+                    }}
                     className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-foreground">Buscar endereço e número</p>
-                      <p className="text-xs text-muted-foreground">Adicionar novo endereço</p>
+                      <p className="text-sm font-semibold text-foreground">Buscar novo endereço</p>
+                      <p className="text-xs text-muted-foreground">Digite e selecione pelo Google</p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </button>
@@ -1156,6 +1158,19 @@ const CartSidebar = () => {
                   />
                 </div>
               </>
+            ) : (
+              <AddressSearch
+                onSave={handleSaveAddress}
+                onCancel={() => {
+                  if (savedAddresses.length > 0 && !editingAddress) {
+                    setIsShowingSavedAddresses(true);
+                    return;
+                  }
+                  setEditingAddress(null);
+                  setIsAddressModalOpen(false);
+                }}
+                initialAddress={editingAddress}
+              />
             )}
           </div>
         </div>
