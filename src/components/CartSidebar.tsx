@@ -9,8 +9,6 @@ const SESSION_ADDRESS_KEY = "podemais-checkout-address";
 const SESSION_NAME_KEY = "podemais-checkout-name";
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
 
-const STORE_ORIGIN = "Rua Glauce Rocha, 539, Campo Grande - MS";
-
 const formatPrice = (price: number) => `R$${price.toFixed(2).replace(".", ",")}`;
 
 const formatPhone = (value: string) => {
