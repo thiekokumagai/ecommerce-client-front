@@ -166,12 +166,38 @@ const CartSidebar = () => {
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
   const discountedProductsTotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
-  const estimatedDistanceKm = useMemo(() => estimateDistanceFromAddress(savedAddress || address), [savedAddress, address]);
-  const deliveryFee = useMemo(() => getDynamicDeliveryFee(estimatedDistanceKm), [estimatedDistanceKm]);
   const finalTotal = discountedProductsTotal + deliveryFee;
 
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
-  const isAddressValid = savedAddress.trim().length > 0;
+  const isAddressValid = structuredAddress !== null;
+
+  const savedAddressDisplay = useMemo(() => {
+    if (!structuredAddress) return "";
+    const parts = [structuredAddress.mainText, structuredAddress.secondaryText];
+    if (structuredAddress.complement) parts.push(`Compl: ${structuredAddress.complement}`);
+    if (structuredAddress.reference) parts.push(`Ref: ${structuredAddress.reference}`);
+    return parts.join(", ");
+  }, [structuredAddress]);
+
+  const calculateDeliveryFee = useCallback(async (addr: StructuredAddress) => {
+    setIsCalculatingFee(true);
+    try {
+      const fullDest = [addr.fullText, addr.complement].filter(Boolean).join(", ");
+      const { data } = await supabase.functions.invoke("calculate-freight", {
+        body: { destination: fullDest },
+      });
+      if (data?.freightPrice) {
+        setDeliveryFee(data.freightPrice);
+      } else {
+        setDeliveryFee(0);
+        if (data?.error) toast.info(data.error);
+      }
+    } catch {
+      setDeliveryFee(0);
+    } finally {
+      setIsCalculatingFee(false);
+    }
+  }, []);
   const hasSelectedPaymentMethod = paymentMethod !== null;
   const isPaymentValid =
     hasSelectedPaymentMethod &&
