@@ -70,12 +70,12 @@ const MobileBottomNav = () => {
         >
           <div className="min-w-0 flex-1 pr-3 text-left">
             <span className="block text-[12px] font-medium text-muted-foreground">{savedAddress ? "Total com a entrega" : "Total sem a entrega"}</span>
-            <span className="truncate text-[23px] font-bold leading-tight text-foreground">
+            <span className="truncate text-[16px] font-bold leading-tight text-foreground">
               {formatPrice(savedAddress ? totalWithDelivery : totalPrice)}
               <span className="ml-1 text-sm font-medium text-muted-foreground">/ {totalItems} {totalItems === 1 ? "item" : "itens"}</span>
             </span>
           </div>
-          <div className="flex min-h-[52px] min-w-[36%] items-center justify-center rounded-[18px] bg-primary px-6 text-base font-bold text-primary-foreground">
+          <div className="flex min-w-[36%] py-2 items-center justify-center rounded-xl bg-primary px-6 text-sm font-bold text-primary-foreground">
             Ver sacola
           </div>
         </button>
