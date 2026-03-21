@@ -330,7 +330,7 @@ const CartSidebar = () => {
           `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
       ),
-    [items, name, phone, savedAddress, savedCouponCode, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
+    [items, name, phone, savedAddressDisplay, savedCouponCode, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
   );
 
   const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
