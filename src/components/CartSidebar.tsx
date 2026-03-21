@@ -536,11 +536,18 @@ const CartSidebar = () => {
                   </div>
                 )}
 
-                <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
-                  <p>
-                    Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
-                  </p>
-                </div>
+                {isCalculatingFee ? (
+                  <div className="flex items-center gap-2 rounded-xl bg-secondary p-3 text-sm text-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span>Calculando taxa de entrega...</span>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
+                    <p>
+                      Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
