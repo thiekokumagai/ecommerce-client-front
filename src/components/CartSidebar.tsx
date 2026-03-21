@@ -308,7 +308,7 @@ const CartSidebar = () => {
           "",
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
-          `Endereço completo: ${savedAddress || "-"}`,
+          `Endereço completo: ${savedAddressDisplay || "-"}`,
           ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
