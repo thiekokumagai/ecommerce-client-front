@@ -46,12 +46,6 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (phase === "search") {
-      const timer = setTimeout(() => inputRef.current?.focus(), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [phase]);
 
   const fetchPredictions = useCallback(async (input: string) => {
     if (input.trim().length < 3) {
@@ -201,7 +195,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
           <input
             ref={inputRef}
-            type="search"
+            type="text"
             inputMode="search"
             autoComplete="street-address"
             value={query}
