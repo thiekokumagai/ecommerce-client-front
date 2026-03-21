@@ -10,6 +10,7 @@ interface AddressPrediction {
 }
 
 export interface StructuredAddress {
+  id?: string;
   mainText: string;
   secondaryText: string;
   fullText: string;
@@ -26,13 +27,13 @@ interface AddressSearchProps {
 
 const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps) => {
   const [phase, setPhase] = useState<"search" | "details">(initialAddress ? "details" : "search");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialAddress?.fullText || "");
   const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selected, setSelected] = useState<AddressPrediction | null>(
     initialAddress
       ? {
-          placeId: "",
+          placeId: initialAddress.id || "",
           mainText: initialAddress.mainText,
           secondaryText: initialAddress.secondaryText,
           fullText: initialAddress.fullText,
@@ -86,6 +87,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
     if (!selected) return;
 
     onSave({
+      id: initialAddress?.id || crypto.randomUUID(),
       mainText: selected.mainText,
       secondaryText: selected.secondaryText,
       fullText: selected.fullText,
@@ -160,17 +162,26 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!complement && !noComplement}
-          className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
-            complement || noComplement ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-          }`}
-        >
-          <Check className="h-4 w-4" />
-          Salvar endereço
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!complement && !noComplement}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
+              complement || noComplement ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <Check className="h-4 w-4" />
+            Salvar endereço
+          </button>
+        </div>
       </div>
     );
   }
@@ -224,15 +235,13 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
         </p>
       )}
 
-      {initialAddress && (
-        <button
-          type="button"
-          onClick={onCancel}
-          className="w-full rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground"
-        >
-          Cancelar
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onCancel}
+        className="w-full rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground"
+      >
+        Cancelar
+      </button>
     </div>
   );
 };

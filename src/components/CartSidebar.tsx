@@ -23,8 +23,10 @@ import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
+import SavedAddressesList from "@/components/checkout/SavedAddressesList";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
+const SESSION_ADDRESSES_KEY = "podemais-checkout-addresses";
 const SESSION_NAME_KEY = "podemais-checkout-name";
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
 
@@ -121,8 +123,6 @@ const paymentOptions: {
   },
 ];
 
-const deliveryFeeLabel = (fee: number) => (fee > 0 ? formatPrice(fee) : "A calcular");
-
 const CartSidebar = () => {
   const {
     items,
@@ -140,6 +140,8 @@ const CartSidebar = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [structuredAddress, setStructuredAddress] = useState<StructuredAddress | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<StructuredAddress[]>([]);
+  const [editingAddress, setEditingAddress] = useState<StructuredAddress | null>(null);
   const [isEditingAddress, setIsEditingAddress] = useState(true);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(null);
@@ -156,8 +158,18 @@ const CartSidebar = () => {
 
   useEffect(() => {
     const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY);
+    const storedAddresses = sessionStorage.getItem(SESSION_ADDRESSES_KEY);
     const storedName = sessionStorage.getItem(SESSION_NAME_KEY) ?? "";
     const storedPhone = sessionStorage.getItem(SESSION_PHONE_KEY) ?? "";
+
+    if (storedAddresses) {
+      try {
+        const parsedAddresses = JSON.parse(storedAddresses) as StructuredAddress[];
+        setSavedAddresses(parsedAddresses);
+      } catch {
+        setSavedAddresses([]);
+      }
+    }
 
     if (storedAddress) {
       try {
@@ -200,8 +212,10 @@ const CartSidebar = () => {
       setPaymentMethod(null);
       setNeedsChange("não");
       setChangeFor("");
+      setEditingAddress(null);
+      setIsEditingAddress(structuredAddress ? false : true);
     }
-  }, [isCartOpen]);
+  }, [isCartOpen, structuredAddress]);
 
   useEffect(() => {
     if (previousTotalItems.current > 0 && totalItems === 0) {
@@ -214,6 +228,7 @@ const CartSidebar = () => {
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
   const discountedProductsTotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
   const finalTotal = discountedProductsTotal + deliveryFee;
+  const totalWithDelivery = totalPrice + deliveryFee;
 
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
   const isAddressValid = structuredAddress !== null;
@@ -226,6 +241,11 @@ const CartSidebar = () => {
     if (structuredAddress.reference) parts.push(`Ref: ${structuredAddress.reference}`);
     return parts.join(", ");
   }, [structuredAddress]);
+
+  const persistAddresses = (addresses: StructuredAddress[]) => {
+    setSavedAddresses(addresses);
+    sessionStorage.setItem(SESSION_ADDRESSES_KEY, JSON.stringify(addresses));
+  };
 
   const calculateDeliveryFee = useCallback(async (addr: StructuredAddress) => {
     setIsCalculatingFee(true);
@@ -278,13 +298,51 @@ const CartSidebar = () => {
 
   const handleSaveAddress = useCallback(
     (addr: StructuredAddress) => {
+      const nextAddress = {
+        ...addr,
+        id: addr.id || crypto.randomUUID(),
+      };
+
+      const nextAddresses = [...savedAddresses.filter((item) => item.id !== nextAddress.id), nextAddress];
+      persistAddresses(nextAddresses);
+      setStructuredAddress(nextAddress);
+      sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(nextAddress));
+      setEditingAddress(null);
+      setIsEditingAddress(false);
+      calculateDeliveryFee(nextAddress);
+    },
+    [calculateDeliveryFee, savedAddresses]
+  );
+
+  const handleSelectSavedAddress = useCallback(
+    (addr: StructuredAddress) => {
       setStructuredAddress(addr);
       sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
       setIsEditingAddress(false);
+      setEditingAddress(null);
       calculateDeliveryFee(addr);
     },
     [calculateDeliveryFee]
   );
+
+  const handleEditSavedAddress = (addr: StructuredAddress) => {
+    setEditingAddress(addr);
+    setIsEditingAddress(true);
+  };
+
+  const handleDeleteSavedAddress = (addressId: string) => {
+    const nextAddresses = savedAddresses.filter((address) => address.id !== addressId);
+    persistAddresses(nextAddresses);
+
+    if (structuredAddress?.id === addressId) {
+      setStructuredAddress(null);
+      sessionStorage.removeItem(SESSION_ADDRESS_KEY);
+      setDeliveryFee(0);
+      setDeliveryDistanceKm(null);
+      setDeliveryError("");
+      setIsEditingAddress(true);
+    }
+  };
 
   const handleSaveContact = () => {
     if (!name.trim()) {
@@ -330,10 +388,7 @@ const CartSidebar = () => {
   };
 
   const goToDelivery = () => {
-    if (!items.length) {
-      toast.info("Escolha os produtos para continuar.");
-      return;
-    }
+    if (!items.length) return;
     setStep("delivery");
   };
 
@@ -665,66 +720,85 @@ const CartSidebar = () => {
               </div>
 
               <div className="rounded-3xl bg-card p-4 shadow-sm">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <MapPin className="h-5 w-5" />
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
+                      <p className="text-xs text-muted-foreground">Selecione ou cadastre um endereço</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
-                    <p className="text-xs text-muted-foreground">Busque seu endereço com Google Maps</p>
-                  </div>
+
+                  {structuredAddress && !isEditingAddress && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingAddress(null);
+                        setIsEditingAddress(true);
+                      }}
+                      className="text-sm font-medium text-primary"
+                    >
+                      Trocar
+                    </button>
+                  )}
                 </div>
 
-                {isEditingAddress ? (
+                {structuredAddress && !isEditingAddress ? (
+                  <div className="rounded-2xl border border-primary bg-primary/5 p-4">
+                    <p className="text-sm font-semibold text-foreground">{structuredAddress.mainText}</p>
+                    <p className="text-xs text-muted-foreground">{structuredAddress.secondaryText}</p>
+                    {structuredAddress.complement && (
+                      <p className="mt-1 text-xs text-muted-foreground">Compl: {structuredAddress.complement}</p>
+                    )}
+                    {structuredAddress.reference && (
+                      <p className="text-xs text-muted-foreground">Ref: {structuredAddress.reference}</p>
+                    )}
+                  </div>
+                ) : (
                   <AddressSearch
                     onSave={handleSaveAddress}
                     onCancel={() => {
-                      if (structuredAddress) setIsEditingAddress(false);
+                      setEditingAddress(null);
+                      setIsEditingAddress(structuredAddress ? false : true);
                     }}
-                    initialAddress={structuredAddress}
+                    initialAddress={editingAddress}
                   />
+                )}
+              </div>
+
+              <SavedAddressesList
+                addresses={savedAddresses}
+                selectedAddressId={structuredAddress?.id}
+                onSelect={handleSelectSavedAddress}
+                onEdit={handleEditSavedAddress}
+                onDelete={handleDeleteSavedAddress}
+              />
+
+              <div className="rounded-3xl bg-card p-4 shadow-sm">
+                {isCalculatingFee ? (
+                  <div className="flex items-center gap-2 text-sm text-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span>Calculando total com entrega...</span>
+                  </div>
+                ) : deliveryError ? (
+                  <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
+                ) : structuredAddress ? (
+                  <div className="flex items-center justify-between text-base">
+                    <span className="font-medium text-muted-foreground">
+                      Total com entrega
+                    </span>
+                    <span className="text-lg font-bold text-primary">{formatPrice(totalWithDelivery)}</span>
+                  </div>
                 ) : (
-                  <div className="rounded-2xl border border-border bg-background p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex gap-3">
-                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{structuredAddress?.mainText}</p>
-                          <p className="text-xs text-muted-foreground">{structuredAddress?.secondaryText}</p>
-                          {structuredAddress?.complement && (
-                            <p className="mt-1 text-xs text-muted-foreground">Compl: {structuredAddress.complement}</p>
-                          )}
-                          {structuredAddress?.reference && (
-                            <p className="text-xs text-muted-foreground">Ref: {structuredAddress.reference}</p>
-                          )}
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => setIsEditingAddress(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                        <Pencil className="h-4 w-4" />
-                        Editar
-                      </button>
-                    </div>
+                  <div className="flex items-center justify-between text-base">
+                    <span className="font-medium text-muted-foreground">
+                      Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
+                    </span>
+                    <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
                   </div>
                 )}
-
-                <div className="mt-4 rounded-2xl bg-secondary p-4">
-                  {isCalculatingFee ? (
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      <span>Calculando rota e taxa de entrega...</span>
-                    </div>
-                  ) : deliveryError ? (
-                    <div className="space-y-1 text-sm">
-                      <p className="font-semibold text-destructive">{deliveryError}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1 text-sm text-foreground">
-                      <p>
-                        Taxa do motoboy: <span className="font-bold text-primary">{deliveryFeeLabel(deliveryFee)}</span>
-                      </p>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           )}
@@ -1018,7 +1092,7 @@ const CartSidebar = () => {
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => toast.info("Escolha os produtos para continuar.")} className="w-full rounded-2xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
+              <button type="button" className="w-full rounded-2xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
                 Escolha os produtos para continuar
               </button>
             ))}
