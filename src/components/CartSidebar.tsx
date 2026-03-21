@@ -1,5 +1,24 @@
 import { useMemo, useState, useCallback, useEffect, useRef } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, MapPin, Pencil, ChevronLeft, Check, User, Phone, Ticket, ChevronRight, Loader2 } from "lucide-react";
+import {
+  X,
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
+  MapPin,
+  Pencil,
+  ChevronLeft,
+  Check,
+  User,
+  Phone,
+  Ticket,
+  ChevronRight,
+  Loader2,
+  CreditCard,
+  Wallet,
+  Receipt,
+  Store,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +28,7 @@ const SESSION_ADDRESS_KEY = "podemais-checkout-address";
 const SESSION_NAME_KEY = "podemais-checkout-name";
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
 
-const formatPrice = (price: number) => `R$${price.toFixed(2).replace(".", ",")}`;
+const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -25,19 +44,6 @@ const formatCurrencyInput = (value: string) => {
   return numberValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const getDynamicDeliveryFee = (distanceKm: number) => {
-  if (distanceKm <= 0) return 0;
-  if (distanceKm <= 4) return 10;
-  if (distanceKm <= 6) return 12;
-  if (distanceKm <= 8) return 15;
-  if (distanceKm <= 12) return 20;
-  if (distanceKm <= 15) return 22;
-  if (distanceKm <= 17) return 25;
-  if (distanceKm <= 20) return 30;
-  if (distanceKm <= 32) return 35;
-  return 35;
-};
-
 type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
 type CheckoutStep = "cart" | "delivery" | "payment" | "confirmation";
 
@@ -45,7 +51,7 @@ const STEPS: { key: CheckoutStep; label: string }[] = [
   { key: "cart", label: "Sacola" },
   { key: "delivery", label: "Entrega" },
   { key: "payment", label: "Pagamento" },
-  { key: "confirmation", label: "Conclusão" },
+  { key: "confirmation", label: "Revisão" },
 ];
 
 const StepIndicator = ({ currentStep }: { currentStep: CheckoutStep }) => {
@@ -60,16 +66,12 @@ const StepIndicator = ({ currentStep }: { currentStep: CheckoutStep }) => {
         return (
           <div key={step.key} className="flex items-center gap-1">
             {index > 0 && (
-              <div className={`mx-1 h-0.5 w-6 sm:w-10 ${isDone ? "bg-primary" : "bg-border"}`} />
+              <div className={`mx-1 h-0.5 w-5 sm:w-10 ${isDone ? "bg-primary" : "bg-border"}`} />
             )}
             <div className="flex flex-col items-center gap-1">
               <div
                 className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                  isDone
-                    ? "bg-primary text-primary-foreground"
-                    : isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
+                  isDone || isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}
               >
                 {isDone ? <Check className="h-3.5 w-3.5" /> : index + 1}
@@ -85,10 +87,53 @@ const StepIndicator = ({ currentStep }: { currentStep: CheckoutStep }) => {
   );
 };
 
+const paymentOptions: {
+  value: PaymentMethod;
+  title: string;
+  subtitle: string;
+  icon: typeof Wallet;
+  highlight?: string;
+}[] = [
+  {
+    value: "pix",
+    title: "Pix",
+    subtitle: "Pagamento instantâneo com 5% de desconto",
+    icon: Wallet,
+    highlight: "5% OFF",
+  },
+  {
+    value: "debito",
+    title: "Cartão de débito",
+    subtitle: "Pague na entrega",
+    icon: CreditCard,
+  },
+  {
+    value: "credito",
+    title: "Cartão de crédito",
+    subtitle: "Pague na entrega",
+    icon: CreditCard,
+  },
+  {
+    value: "dinheiro",
+    title: "Dinheiro",
+    subtitle: "Leve troco se precisar",
+    icon: Receipt,
+  },
+];
+
+const deliveryFeeLabel = (fee: number) => (fee > 0 ? formatPrice(fee) : "A calcular");
+
 const CartSidebar = () => {
   const {
-    items, isCartOpen, setIsCartOpen, updateQuantity, removeFromCart,
-    totalPrice, totalItems, addOrder, clearCart,
+    items,
+    isCartOpen,
+    setIsCartOpen,
+    updateQuantity,
+    removeFromCart,
+    totalPrice,
+    totalItems,
+    addOrder,
+    clearCart,
   } = useCart();
 
   const [step, setStep] = useState<CheckoutStep>("cart");
@@ -97,6 +142,8 @@ const CartSidebar = () => {
   const [structuredAddress, setStructuredAddress] = useState<StructuredAddress | null>(null);
   const [isEditingAddress, setIsEditingAddress] = useState(true);
   const [deliveryFee, setDeliveryFee] = useState(0);
+  const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(null);
+  const [deliveryError, setDeliveryError] = useState<string>("");
   const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
@@ -117,13 +164,31 @@ const CartSidebar = () => {
         const parsed = JSON.parse(storedAddress) as StructuredAddress;
         setStructuredAddress(parsed);
         setIsEditingAddress(false);
-        // Calculate freight for restored address
+
         const fullDest = [parsed.fullText, parsed.complement].filter(Boolean).join(", ");
-        supabase.functions.invoke("calculate-freight", { body: { destination: fullDest } })
-          .then(({ data }) => { if (data?.freightPrice) setDeliveryFee(data.freightPrice); })
-          .catch(() => {});
-      } catch { /* ignore */ }
+        supabase.functions
+          .invoke("calculate-freight", { body: { destination: fullDest } })
+          .then(({ data }) => {
+            if (typeof data?.freightPrice === "number") {
+              setDeliveryFee(data.freightPrice);
+              setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
+              setDeliveryError(data?.error ?? "");
+            } else {
+              setDeliveryFee(0);
+              setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
+              setDeliveryError(data?.error ?? "");
+            }
+          })
+          .catch(() => {
+            setDeliveryFee(0);
+            setDeliveryDistanceKm(null);
+            setDeliveryError("Não foi possível recalcular a taxa de entrega.");
+          });
+      } catch {
+        // ignore invalid session data
+      }
     }
+
     if (storedName) setName(storedName);
     if (storedPhone) setPhone(storedPhone);
     if (storedName && storedPhone) setIsEditingContact(false);
@@ -153,6 +218,7 @@ const CartSidebar = () => {
 
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
   const isAddressValid = structuredAddress !== null;
+  const hasValidDeliveryFee = deliveryFee > 0 && !deliveryError;
 
   const savedAddressDisplay = useMemo(() => {
     if (!structuredAddress) return "";
@@ -164,23 +230,35 @@ const CartSidebar = () => {
 
   const calculateDeliveryFee = useCallback(async (addr: StructuredAddress) => {
     setIsCalculatingFee(true);
+    setDeliveryError("");
+
     try {
       const fullDest = [addr.fullText, addr.complement].filter(Boolean).join(", ");
       const { data } = await supabase.functions.invoke("calculate-freight", {
         body: { destination: fullDest },
       });
-      if (data?.freightPrice) {
+
+      if (typeof data?.freightPrice === "number") {
         setDeliveryFee(data.freightPrice);
-      } else {
-        setDeliveryFee(0);
-        if (data?.error) toast.info(data.error);
+        setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
+        setDeliveryError("");
+        return;
       }
+
+      setDeliveryFee(0);
+      setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
+      setDeliveryError(data?.error || "Não foi possível calcular a entrega.");
+      if (data?.error) toast.info(data.error);
     } catch {
       setDeliveryFee(0);
+      setDeliveryDistanceKm(null);
+      setDeliveryError("Não foi possível calcular a entrega.");
+      toast.info("Não foi possível calcular a entrega.");
     } finally {
       setIsCalculatingFee(false);
     }
   }, []);
+
   const hasSelectedPaymentMethod = paymentMethod !== null;
   const isPaymentValid =
     hasSelectedPaymentMethod &&
@@ -199,12 +277,15 @@ const CartSidebar = () => {
     sessionStorage.setItem(SESSION_PHONE_KEY, formattedPhone);
   };
 
-  const handleSaveAddress = useCallback((addr: StructuredAddress) => {
-    setStructuredAddress(addr);
-    sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
-    setIsEditingAddress(false);
-    calculateDeliveryFee(addr);
-  }, [calculateDeliveryFee]);
+  const handleSaveAddress = useCallback(
+    (addr: StructuredAddress) => {
+      setStructuredAddress(addr);
+      sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
+      setIsEditingAddress(false);
+      calculateDeliveryFee(addr);
+    },
+    [calculateDeliveryFee]
+  );
 
   const handleSaveContact = () => {
     if (!name.trim()) {
@@ -280,6 +361,11 @@ const CartSidebar = () => {
       return;
     }
 
+    if (!hasValidDeliveryFee) {
+      toast.info(deliveryError || "A entrega precisa ser calculada antes de continuar.");
+      return;
+    }
+
     setPaymentMethod(null);
     setNeedsChange("não");
     setChangeFor("");
@@ -314,6 +400,7 @@ const CartSidebar = () => {
           `Nome: ${name || "-"}`,
           `Telefone: ${phone || "-"}`,
           `Endereço completo: ${savedAddressDisplay || "-"}`,
+          ...(deliveryDistanceKm !== null ? [`Distância da rota: ${deliveryDistanceKm.toFixed(1).replace(".", ",")} km`] : []),
           ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
@@ -335,13 +422,28 @@ const CartSidebar = () => {
           `Total final com entrega: ${formatPrice(finalTotal)}`,
         ].join("\n")
       ),
-    [items, name, phone, savedAddressDisplay, savedCouponCode, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, needsChange, changeFor, deliveryFee, finalTotal]
+    [
+      items,
+      name,
+      phone,
+      savedAddressDisplay,
+      deliveryDistanceKm,
+      savedCouponCode,
+      totalPrice,
+      paymentMethod,
+      pixDiscount,
+      totalWithPixDiscount,
+      needsChange,
+      changeFor,
+      deliveryFee,
+      finalTotal,
+    ]
   );
 
   const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
 
   const handleCheckout = () => {
-    if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod) {
+    if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod || !hasValidDeliveryFee) {
       toast.info("Preencha todas as etapas obrigatórias para finalizar.");
       return;
     }
@@ -368,16 +470,23 @@ const CartSidebar = () => {
   if (!isCartOpen) return null;
 
   const paymentLabel =
-    paymentMethod === "pix" ? "Pix (5% desconto)" :
-    paymentMethod === "debito" ? "Débito" :
-    paymentMethod === "credito" ? "Crédito" :
-    paymentMethod === "dinheiro" ? "Dinheiro" : "-";
+    paymentMethod === "pix"
+      ? "Pix (5% desconto)"
+      : paymentMethod === "debito"
+        ? "Cartão de débito"
+        : paymentMethod === "credito"
+          ? "Cartão de crédito"
+          : paymentMethod === "dinheiro"
+            ? "Dinheiro"
+            : "-";
+
+  const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && !isEditingAddress && hasValidDeliveryFee;
 
   return (
     <div className="fixed inset-0 z-[90] flex justify-end">
       <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={closeCart} />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-card shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border bg-primary px-5 py-4">
+      <div className="relative flex h-full w-full max-w-md flex-col bg-[#f7f7f7] shadow-2xl">
+        <div className="flex items-center justify-between bg-primary px-5 py-4 text-primary-foreground">
           <div className="flex items-center gap-2">
             {step !== "cart" && (
               <button
@@ -386,112 +495,162 @@ const CartSidebar = () => {
                   const idx = stepOrder.indexOf(step);
                   if (idx > 0) setStep(stepOrder[idx - 1]);
                 }}
-                className="text-primary-foreground/80"
+                className="rounded-full p-1 text-primary-foreground/90"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
             )}
-            <h2 className="text-lg font-bold text-primary-foreground">
-              {step === "cart" ? "Sua Sacola" : "Checkout"}
-            </h2>
+            <div>
+              <p className="text-xs font-medium text-primary-foreground/80">Entrega rápida</p>
+              <h2 className="text-lg font-bold">{step === "cart" ? "Sua Sacola" : "Finalizar pedido"}</h2>
+            </div>
           </div>
-          <button onClick={closeCart} className="text-primary-foreground/80">
+          <button onClick={closeCart} className="rounded-full p-1 text-primary-foreground/90">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {step !== "cart" && items.length > 0 && (
-          <div className="border-b border-border">
-            <StepIndicator currentStep={step} />
-          </div>
-        )}
+        {step !== "cart" && items.length > 0 && <div className="bg-card border-b border-border"><StepIndicator currentStep={step} /></div>}
 
         <div className="flex-1 overflow-y-auto">
           {step === "cart" && (
-            <div className="p-5">
-              {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-                  <ShoppingBag className="h-12 w-12" />
-                  <p className="text-sm">Seu carrinho está vazio</p>
-                  <p className="text-center text-sm">Escolha os produtos para continuar.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-end">
+            <div className="space-y-4 p-4">
+              <div className="rounded-3xl bg-card p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Store className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Seu pedido</p>
+                      <p className="text-xs text-muted-foreground">Revise os itens antes de continuar</p>
+                    </div>
+                  </div>
+                  {items.length > 0 && (
                     <button
                       type="button"
                       onClick={handleClearCart}
                       className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
                     >
-                      Limpar sacola
+                      Limpar
                     </button>
-                  </div>
+                  )}
+                </div>
 
-                  {items.map((item) => (
-                    <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex gap-3 rounded-xl border border-border bg-background p-3">
-                      <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-lg bg-secondary/30 object-contain" loading="lazy" />
-                      <div className="flex flex-1 flex-col justify-between">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="line-clamp-2 text-sm font-medium text-foreground">{item.product.name}</p>
-                            {item.selectedVariation && (
-                              <p className="mt-1 text-xs text-muted-foreground">
-                                {item.product.variationGroup?.name}: {item.selectedVariation}
-                              </p>
-                            )}
+                {items.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+                    <ShoppingBag className="h-12 w-12" />
+                    <p className="text-sm font-medium">Sua sacola está vazia</p>
+                    <p className="text-center text-sm">Adicione produtos para iniciar o checkout.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      <div
+                        key={`${item.product.id}-${item.selectedVariation ?? "default"}`}
+                        className="rounded-2xl border border-border bg-background p-3"
+                      >
+                        <div className="flex gap-3">
+                          <img
+                            src={item.product.image}
+                            alt={item.product.name}
+                            className="h-16 w-16 rounded-xl bg-secondary/30 object-contain"
+                            loading="lazy"
+                          />
+                          <div className="flex flex-1 flex-col justify-between gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="line-clamp-2 text-sm font-semibold text-foreground">{item.product.name}</p>
+                                {item.selectedVariation && (
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    {item.product.variationGroup?.name}: {item.selectedVariation}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleRemoveItem(item.product.id, item.selectedVariation)}
+                                className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-secondary"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1 rounded-full border border-border bg-card px-1 py-1">
+                                <button
+                                  onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariation)}
+                                  className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <span className="min-w-[28px] text-center text-sm font-semibold text-foreground">{item.quantity}</span>
+                                <button
+                                  onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)}
+                                  className="rounded-full bg-primary p-1.5 text-primary-foreground"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              </div>
+                              <p className="text-sm font-bold text-foreground">{formatPrice(item.product.price * item.quantity)}</p>
+                            </div>
                           </div>
-                          <button onClick={() => handleRemoveItem(item.product.id, item.selectedVariation)} className="shrink-0 text-muted-foreground">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1 rounded-lg border border-border">
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariation)} className="px-2 py-1 text-muted-foreground">
-                              <Minus className="h-3 w-3" />
-                            </button>
-                            <span className="min-w-[24px] text-center text-sm font-medium">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)} className="px-2 py-1 text-muted-foreground">
-                              <Plus className="h-3 w-3" />
-                            </button>
-                          </div>
-                          <p className="text-sm font-bold text-primary">{formatPrice(item.product.price * item.quantity)}</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {step === "delivery" && (
-            <div className="space-y-5 p-5">
-              <div className="space-y-4 rounded-2xl border border-border p-4">
-                <h3 className="text-sm font-semibold text-foreground">Informações de contato</h3>
+            <div className="space-y-4 p-4">
+              <div className="rounded-3xl bg-card p-4 shadow-sm">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Seus dados</h3>
+                    <p className="text-xs text-muted-foreground">Quem vai receber o pedido?</p>
+                  </div>
+                </div>
 
                 {isEditingContact ? (
-                  <>
+                  <div className="space-y-3">
                     <div>
                       <label className="mb-2 block text-sm font-medium text-foreground">Nome</label>
-                      <input value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Seu nome" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
+                      <input
+                        value={name}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        placeholder="Seu nome"
+                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                      />
                     </div>
                     <div>
                       <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
-                      <input value={phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="(67) 99999-9999" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
+                      <input
+                        value={phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        placeholder="(67) 99999-9999"
+                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                      />
                     </div>
                     <button
                       type="button"
                       onClick={handleSaveContact}
                       disabled={!isContactValid}
-                      className={`w-full rounded-xl py-3 text-sm font-semibold ${isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                      className={`w-full rounded-2xl py-3 text-sm font-semibold ${
+                        isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}
                     >
                       Salvar contato
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <div className="rounded-xl border border-border bg-background p-4">
+                  <div className="rounded-2xl border border-border bg-background p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <div className="flex items-center gap-2 text-sm text-foreground">
                           <User className="h-4 w-4 text-primary" />
                           {name}
@@ -503,28 +662,39 @@ const CartSidebar = () => {
                       </div>
                       <button type="button" onClick={() => setIsEditingContact(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
                         <Pencil className="h-4 w-4" />
+                        Editar
                       </button>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-4 rounded-2xl border border-border p-4">
-                <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
+              <div className="rounded-3xl bg-card p-4 shadow-sm">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Endereço de entrega</h3>
+                    <p className="text-xs text-muted-foreground">Busque seu endereço com Google Maps</p>
+                  </div>
+                </div>
 
                 {isEditingAddress ? (
                   <AddressSearch
                     onSave={handleSaveAddress}
-                    onCancel={() => { if (structuredAddress) setIsEditingAddress(false); }}
+                    onCancel={() => {
+                      if (structuredAddress) setIsEditingAddress(false);
+                    }}
                     initialAddress={structuredAddress}
                   />
                 ) : (
-                  <div className="rounded-xl border border-border bg-background p-4">
+                  <div className="rounded-2xl border border-border bg-background p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex gap-3">
                         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                         <div>
-                          <p className="text-sm font-medium text-foreground">{structuredAddress?.mainText}</p>
+                          <p className="text-sm font-semibold text-foreground">{structuredAddress?.mainText}</p>
                           <p className="text-xs text-muted-foreground">{structuredAddress?.secondaryText}</p>
                           {structuredAddress?.complement && (
                             <p className="mt-1 text-xs text-muted-foreground">Compl: {structuredAddress.complement}</p>
@@ -536,47 +706,72 @@ const CartSidebar = () => {
                       </div>
                       <button type="button" onClick={() => setIsEditingAddress(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
                         <Pencil className="h-4 w-4" />
+                        Editar
                       </button>
                     </div>
                   </div>
                 )}
 
-                {isCalculatingFee ? (
-                  <div className="flex items-center gap-2 rounded-xl bg-secondary p-3 text-sm text-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span>Calculando taxa de entrega...</span>
-                  </div>
-                ) : (
-                  <div className="rounded-xl bg-secondary p-3 text-sm text-foreground">
-                    <p>
-                      Taxa do motoboy: <span className="font-bold text-primary">{formatPrice(deliveryFee)}</span>
-                    </p>
-                  </div>
-                )}
+                <div className="mt-4 rounded-2xl bg-secondary p-4">
+                  {isCalculatingFee ? (
+                    <div className="flex items-center gap-2 text-sm text-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span>Calculando rota e taxa de entrega...</span>
+                    </div>
+                  ) : deliveryError ? (
+                    <div className="space-y-1 text-sm">
+                      <p className="font-semibold text-destructive">{deliveryError}</p>
+                      {deliveryDistanceKm !== null && (
+                        <p className="text-muted-foreground">
+                          Distância calculada: {deliveryDistanceKm.toFixed(1).replace(".", ",")} km
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-1 text-sm text-foreground">
+                      <p>
+                        Taxa do motoboy: <span className="font-bold text-primary">{deliveryFeeLabel(deliveryFee)}</span>
+                      </p>
+                      {deliveryDistanceKm !== null && (
+                        <p className="text-muted-foreground">
+                          Distância da rota: {deliveryDistanceKm.toFixed(1).replace(".", ",")} km
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
           {step === "payment" && (
-            <div className="space-y-5 p-5">
-              <div className="space-y-4 rounded-2xl border border-border p-4">
-                <h3 className="text-sm font-semibold text-foreground">Forma de pagamento</h3>
+            <div className="space-y-4 p-4">
+              <div className="rounded-3xl bg-card p-4 shadow-sm">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Wallet className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Pagamento</h3>
+                    <p className="text-xs text-muted-foreground">Escolha como deseja pagar</p>
+                  </div>
+                </div>
 
                 {isEditingCoupon ? (
-                  <div className="rounded-xl border border-border bg-background p-4">
+                  <div className="mb-4 rounded-2xl border border-border bg-background p-4">
                     <label className="mb-2 block text-sm font-medium text-foreground">Cupom</label>
                     <input
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                       placeholder="Digite seu cupom"
-                      className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                      className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
                     />
                     <div className="mt-3 flex gap-2">
                       <button
                         type="button"
                         onClick={handleSaveCoupon}
                         disabled={!couponCode.trim()}
-                        className={`flex-1 rounded-xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                        className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                       >
                         Salvar cupom
                       </button>
@@ -591,14 +786,14 @@ const CartSidebar = () => {
                           setCouponCode("");
                           setIsEditingCoupon(false);
                         }}
-                        className="rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground"
+                        className="rounded-2xl border border-border px-4 py-3 text-sm font-medium text-foreground"
                       >
                         Cancelar
                       </button>
                     </div>
                   </div>
                 ) : savedCouponCode ? (
-                  <div className="rounded-xl border border-border bg-background p-4">
+                  <div className="mb-4 rounded-2xl border border-border bg-background p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2 text-sm text-foreground">
                         <Ticket className="h-4 w-4 text-primary" />
@@ -626,52 +821,53 @@ const CartSidebar = () => {
                   <button
                     type="button"
                     onClick={() => setIsEditingCoupon(true)}
-                    className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
+                    className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
                         <Ticket className="h-4 w-4" />
                       </span>
                       <div>
-                        <p className="text-sm font-medium text-foreground">Tem um cupom?</p>
-                        <p className="text-xs text-muted-foreground">Clique e insira o código</p>
+                        <p className="text-sm font-medium text-foreground">Adicionar cupom</p>
+                        <p className="text-xs text-muted-foreground">Se você tiver um código promocional</p>
                       </div>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("pix")}
-                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors ${
-                    paymentMethod === "pix" ? "border-primary bg-primary/5 text-foreground" : "border-border text-foreground"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span>Pix</span>
-                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">5% desconto</span>
-                  </div>
-                  <div className={`h-5 w-5 rounded-full border-2 ${paymentMethod === "pix" ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>
-                    {paymentMethod === "pix" && <Check className="h-full w-full p-0.5 text-primary-foreground" />}
-                  </div>
-                </button>
+                <div className="space-y-3">
+                  {paymentOptions.map((option) => {
+                    const Icon = option.icon;
+                    const isSelected = paymentMethod === option.value;
 
-                <div className="space-y-2">
-                  <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagar na entrega</h4>
-
-                  {(["debito", "credito", "dinheiro"] as const).map((method) => {
-                    const labels = { debito: "Débito", credito: "Crédito", dinheiro: "Dinheiro" };
                     return (
                       <button
-                        key={method}
+                        key={option.value}
                         type="button"
-                        onClick={() => setPaymentMethod(method)}
-                        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 text-sm font-medium transition-colors ${paymentMethod === method ? "border-primary bg-primary/5 text-foreground" : "border-border text-foreground"}`}
+                        onClick={() => setPaymentMethod(option.value)}
+                        className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${
+                          isSelected ? "border-primary bg-primary/5" : "border-border bg-background"
+                        }`}
                       >
-                        <span>{labels[method]}</span>
-                        <div className={`h-5 w-5 rounded-full border-2 ${paymentMethod === method ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>
-                          {paymentMethod === method && <Check className="h-full w-full p-0.5 text-primary-foreground" />}
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground">{option.title}</p>
+                              {option.highlight && (
+                                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                  {option.highlight}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">{option.subtitle}</p>
+                          </div>
+                        </div>
+                        <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>
+                          {isSelected && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
                         </div>
                       </button>
                     );
@@ -679,14 +875,22 @@ const CartSidebar = () => {
                 </div>
 
                 {paymentMethod === "dinheiro" && (
-                  <div className="space-y-3 rounded-xl bg-secondary p-4">
+                  <div className="mt-4 space-y-3 rounded-2xl bg-secondary p-4">
                     <div>
                       <label className="mb-2 block text-sm font-medium text-foreground">Precisa de troco?</label>
                       <div className="grid grid-cols-2 gap-2">
-                        <button type="button" onClick={() => setNeedsChange("sim")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
+                        <button
+                          type="button"
+                          onClick={() => setNeedsChange("sim")}
+                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
+                        >
                           Sim
                         </button>
-                        <button type="button" onClick={() => setNeedsChange("não")} className={`rounded-xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>
+                        <button
+                          type="button"
+                          onClick={() => setNeedsChange("não")}
+                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
+                        >
                           Não
                         </button>
                       </div>
@@ -694,32 +898,40 @@ const CartSidebar = () => {
                     {needsChange === "sim" && (
                       <div>
                         <label className="mb-2 block text-sm font-medium text-foreground">Troco para quanto?</label>
-                        <input value={changeFor} onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))} placeholder="Ex: 100,00" className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm" />
+                        <input
+                          value={changeFor}
+                          onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))}
+                          placeholder="Ex: 100,00"
+                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                        />
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2 rounded-2xl border border-border p-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
-                </div>
-                {paymentMethod === "pix" && (
-                  <div className="flex justify-between text-primary">
-                    <span>Desconto Pix</span>
-                    <span className="font-medium">-{formatPrice(pixDiscount)}</span>
+              <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Resumo</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Taxa de entrega</span>
-                  <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
-                </div>
-                <div className="border-t border-border pt-2">
-                  <div className="flex justify-between text-base">
-                    <span className="font-semibold text-foreground">Total</span>
-                    <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
+                  {paymentMethod === "pix" && (
+                    <div className="flex justify-between text-primary">
+                      <span>Desconto Pix</span>
+                      <span className="font-medium">-{formatPrice(pixDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Entrega</span>
+                    <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
+                  </div>
+                  <div className="border-t border-border pt-3">
+                    <div className="flex justify-between text-base">
+                      <span className="font-semibold text-foreground">Total</span>
+                      <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -727,27 +939,32 @@ const CartSidebar = () => {
           )}
 
           {step === "confirmation" && (
-            <div className="space-y-5 p-5">
-              <div className="rounded-2xl border border-border p-4">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Informações para entrega</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
+            <div className="space-y-4 p-4">
+              <div className="rounded-3xl bg-card p-4 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Entrega</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-foreground">
                     <User className="h-4 w-4 text-primary" />
                     <span>{name}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-foreground">
+                  <div className="flex items-center gap-2 text-foreground">
                     <Phone className="h-4 w-4 text-primary" />
                     <span>{phone}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <MapPin className="h-4 w-4 text-primary" />
+                  <div className="flex items-start gap-2 text-foreground">
+                    <MapPin className="mt-0.5 h-4 w-4 text-primary" />
                     <span>{savedAddressDisplay || "-"}</span>
                   </div>
+                  {deliveryDistanceKm !== null && (
+                    <p className="text-xs text-muted-foreground">
+                      Distância da rota: {deliveryDistanceKm.toFixed(1).replace(".", ",")} km
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border p-4">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Detalhes do pedido</h3>
+              <div className="rounded-3xl bg-card p-4 shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Itens do pedido</h3>
                 <div className="space-y-2">
                   {items.map((item) => (
                     <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex items-center justify-between text-sm">
@@ -761,41 +978,44 @@ const CartSidebar = () => {
                 </div>
               </div>
 
-              <div className="space-y-2 rounded-2xl border border-border p-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Pagamento</span>
-                  <span className="font-medium text-foreground">{paymentLabel}</span>
-                </div>
-                {savedCouponCode && (
+              <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Pagamento e total</h3>
+                <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cupom</span>
-                    <span className="font-medium text-foreground">{savedCouponCode}</span>
+                    <span className="text-muted-foreground">Forma de pagamento</span>
+                    <span className="font-medium text-foreground">{paymentLabel}</span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
-                </div>
-                {paymentMethod === "pix" && (
-                  <div className="flex justify-between text-primary">
-                    <span>Desconto Pix</span>
-                    <span className="font-medium">-{formatPrice(pixDiscount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Taxa de entrega</span>
-                  <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
-                </div>
-                {paymentMethod === "dinheiro" && needsChange === "sim" && changeFor && (
+                  {savedCouponCode && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cupom</span>
+                      <span className="font-medium text-foreground">{savedCouponCode}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Troco para</span>
-                    <span className="font-medium text-foreground">R$ {changeFor}</span>
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
                   </div>
-                )}
-                <div className="border-t border-border pt-2">
-                  <div className="flex justify-between text-base">
-                    <span className="font-semibold text-foreground">Total</span>
-                    <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
+                  {paymentMethod === "pix" && (
+                    <div className="flex justify-between text-primary">
+                      <span>Desconto Pix</span>
+                      <span className="font-medium">-{formatPrice(pixDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Entrega</span>
+                    <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
+                  </div>
+                  {paymentMethod === "dinheiro" && needsChange === "sim" && changeFor && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Troco para</span>
+                      <span className="font-medium text-foreground">R$ {changeFor}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-border pt-3">
+                    <div className="flex justify-between text-base">
+                      <span className="font-semibold text-foreground">Total</span>
+                      <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -803,37 +1023,36 @@ const CartSidebar = () => {
           )}
         </div>
 
-        <div className="border-t border-border p-5">
-          {step === "cart" && (
-            items.length > 0 ? (
+        <div className="border-t border-border bg-card p-4">
+          {step === "cart" &&
+            (items.length > 0 ? (
               <div>
                 <div className="mb-3 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})</span>
+                  <span className="text-muted-foreground">
+                    Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
+                  </span>
                   <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
                 </div>
-                <button type="button" onClick={goToDelivery} className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
+                <button type="button" onClick={goToDelivery} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
                   Continuar
                 </button>
               </div>
             ) : (
-              <button type="button" onClick={() => toast.info("Escolha os produtos para continuar.")} className="w-full rounded-xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
+              <button type="button" onClick={() => toast.info("Escolha os produtos para continuar.")} className="w-full rounded-2xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
                 Escolha os produtos para continuar
               </button>
-            )
-          )}
+            ))}
 
           {step === "delivery" && (
             <button
               type="button"
               onClick={goToPayment}
-              disabled={!isContactValid || !isAddressValid || isEditingContact || isEditingAddress}
-              className={`w-full rounded-xl py-3.5 text-sm font-bold ${
-                isContactValid && isAddressValid && !isEditingContact && !isEditingAddress
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
+              disabled={!canContinueDelivery}
+              className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
+                canContinueDelivery ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
-              Continuar
+              Ir para pagamento
             </button>
           )}
 
@@ -842,17 +1061,17 @@ const CartSidebar = () => {
               type="button"
               onClick={goToConfirmation}
               disabled={!isPaymentValid}
-              className={`w-full rounded-xl py-3.5 text-sm font-bold ${
+              className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
                 isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
-              Continuar
+              Revisar pedido
             </button>
           )}
 
           {step === "confirmation" && (
-            <button type="button" onClick={handleCheckout} className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
-              Enviar Pedido via WhatsApp
+            <button type="button" onClick={handleCheckout} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
+              Enviar pedido via WhatsApp
             </button>
           )}
         </div>

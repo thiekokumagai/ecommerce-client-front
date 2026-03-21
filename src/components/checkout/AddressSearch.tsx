@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MapPin, Search, ChevronLeft, Loader2 } from "lucide-react";
+import { MapPin, Search, Loader2, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AddressPrediction {
@@ -30,7 +30,14 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selected, setSelected] = useState<AddressPrediction | null>(
-    initialAddress ? { placeId: "", mainText: initialAddress.mainText, secondaryText: initialAddress.secondaryText, fullText: initialAddress.fullText } : null
+    initialAddress
+      ? {
+          placeId: "",
+          mainText: initialAddress.mainText,
+          secondaryText: initialAddress.secondaryText,
+          fullText: initialAddress.fullText,
+        }
+      : null
   );
   const [complement, setComplement] = useState(initialAddress?.complement || "");
   const [reference, setReference] = useState(initialAddress?.reference || "");
@@ -40,7 +47,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
   useEffect(() => {
     if (phase === "search") {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      const timer = setTimeout(() => inputRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
     }
   }, [phase]);
 
@@ -76,6 +84,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
   const handleSave = () => {
     if (!selected) return;
+
     onSave({
       mainText: selected.mainText,
       secondaryText: selected.secondaryText,
@@ -89,54 +98,77 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   if (phase === "details" && selected) {
     return (
       <div className="space-y-4">
-        <div className="flex items-start gap-3 rounded-xl border border-border bg-background p-4">
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">{selected.mainText}</p>
-            <p className="text-xs text-muted-foreground">{selected.secondaryText}</p>
+        <div className="rounded-2xl border border-border bg-background p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex gap-3">
+              <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <MapPin className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{selected.mainText}</p>
+                <p className="text-xs text-muted-foreground">{selected.secondaryText}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPhase("search");
+                setQuery(selected.fullText);
+              }}
+              className="text-sm font-medium text-primary"
+            >
+              Trocar
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => { setPhase("search"); setQuery(selected.mainText); }}
-            className="text-primary"
-          >
-            <MapPin className="h-4 w-4" />
-          </button>
         </div>
 
-        <div>
-          <input
-            value={complement}
-            onChange={(e) => { setComplement(e.target.value); if (e.target.value) setNoComplement(false); }}
-            placeholder="Complemento *"
-            disabled={noComplement}
-            className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 md:text-sm"
-          />
-          <label className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="space-y-3">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-foreground">Complemento</label>
             <input
-              type="checkbox"
-              checked={noComplement}
-              onChange={(e) => { setNoComplement(e.target.checked); if (e.target.checked) setComplement(""); }}
-              className="h-4 w-4 rounded border-border accent-primary"
+              value={complement}
+              onChange={(e) => {
+                setComplement(e.target.value);
+                if (e.target.value) setNoComplement(false);
+              }}
+              placeholder="Casa, apto, bloco, sala..."
+              disabled={noComplement}
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 md:text-sm"
             />
-            Endereço sem complemento
-          </label>
-        </div>
+            <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={noComplement}
+                onChange={(e) => {
+                  setNoComplement(e.target.checked);
+                  if (e.target.checked) setComplement("");
+                }}
+                className="h-4 w-4 rounded border-border accent-primary"
+              />
+              Endereço sem complemento
+            </label>
+          </div>
 
-        <input
-          value={reference}
-          onChange={(e) => setReference(e.target.value)}
-          placeholder="Ponto de referência (opcional)"
-          className="h-11 w-full rounded-xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
-        />
+          <div>
+            <label className="mb-2 block text-sm font-medium text-foreground">Ponto de referência</label>
+            <input
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="Opcional"
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+            />
+          </div>
+        </div>
 
         <button
           type="button"
           onClick={handleSave}
           disabled={!complement && !noComplement}
-          className={`w-full rounded-xl py-3 text-sm font-semibold ${
+          className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
             complement || noComplement ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
           }`}
         >
+          <Check className="h-4 w-4" />
           Salvar endereço
         </button>
       </div>
@@ -144,17 +176,17 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => handleInputChange(e.target.value)}
-          placeholder="Buscar endereço"
-          className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+          placeholder="Digite rua, número ou bairro"
+          className="h-12 w-full rounded-2xl border border-border bg-background pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
         />
-        {isLoading && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
+        {isLoading && <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
       </div>
 
       {query.length >= 3 && (
@@ -164,18 +196,22 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       )}
 
       {predictions.length > 0 && (
-        <div className="space-y-1 rounded-xl border border-border bg-background p-1">
-          {predictions.map((p) => (
+        <div className="overflow-hidden rounded-2xl border border-border bg-background">
+          {predictions.map((prediction, index) => (
             <button
-              key={p.placeId}
+              key={prediction.placeId}
               type="button"
-              onClick={() => handleSelect(p)}
-              className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-secondary"
+              onClick={() => handleSelect(prediction)}
+              className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary ${
+                index !== predictions.length - 1 ? "border-b border-border" : ""
+              }`}
             >
-              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-foreground">{p.mainText}</p>
-                <p className="text-xs text-muted-foreground">{p.secondaryText}</p>
+                <p className="text-sm font-semibold text-foreground">{prediction.mainText}</p>
+                <p className="text-xs text-muted-foreground">{prediction.secondaryText}</p>
               </div>
             </button>
           ))}
@@ -183,14 +219,16 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       )}
 
       {query.length >= 3 && predictions.length === 0 && !isLoading && (
-        <p className="px-2 py-3 text-center text-sm text-muted-foreground">Nenhum endereço encontrado</p>
+        <p className="rounded-2xl bg-background px-4 py-4 text-center text-sm text-muted-foreground">
+          Nenhum endereço encontrado
+        </p>
       )}
 
       {initialAddress && (
         <button
           type="button"
           onClick={onCancel}
-          className="w-full rounded-xl border border-border py-3 text-sm font-medium text-foreground"
+          className="w-full rounded-2xl border border-border bg-background py-3 text-sm font-medium text-foreground"
         >
           Cancelar
         </button>
