@@ -116,9 +116,10 @@ const CartSidebar = () => {
   const [step, setStep] = useState<CheckoutStep>("cart");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [savedAddress, setSavedAddress] = useState("");
+  const [structuredAddress, setStructuredAddress] = useState<StructuredAddress | null>(null);
   const [isEditingAddress, setIsEditingAddress] = useState(true);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [needsChange, setNeedsChange] = useState("não");
