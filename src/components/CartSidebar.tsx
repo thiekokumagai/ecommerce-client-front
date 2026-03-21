@@ -824,9 +824,6 @@ const CartSidebar = () => {
                         <span className="font-medium text-muted-foreground">Total com entrega</span>
                         <span className="text-lg font-bold text-primary">{formatPrice(totalWithDelivery)}</span>
                       </div>
-                      {deliveryDistanceKm !== null && (
-                        <p className="text-xs text-muted-foreground">Distância estimada: {deliveryDistanceKm} km</p>
-                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-between text-base">
