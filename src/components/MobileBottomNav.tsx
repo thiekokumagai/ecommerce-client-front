@@ -1,53 +1,91 @@
-import { Home, Package, ShoppingBag } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
-import { cn } from "@/lib/utils";
 
-const navLinks = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/pedidos", label: "Pedidos anteriores", icon: Package },
-];
-
+const SESSION_ADDRESS_KEY = "podemais-checkout-address";
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
+
+interface StoredAddress {
+  mainText: string;
+  secondaryText: string;
+  fullText: string;
+  complement: string;
+  reference: string;
+  noComplement: boolean;
+}
 
 const MobileBottomNav = () => {
   const location = useLocation();
-  const { totalPrice, setIsCartOpen } = useCart();
+  const { totalPrice, totalItems, setIsCartOpen } = useCart();
+  const [savedAddress, setSavedAddress] = useState<StoredAddress | null>(null);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+
+  useEffect(() => {
+    const syncAddress = async () => {
+      const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY);
+      if (!storedAddress) {
+        setSavedAddress(null);
+        setDeliveryFee(0);
+        return;
+      }
+
+      try {
+        const parsedAddress = JSON.parse(storedAddress) as StoredAddress;
+        setSavedAddress(parsedAddress);
+
+        const destination = [parsedAddress.fullText, parsedAddress.complement].filter(Boolean).join(", ");
+        const { data } = await supabase.functions.invoke("calculate-freight", {
+          body: { destination },
+        });
+
+        setDeliveryFee(typeof data?.freightPrice === "number" ? data.freightPrice : 0);
+      } catch {
+        setSavedAddress(null);
+        setDeliveryFee(0);
+      }
+    };
+
+    syncAddress();
+    window.addEventListener("focus", syncAddress);
+
+    return () => {
+      window.removeEventListener("focus", syncAddress);
+    };
+  }, []);
+
+  const isCartRouteVisible = location.pathname === "/" || location.pathname.startsWith("/produto/");
+
+  const addressText = useMemo(() => {
+    if (!savedAddress) return "Adicione seu endereço para calcular a entrega";
+    return [savedAddress.mainText, savedAddress.secondaryText].filter(Boolean).join(", ");
+  }, [savedAddress]);
+
+  const totalWithDelivery = totalPrice + deliveryFee;
+
+  if (!isCartRouteVisible || totalItems === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[80] md:hidden">
-      <button
-        type="button"
-        onClick={() => setIsCartOpen(true)}
-        className="relative flex h-10 w-full items-center justify-center bg-primary px-4 text-sm text-primary-foreground"
-      >
-        <ShoppingBag className="absolute left-4 h-4 w-4" />
-        <span>Ver sacola</span>
-        <span className="absolute right-4">{formatPrice(totalPrice)}</span>
-      </button>
-
-      <nav className="border-t border-border bg-background">
-        <div className="grid grid-cols-2">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname === link.to;
-
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2 text-[11px]",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{link.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+    <div className="fixed inset-x-0 bottom-0 z-[80] border-t border-border bg-background/95 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur md:hidden">
+      <div className="mx-auto max-w-md space-y-2">
+        <p className="truncate px-1 text-[11px] text-muted-foreground">{addressText}</p>
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          className="flex w-full items-center justify-between rounded-[24px] bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+        >
+          <div className="flex min-w-0 flex-1 flex-col px-4 py-3 text-left">
+            <span className="text-xs text-muted-foreground">Total com a entrega</span>
+            <span className="truncate text-2xl font-bold text-foreground">
+              {formatPrice(totalWithDelivery)}
+              <span className="ml-1 text-base font-medium text-muted-foreground">/ {totalItems} {totalItems === 1 ? "item" : "itens"}</span>
+            </span>
+          </div>
+          <div className="m-2 flex min-h-[72px] min-w-[44%] items-center justify-center rounded-[22px] bg-primary px-6 text-lg font-bold text-primary-foreground">
+            Continuar
+          </div>
+        </button>
+      </div>
     </div>
   );
 };
