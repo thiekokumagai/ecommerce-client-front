@@ -133,7 +133,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               }}
               placeholder="Complemento *"
               disabled={noComplement}
-              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none disabled:opacity-50"
             />
             <label className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
               <input
@@ -154,7 +154,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder="Ponto de referência (opcional)"
-              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none"
             />
           </div>
         </div>
@@ -201,10 +201,13 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
           <input
             ref={inputRef}
+            type="search"
+            inputMode="search"
+            autoComplete="street-address"
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Buscar endereço e número"
-            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="h-12 w-full rounded-xl border border-border bg-secondary pl-11 pr-10 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none focus:ring-0"
           />
           {query && (
             <button

@@ -30,6 +30,15 @@ const SESSION_ADDRESSES_KEY = "podemais-checkout-addresses";
 const SESSION_NAME_KEY = "podemais-checkout-name";
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
 
+const CREDIT_INSTALLMENTS = [
+  { value: 1, interest: 0 },
+  { value: 2, interest: 5.95 },
+  { value: 3, interest: 6.5 },
+  { value: 4, interest: 7.05 },
+  { value: 5, interest: 7.99 },
+  { value: 6, interest: 8.99 },
+] as const;
+
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
 
 const formatPhone = (value: string) => {
@@ -150,6 +159,7 @@ const CartSidebar = () => {
   const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [creditInstallments, setCreditInstallments] = useState(1);
   const [needsChange, setNeedsChange] = useState("não");
   const [changeFor, setChangeFor] = useState("");
   const [couponCode, setCouponCode] = useState("");
@@ -210,6 +220,7 @@ const CartSidebar = () => {
     if (!isCartOpen) {
       setStep("cart");
       setPaymentMethod(null);
+      setCreditInstallments(1);
       setNeedsChange("não");
       setChangeFor("");
       setEditingAddress(null);
@@ -227,7 +238,22 @@ const CartSidebar = () => {
 
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
-  const discountedProductsTotal = paymentMethod === "pix" ? totalWithPixDiscount : totalPrice;
+
+  const selectedInstallment = CREDIT_INSTALLMENTS.find(
+    (installment) => installment.value === creditInstallments
+  ) ?? CREDIT_INSTALLMENTS[0];
+
+  const creditTotal = useMemo(() => {
+    if (paymentMethod !== "credito") return totalPrice;
+    return totalPrice * (1 + selectedInstallment.interest / 100);
+  }, [paymentMethod, selectedInstallment.interest, totalPrice]);
+
+  const discountedProductsTotal = useMemo(() => {
+    if (paymentMethod === "pix") return totalWithPixDiscount;
+    if (paymentMethod === "credito") return creditTotal;
+    return totalPrice;
+  }, [paymentMethod, totalWithPixDiscount, creditTotal, totalPrice]);
+
   const finalTotal = discountedProductsTotal + deliveryFee;
   const totalWithDelivery = totalPrice + deliveryFee;
 
@@ -238,8 +264,8 @@ const CartSidebar = () => {
   const savedAddressDisplay = useMemo(() => {
     if (!structuredAddress) return "";
     const parts = [structuredAddress.mainText, structuredAddress.secondaryText];
-    if (structuredAddress.complement) parts.push(`Compl: ${structuredAddress.complement}`);
-    if (structuredAddress.reference) parts.push(`Ref: ${structuredAddress.reference}`);
+    if (structuredAddress.complement) parts.push(`Complemento: ${structuredAddress.complement}`);
+    if (structuredAddress.reference) parts.push(`Referência: ${structuredAddress.reference}`);
     return parts.join(", ");
   }, [structuredAddress]);
 
@@ -416,6 +442,7 @@ const CartSidebar = () => {
     }
 
     setPaymentMethod(null);
+    setCreditInstallments(1);
     setNeedsChange("não");
     setChangeFor("");
     setStep("payment");
@@ -435,6 +462,8 @@ const CartSidebar = () => {
     setStep("confirmation");
   };
 
+  const installmentPerMonth = creditTotal / creditInstallments;
+
   const checkoutMessage = useMemo(
     () =>
       encodeURIComponent(
@@ -453,12 +482,18 @@ const CartSidebar = () => {
           "",
           `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
           ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
+          ...(paymentMethod === "credito"
+            ? [
+                `Parcelamento: ${creditInstallments}x`,
+                ...(selectedInstallment.interest > 0 ? [`Juros do crédito: +${selectedInstallment.interest.toFixed(2).replace(".", ",")}%`] : []),
+              ]
+            : []),
           paymentMethod === "pix"
             ? `Forma de pagamento: Pix - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
             : paymentMethod === "debito"
               ? "Forma de pagamento: Débito"
               : paymentMethod === "credito"
-                ? "Forma de pagamento: Crédito"
+                ? `Forma de pagamento: Crédito - ${creditInstallments}x de ${formatPrice(installmentPerMonth)}`
                 : "Forma de pagamento: Dinheiro",
           ...(paymentMethod === "dinheiro"
             ? [
@@ -480,6 +515,9 @@ const CartSidebar = () => {
       paymentMethod,
       pixDiscount,
       totalWithPixDiscount,
+      creditInstallments,
+      selectedInstallment.interest,
+      installmentPerMonth,
       needsChange,
       changeFor,
       deliveryFee,
@@ -522,7 +560,7 @@ const CartSidebar = () => {
       : paymentMethod === "debito"
         ? "Cartão de débito"
         : paymentMethod === "credito"
-          ? "Cartão de crédito"
+          ? `Cartão de crédito${creditInstallments > 1 ? ` - ${creditInstallments}x` : ""}`
           : paymentMethod === "dinheiro"
             ? "Dinheiro"
             : "-";
@@ -672,16 +710,19 @@ const CartSidebar = () => {
                           value={name}
                           onChange={(e) => handleNameChange(e.target.value)}
                           placeholder="Seu nome"
-                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
                         />
                       </div>
                       <div>
                         <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
                         <input
+                          type="tel"
+                          inputMode="numeric"
+                          autoComplete="tel"
                           value={phone}
                           onChange={(e) => handlePhoneChange(e.target.value)}
                           placeholder="(67) 99999-9999"
-                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
                         />
                       </div>
                       <button
@@ -725,6 +766,16 @@ const CartSidebar = () => {
                         <div>
                           <p className="text-sm font-semibold text-foreground">{structuredAddress.mainText}</p>
                           <p className="text-xs text-muted-foreground">{structuredAddress.secondaryText}</p>
+                          {structuredAddress.complement && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Complemento: {structuredAddress.complement}
+                            </p>
+                          )}
+                          {structuredAddress.reference && (
+                            <p className="text-xs text-muted-foreground">
+                              Referência: {structuredAddress.reference}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -768,9 +819,14 @@ const CartSidebar = () => {
                   ) : deliveryError ? (
                     <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
                   ) : structuredAddress ? (
-                    <div className="flex items-center justify-between text-base">
-                      <span className="font-medium text-muted-foreground">Total com entrega</span>
-                      <span className="text-lg font-bold text-primary">{formatPrice(totalWithDelivery)}</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-base">
+                        <span className="font-medium text-muted-foreground">Total com entrega</span>
+                        <span className="text-lg font-bold text-primary">{formatPrice(totalWithDelivery)}</span>
+                      </div>
+                      {deliveryDistanceKm !== null && (
+                        <p className="text-xs text-muted-foreground">Distância estimada: {deliveryDistanceKm} km</p>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-between text-base">
@@ -804,7 +860,7 @@ const CartSidebar = () => {
                         value={couponCode}
                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                         placeholder="Digite seu cupom"
-                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
                       />
                       <div className="mt-3 flex gap-2">
                         <button
@@ -914,6 +970,44 @@ const CartSidebar = () => {
                     })}
                   </div>
 
+                  {paymentMethod === "credito" && (
+                    <div className="mt-4 rounded-2xl bg-secondary p-4">
+                      <label className="mb-2 block text-sm font-medium text-foreground">Parcelamento</label>
+                      <div className="space-y-2">
+                        {CREDIT_INSTALLMENTS.map((installment) => {
+                          const totalInstallmentPrice = totalPrice * (1 + installment.interest / 100);
+                          const perInstallment = totalInstallmentPrice / installment.value;
+                          const isSelected = creditInstallments === installment.value;
+
+                          return (
+                            <button
+                              key={installment.value}
+                              type="button"
+                              onClick={() => setCreditInstallments(installment.value)}
+                              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${
+                                isSelected ? "border-primary bg-background" : "border-border bg-background/70"
+                              }`}
+                            >
+                              <div>
+                                <p className="text-sm font-semibold text-foreground">
+                                  {installment.value}x de {formatPrice(perInstallment)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {installment.value === 1
+                                    ? "Sem juros"
+                                    : `+ ${installment.interest.toFixed(2).replace(".", ",")}%`}
+                                </p>
+                              </div>
+                              <span className="text-sm font-medium text-foreground">
+                                {formatPrice(totalInstallmentPrice)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {paymentMethod === "dinheiro" && (
                     <div className="mt-4 space-y-3 rounded-2xl bg-secondary p-4">
                       <div>
@@ -942,7 +1036,7 @@ const CartSidebar = () => {
                             value={changeFor}
                             onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))}
                             placeholder="Ex: 100,00"
-                            className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+                            className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
                           />
                         </div>
                       )}
@@ -963,6 +1057,12 @@ const CartSidebar = () => {
                         <span className="font-medium">-{formatPrice(pixDiscount)}</span>
                       </div>
                     )}
+                    {paymentMethod === "credito" && selectedInstallment.interest > 0 && (
+                      <div className="flex justify-between text-primary">
+                        <span>Juros do parcelamento</span>
+                        <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Entrega</span>
                       <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
@@ -972,6 +1072,11 @@ const CartSidebar = () => {
                         <span className="font-semibold text-foreground">Total</span>
                         <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
                       </div>
+                      {paymentMethod === "credito" && (
+                        <p className="mt-1 text-right text-xs text-muted-foreground">
+                          {creditInstallments}x de {formatPrice((discountedProductsTotal + deliveryFee) / creditInstallments)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1020,6 +1125,14 @@ const CartSidebar = () => {
                       <span className="text-muted-foreground">Forma de pagamento</span>
                       <span className="font-medium text-foreground">{paymentLabel}</span>
                     </div>
+                    {paymentMethod === "credito" && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Parcelamento</span>
+                        <span className="font-medium text-foreground">
+                          {creditInstallments}x de {formatPrice(finalTotal / creditInstallments)}
+                        </span>
+                      </div>
+                    )}
                     {savedCouponCode && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Cupom</span>
@@ -1034,6 +1147,12 @@ const CartSidebar = () => {
                       <div className="flex justify-between text-primary">
                         <span>Desconto Pix</span>
                         <span className="font-medium">-{formatPrice(pixDiscount)}</span>
+                      </div>
+                    )}
+                    {paymentMethod === "credito" && selectedInstallment.interest > 0 && (
+                      <div className="flex justify-between text-primary">
+                        <span>Juros do parcelamento</span>
+                        <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
                       </div>
                     )}
                     <div className="flex justify-between">
@@ -1114,8 +1233,8 @@ const CartSidebar = () => {
       </div>
 
       {isAddressModalOpen && (
-        <div className="fixed inset-0 z-[95] bg-black/40 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-6">
-          <div className="h-full w-full bg-background md:h-[85vh] md:max-h-[860px] md:w-full md:max-w-md md:overflow-hidden md:rounded-[32px] md:shadow-2xl">
+        <div className="fixed inset-0 z-[95] bg-black/40 backdrop-blur-sm md:flex md:justify-end">
+          <div className="h-full w-full bg-background md:relative md:mr-0 md:w-full md:max-w-md md:shadow-2xl">
             <div className="mx-auto flex h-full w-full max-w-md flex-col">
               {isShowingSavedAddresses ? (
                 <>
