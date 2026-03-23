@@ -67,20 +67,7 @@ const SiteHeader = () => {
               <img src={logo} alt="Pod & Mais" className="h-20 w-20 object-contain" />
             </Link>
 
-            <nav className="flex items-center gap-1">
-              <Link
-                to="/"
-                className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
-              >
-                Página Inicial
-              </Link>
-              <Link
-                to="/pedidos"
-                className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
-              >
-                Pedidos anteriores
-              </Link>
-            </nav>
+           
           </div>
 
           <div className="flex items-center gap-2">

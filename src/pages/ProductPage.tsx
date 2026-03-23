@@ -256,7 +256,7 @@ const ProductPage = () => {
         </section>
 
         <section className="hidden lg:block">
-          <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-center">
+          <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-left">
             <ProductDesktopGallery
               productName={product.name}
               images={details.gallery}

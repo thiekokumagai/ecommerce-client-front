@@ -66,7 +66,7 @@ const CategoriesSection = () => {
           )}
         </div>
 
-        <div className="mt-6 flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-7 md:gap-4 md:overflow-visible">
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-2 md:gap-6 md:overflow-visible">
           {categories.map((cat) => {
             const isActive = selectedCategory === cat.name;
 
