@@ -940,27 +940,10 @@ const CartSidebar = () => {
                       </div>
                     ) : deliveryError ? (
                       <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
-                    ) : structuredAddress ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Entrega{deliveryDistanceKm ? ` (${deliveryDistanceKm} km)` : ""}
-                          </span>
-                          <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
-                        </div>
-                        <div className="border-t border-border pt-3">
-                          <div className="flex items-center justify-between text-base">
-                            <span className="font-medium text-muted-foreground">Total com entrega</span>
-                            <span className="text-lg font-bold text-primary">{formatPrice(totalPrice + deliveryFee)}</span>
-                          </div>
-                        </div>
-                      </div>
                     ) : (
                       <div className="flex items-center justify-between text-base">
-                        <span className="font-medium text-muted-foreground">
-                          Total com entrega
-                        </span>
-                        <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
+                        <span className="font-medium text-muted-foreground">Total com entrega</span>
+                        <span className="text-lg font-bold text-primary">{formatPrice(totalPrice + deliveryFee)}</span>
                       </div>
                     )}
                   </div>
