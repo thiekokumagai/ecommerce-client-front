@@ -579,13 +579,13 @@ const CartSidebar = () => {
     toast.success("Pedido enviado com sucesso!");
   };
 
-  if (!isCartOpen) return null;
-
   const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
 
   return (
     <>
-      <div className="fixed inset-0 z-[90] flex justify-end">
+      {isCartOpen && (
+        <div className="fixed inset-0 z-[90] flex justify-end">
+
         <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm" onClick={closeCart} />
         <div className="relative flex h-full w-full max-w-md flex-col bg-[#f7f7f7] shadow-2xl">
           <div className="flex items-center justify-between bg-primary px-5 py-4 text-primary-foreground">
@@ -932,8 +932,10 @@ const CartSidebar = () => {
           </div>
         </div>
       </div>
+      )}
 
       {isAddressModalOpen && (
+
         <div className="fixed inset-0 z-[95] bg-black/40 backdrop-blur-sm md:flex md:justify-end">
           <div className="h-full w-full bg-background md:relative md:mr-0 md:w-full md:max-w-md md:shadow-2xl">
             <div className="mx-auto flex h-full w-full max-w-md flex-col">
