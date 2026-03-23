@@ -559,6 +559,8 @@ const CartSidebar = () => {
   };
 
   const handleSendWhatsApp = () => {
+    const orderItems = items.map((item) => ({ ...item }));
+
     addOrder({
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
@@ -569,12 +571,12 @@ const CartSidebar = () => {
       deliveryFee,
       subtotal: totalPrice,
       total: finalTotal,
-      items: items.map((item) => ({ ...item })),
+      items: orderItems,
     });
 
+    clearCart();
     window.open(whatsappHref, "_blank", "noopener,noreferrer");
     setIsFinishModalOpen(false);
-    clearCart();
     setIsCartOpen(false);
     toast.success("Pedido enviado com sucesso!");
   };
