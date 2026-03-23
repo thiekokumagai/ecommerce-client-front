@@ -232,7 +232,7 @@ const CartSidebar = () => {
   }, []);
 
   useEffect(() => {
-    if (!isCartOpen) {
+    if (!isCartOpen && !isFinishModalOpen) {
       setStep("cart");
       setPaymentMethod(null);
       setCreditMode("avista");
@@ -242,10 +242,9 @@ const CartSidebar = () => {
       setEditingAddress(null);
       setIsAddressModalOpen(false);
       setIsShowingSavedAddresses(false);
-      setIsFinishModalOpen(false);
       setHasCopiedPix(false);
     }
-  }, [isCartOpen]);
+  }, [isCartOpen, isFinishModalOpen]);
 
   useEffect(() => {
     if (previousTotalItems.current > 0 && totalItems === 0) {
