@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { ChevronUp } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useLocation } from "react-router-dom";
 
 const BackToTopButton = () => {
   const [isVisible, setIsVisible] = useState(false);
   const { totalItems } = useCart();
+  const location = useLocation();
   const hasCartItems = totalItems > 0;
+  const isProductPage = location.pathname.startsWith("/produto/");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,16 +21,24 @@ const BackToTopButton = () => {
 
   if (!isVisible) return null;
 
+  // Position above WhatsApp button (+56px gap)
+  let mobileBottom = "bottom-[62px]";
+  if (isProductPage && hasCartItems) {
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+196px)]";
+  } else if (isProductPage) {
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+128px)]";
+  } else if (hasCartItems) {
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+136px)]";
+  }
+
   return (
     <button
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className={`fixed right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-foreground/80 text-background shadow-md transition-all hover:bg-foreground active:scale-95 md:bottom-6 md:right-[88px] ${
-        hasCartItems ? "bottom-[calc(env(safe-area-inset-bottom)+80px+60px)]" : "bottom-[76px]"
-      }`}
+      className={`fixed right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md border border-border transition-all hover:shadow-lg active:scale-95 md:bottom-[72px] md:right-6 ${mobileBottom}`}
       aria-label="Voltar ao topo"
     >
-      <ChevronUp className="h-5 w-5" />
+      <ArrowUp className="h-4 w-4 text-primary" />
     </button>
   );
 };
