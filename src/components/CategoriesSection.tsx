@@ -111,7 +111,7 @@ const CategoriesSection = () => {
               type="button"
               onClick={() => scrollByAmount("left")}
               aria-label="Ver categorias anteriores"
-              className="absolute left-0 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-md"
+              className="absolute left-0 top-[42px] z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-md"
             >
               <ChevronLeft className="h-5 w-5 text-primary" />
             </button>
@@ -122,7 +122,7 @@ const CategoriesSection = () => {
               type="button"
               onClick={() => scrollByAmount("right")}
               aria-label="Ver próximas categorias"
-              className="absolute right-0 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-md"
+              className="absolute right-0 top-[42px] z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-md"
             >
               <ChevronRight className="h-5 w-5 text-primary" />
             </button>
