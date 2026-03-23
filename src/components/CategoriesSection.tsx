@@ -1,3 +1,5 @@
+import { useRef, useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import catDescartavel from "@/assets/cat-descartavel.webp";
 import catLifepod from "@/assets/cat-lifepod.webp";
 import catNicsalt from "@/assets/cat-nicsalt.webp";
@@ -27,8 +29,34 @@ const CategoriesSection = () => {
     setSelectedNicotineStrength,
   } = useCart();
 
+  const scrollRef = useRef<HTMLDivElement>(null);
   const normalizedSearch = searchTerm.trim();
   const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = () => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    setCanScrollLeft(container.scrollLeft > 4);
+    setCanScrollRight(container.scrollLeft < maxScrollLeft - 4);
+  };
+
+  useEffect(() => {
+    updateScrollState();
+    const container = scrollRef.current;
+    if (!container) return;
+
+    container.addEventListener("scroll", updateScrollState);
+    window.addEventListener("resize", updateScrollState);
+
+    return () => {
+      container.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, []);
 
   const handleCategoryChange = (category: string, isActive: boolean) => {
     const nextCategory = isActive ? null : category;
@@ -37,6 +65,17 @@ const CategoriesSection = () => {
     if (nextCategory !== "NicSalt") {
       setSelectedNicotineStrength(null);
     }
+  };
+
+  const scrollByAmount = (direction: "left" | "right") => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const amount = Math.min(320, container.clientWidth * 0.75);
+    container.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
   };
 
   return (
@@ -66,40 +105,69 @@ const CategoriesSection = () => {
           )}
         </div>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto pb-2 md:gap-6 md:overflow-visible">
-          {categories.map((cat) => {
-            const isActive = selectedCategory === cat.name;
+        <div className="relative mt-6">
+          {canScrollLeft && (
+            <button
+              type="button"
+              onClick={() => scrollByAmount("left")}
+              aria-label="Ver categorias anteriores"
+              className="absolute left-0 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-md"
+            >
+              <ChevronLeft className="h-5 w-5 text-primary" />
+            </button>
+          )}
 
-            return (
-              <button
-                key={cat.name}
-                type="button"
-                onClick={() => handleCategoryChange(cat.name, isActive)}
-                className="flex shrink-0 flex-col items-center gap-2"
-              >
-                <div
-                  className={cn(
-                    "overflow-hidden rounded-full border-2 bg-secondary p-1",
-                    isActive ? "border-primary" : "border-transparent"
-                  )}
-                >
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    className="aspect-square w-20 rounded-full object-cover md:w-24"
-                  />
-                </div>
-                <span
-                  className={cn(
-                    "text-xs font-medium md:text-sm",
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  )}
-                >
-                  {cat.name}
-                </span>
-              </button>
-            );
-          })}
+          {canScrollRight && (
+            <button
+              type="button"
+              onClick={() => scrollByAmount("right")}
+              aria-label="Ver próximas categorias"
+              className="absolute right-0 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background shadow-md"
+            >
+              <ChevronRight className="h-5 w-5 text-primary" />
+            </button>
+          )}
+
+          <div
+            ref={scrollRef}
+            className="scrollbar-none overflow-x-auto scroll-smooth"
+          >
+            <div className="flex min-w-max gap-2 px-1 pb-2 md:gap-6">
+              {categories.map((cat) => {
+                const isActive = selectedCategory === cat.name;
+
+                return (
+                  <button
+                    key={cat.name}
+                    type="button"
+                    onClick={() => handleCategoryChange(cat.name, isActive)}
+                    className="flex w-[88px] shrink-0 flex-col items-center gap-2 md:w-[104px]"
+                  >
+                    <div
+                      className={cn(
+                        "overflow-hidden rounded-full border-2 bg-secondary p-1",
+                        isActive ? "border-primary" : "border-transparent"
+                      )}
+                    >
+                      <img
+                        src={cat.image}
+                        alt={cat.name}
+                        className="aspect-square w-20 rounded-full object-cover md:w-24"
+                      />
+                    </div>
+                    <span
+                      className={cn(
+                        "text-center text-xs font-medium md:text-sm",
+                        isActive ? "text-primary" : "text-muted-foreground"
+                      )}
+                    >
+                      {cat.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </section>
