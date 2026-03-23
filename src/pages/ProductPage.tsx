@@ -21,7 +21,7 @@ const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal } = useCart();
+  const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal, totalItems } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [zipCode, setZipCode] = useState("");
@@ -369,7 +369,11 @@ const ProductPage = () => {
         </section>
       </main>
 
-      <div className="fixed inset-x-0 bottom-[97px] z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden">
+      <div
+        className={`fixed inset-x-0 z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden ${
+          totalItems > 0 ? "bottom-[97px]" : "bottom-0"
+        }`}
+      >
         <button
           type="button"
           onClick={handleAddOrUpdateCart}
