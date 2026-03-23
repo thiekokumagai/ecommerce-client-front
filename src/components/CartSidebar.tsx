@@ -18,17 +18,22 @@ import {
   Wallet,
   Receipt,
   Store,
+  Copy,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
 import SavedAddressesList from "@/components/checkout/SavedAddressesList";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
 const SESSION_ADDRESSES_KEY = "podemais-checkout-addresses";
 const SESSION_NAME_KEY = "podemais-checkout-name";
 const SESSION_PHONE_KEY = "podemais-checkout-phone";
+const PIX_KEY = "(67) 99213-0201";
+const PIX_HOLDER = "Wesley Thieko de Aguiar Kumagai";
 
 const CREDIT_INSTALLMENTS = [
   { value: 1, interest: 0 },
@@ -173,6 +178,8 @@ const CartSidebar = () => {
   const [couponCode, setCouponCode] = useState("");
   const [savedCouponCode, setSavedCouponCode] = useState("");
   const [isEditingCoupon, setIsEditingCoupon] = useState(false);
+  const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
+  const [hasCopiedPix, setHasCopiedPix] = useState(false);
   const previousTotalItems = useRef(totalItems);
 
   useEffect(() => {
@@ -235,6 +242,8 @@ const CartSidebar = () => {
       setEditingAddress(null);
       setIsAddressModalOpen(false);
       setIsShowingSavedAddresses(false);
+      setIsFinishModalOpen(false);
+      setHasCopiedPix(false);
     }
   }, [isCartOpen]);
 
@@ -247,12 +256,8 @@ const CartSidebar = () => {
 
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
-
   const effectiveCreditInstallments = paymentMethod === "credito" && creditMode === "parcelado" ? creditInstallments : 1;
-
-  const selectedInstallment = CREDIT_INSTALLMENTS.find(
-    (installment) => installment.value === effectiveCreditInstallments
-  ) ?? CREDIT_INSTALLMENTS[0];
+  const selectedInstallment = CREDIT_INSTALLMENTS.find((installment) => installment.value === effectiveCreditInstallments) ?? CREDIT_INSTALLMENTS[0];
 
   const creditTotal = useMemo(() => {
     if (paymentMethod !== "credito") return totalPrice;
@@ -266,10 +271,8 @@ const CartSidebar = () => {
   }, [paymentMethod, totalWithPixDiscount, creditTotal, totalPrice]);
 
   const finalTotal = discountedProductsTotal + deliveryFee;
-  const totalWithDelivery = totalPrice + deliveryFee;
   const parsedChangeFor = parseCurrencyInput(changeFor);
   const isChangeEnough = needsChange === "não" || parsedChangeFor >= finalTotal;
-
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
   const isAddressValid = structuredAddress !== null;
   const hasValidDeliveryFee = deliveryFee > 0 && !deliveryError;
@@ -281,6 +284,19 @@ const CartSidebar = () => {
     if (structuredAddress.reference) parts.push(`Referência: ${structuredAddress.reference}`);
     return parts.join(", ");
   }, [structuredAddress]);
+
+  const paymentLabel =
+    paymentMethod === "pix"
+      ? "PIX"
+      : paymentMethod === "debito"
+        ? "Cartão de débito"
+        : paymentMethod === "credito"
+          ? creditMode === "parcelado"
+            ? `Cartão de crédito - ${effectiveCreditInstallments}x`
+            : "Cartão de crédito à vista"
+          : paymentMethod === "dinheiro"
+            ? "Dinheiro"
+            : "-";
 
   const persistAddresses = (addresses: StructuredAddress[]) => {
     setSavedAddresses(addresses);
@@ -319,12 +335,7 @@ const CartSidebar = () => {
   }, []);
 
   const hasSelectedPaymentMethod = paymentMethod !== null;
-  const isPaymentValid =
-    hasSelectedPaymentMethod &&
-    (paymentMethod !== "dinheiro" ||
-      needsChange === "não" ||
-      (changeFor.trim().length > 0 && isChangeEnough));
-
+  const isPaymentValid = hasSelectedPaymentMethod && (paymentMethod !== "dinheiro" || needsChange === "não" || (changeFor.trim().length > 0 && isChangeEnough));
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
 
   const handleNameChange = (value: string) => {
@@ -338,36 +349,30 @@ const CartSidebar = () => {
     sessionStorage.setItem(SESSION_PHONE_KEY, formattedPhone);
   };
 
-  const handleSaveAddress = useCallback(
-    (addr: StructuredAddress) => {
-      const nextAddress = {
-        ...addr,
-        id: addr.id || crypto.randomUUID(),
-      };
+  const handleSaveAddress = useCallback((addr: StructuredAddress) => {
+    const nextAddress = {
+      ...addr,
+      id: addr.id || crypto.randomUUID(),
+    };
 
-      const nextAddresses = [...savedAddresses.filter((item) => item.id !== nextAddress.id), nextAddress];
-      persistAddresses(nextAddresses);
-      setStructuredAddress(nextAddress);
-      sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(nextAddress));
-      setEditingAddress(null);
-      setIsAddressModalOpen(false);
-      setIsShowingSavedAddresses(false);
-      calculateDeliveryFee(nextAddress);
-    },
-    [calculateDeliveryFee, savedAddresses]
-  );
+    const nextAddresses = [...savedAddresses.filter((item) => item.id !== nextAddress.id), nextAddress];
+    persistAddresses(nextAddresses);
+    setStructuredAddress(nextAddress);
+    sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(nextAddress));
+    setEditingAddress(null);
+    setIsAddressModalOpen(false);
+    setIsShowingSavedAddresses(false);
+    calculateDeliveryFee(nextAddress);
+  }, [calculateDeliveryFee, savedAddresses]);
 
-  const handleSelectSavedAddress = useCallback(
-    (addr: StructuredAddress) => {
-      setStructuredAddress(addr);
-      sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
-      setEditingAddress(null);
-      setIsAddressModalOpen(false);
-      setIsShowingSavedAddresses(false);
-      calculateDeliveryFee(addr);
-    },
-    [calculateDeliveryFee]
-  );
+  const handleSelectSavedAddress = useCallback((addr: StructuredAddress) => {
+    setStructuredAddress(addr);
+    sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
+    setEditingAddress(null);
+    setIsAddressModalOpen(false);
+    setIsShowingSavedAddresses(false);
+    calculateDeliveryFee(addr);
+  }, [calculateDeliveryFee]);
 
   const handleEditSavedAddress = (addr: StructuredAddress) => {
     setEditingAddress(addr);
@@ -488,80 +493,46 @@ const CartSidebar = () => {
     setStep("confirmation");
   };
 
-  const installmentPerMonth = creditTotal / effectiveCreditInstallments;
-
-  const checkoutMessage = useMemo(
-    () =>
-      encodeURIComponent(
-        [
-          "Olá! Gostaria de finalizar meu pedido:",
-          "",
-          ...items.map(
-            (item) =>
-              `${item.quantity}x ${item.product.name}${item.selectedVariation ? ` (${item.product.variationGroup?.name}: ${item.selectedVariation})` : ""} - ${formatPrice(item.product.price * item.quantity)}`
-          ),
-          "",
-          `Nome: ${name || "-"}`,
-          `Telefone: ${phone || "-"}`,
-          `Endereço completo: ${savedAddressDisplay || "-"}`,
-          ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
-          "",
-          `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
-          ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
-          ...(paymentMethod === "credito"
-            ? [
-                `Crédito: ${creditMode === "avista" ? "À vista" : "Parcelado"}`,
-                ...(creditMode === "parcelado"
-                  ? [
-                      `Parcelamento: ${effectiveCreditInstallments}x`,
-                      ...(selectedInstallment.interest > 0 ? [`Juros do crédito: +${selectedInstallment.interest.toFixed(2).replace(".", ",")}%`] : []),
-                    ]
-                  : []),
-              ]
-            : []),
-          paymentMethod === "pix"
-            ? `Forma de pagamento: Pix - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
-            : paymentMethod === "debito"
-              ? "Forma de pagamento: Débito"
-              : paymentMethod === "credito"
-                ? creditMode === "parcelado"
-                  ? `Forma de pagamento: Crédito parcelado - ${effectiveCreditInstallments}x de ${formatPrice(installmentPerMonth)}`
-                  : "Forma de pagamento: Crédito à vista"
-                : "Forma de pagamento: Dinheiro",
-          ...(paymentMethod === "dinheiro"
-            ? [
-                `Precisa de troco: ${needsChange}`,
-                ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor}`] : []),
-              ]
-            : []),
-          `Taxa do motoboy: ${formatPrice(deliveryFee)}`,
-          `Total final com entrega: ${formatPrice(finalTotal)}`,
-        ].join("\n")
-      ),
-    [
-      items,
-      name,
-      phone,
-      savedAddressDisplay,
-      savedCouponCode,
-      totalPrice,
-      paymentMethod,
-      pixDiscount,
-      totalWithPixDiscount,
-      creditMode,
-      effectiveCreditInstallments,
-      selectedInstallment.interest,
-      installmentPerMonth,
-      needsChange,
-      changeFor,
-      deliveryFee,
-      finalTotal,
-    ]
-  );
+  const checkoutMessage = useMemo(() => encodeURIComponent([
+    "Olá! Gostaria de finalizar meu pedido:",
+    "",
+    ...items.map((item) => `${item.quantity}x ${item.product.name}${item.selectedVariation ? ` (${item.product.variationGroup?.name}: ${item.selectedVariation})` : ""} - ${formatPrice(item.product.price * item.quantity)}`),
+    "",
+    `Nome: ${name || "-"}`,
+    `Telefone: ${phone || "-"}`,
+    `Endereço completo: ${savedAddressDisplay || "-"}`,
+    ...(savedCouponCode ? [`Cupom: ${savedCouponCode}`] : []),
+    "",
+    `Subtotal dos produtos: ${formatPrice(totalPrice)}`,
+    ...(paymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(pixDiscount)}`] : []),
+    ...(paymentMethod === "credito" ? [
+      `Crédito: ${creditMode === "avista" ? "À vista" : "Parcelado"}`,
+      ...(creditMode === "parcelado" ? [
+        `Parcelamento: ${effectiveCreditInstallments}x`,
+        ...(selectedInstallment.interest > 0 ? [`Juros do crédito: +${selectedInstallment.interest.toFixed(2).replace(".", ",")}%`] : []),
+      ] : []),
+    ] : []),
+    paymentMethod === "pix"
+      ? `Forma de pagamento: Pix - Total com desconto: ${formatPrice(totalWithPixDiscount)}`
+      : paymentMethod === "debito"
+        ? "Forma de pagamento: Débito"
+        : paymentMethod === "credito"
+          ? creditMode === "parcelado"
+            ? `Forma de pagamento: Crédito parcelado - ${effectiveCreditInstallments}x de ${formatPrice((creditTotal + 0) / effectiveCreditInstallments)}`
+            : "Forma de pagamento: Crédito à vista"
+          : "Forma de pagamento: Dinheiro",
+    ...(paymentMethod === "dinheiro" ? [
+      `Precisa de troco: ${needsChange}`,
+      ...(needsChange === "sim" ? [`Troco para: R$ ${changeFor}`] : []),
+    ] : []),
+    ...(paymentMethod === "pix" ? [`Chave PIX: ${PIX_KEY}`, `Titular PIX: ${PIX_HOLDER}`] : []),
+    `Taxa do motoboy: ${formatPrice(deliveryFee)}`,
+    `Total final com entrega: ${formatPrice(finalTotal)}`,
+  ].join("\n")), [items, name, phone, savedAddressDisplay, savedCouponCode, totalPrice, paymentMethod, pixDiscount, totalWithPixDiscount, creditMode, effectiveCreditInstallments, selectedInstallment.interest, changeFor, needsChange, deliveryFee, finalTotal, creditTotal]);
 
   const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
 
-  const handleCheckout = () => {
+  const finalizeOrder = () => {
     if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod || !hasValidDeliveryFee) {
       toast.info("Preencha todas as etapas obrigatórias para finalizar.");
       return;
@@ -572,13 +543,30 @@ const CartSidebar = () => {
       return;
     }
 
+    setHasCopiedPix(paymentMethod !== "pix");
+    setIsCartOpen(false);
+    setIsFinishModalOpen(true);
+  };
+
+  const handleCopyPix = async () => {
+
+    try {
+      await navigator.clipboard.writeText(PIX_KEY);
+      setHasCopiedPix(true);
+      toast.success("Chave PIX copiada.");
+    } catch {
+      toast.error("Não foi possível copiar a chave PIX.");
+    }
+  };
+
+  const handleSendWhatsApp = () => {
     addOrder({
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       customerName: name.trim(),
       customerPhone: phone.trim(),
       customerAddress: savedAddressDisplay,
-      paymentMethod,
+      paymentMethod: paymentMethod!,
       deliveryFee,
       subtotal: totalPrice,
       total: finalTotal,
@@ -586,25 +574,13 @@ const CartSidebar = () => {
     });
 
     window.open(whatsappHref, "_blank", "noopener,noreferrer");
+    setIsFinishModalOpen(false);
     clearCart();
     setIsCartOpen(false);
     toast.success("Pedido enviado com sucesso!");
   };
 
   if (!isCartOpen) return null;
-
-  const paymentLabel =
-    paymentMethod === "pix"
-      ? "Pix (5% desconto)"
-      : paymentMethod === "debito"
-        ? "Cartão de débito"
-        : paymentMethod === "credito"
-          ? creditMode === "parcelado"
-            ? `Cartão de crédito - ${effectiveCreditInstallments}x`
-            : "Cartão de crédito à vista"
-          : paymentMethod === "dinheiro"
-            ? "Dinheiro"
-            : "-";
 
   const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
 
@@ -654,11 +630,7 @@ const CartSidebar = () => {
                       </div>
                     </div>
                     {items.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleClearCart}
-                        className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
-                      >
+                      <button type="button" onClick={handleClearCart} className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80">
                         Limpar
                       </button>
                     )}
@@ -673,48 +645,26 @@ const CartSidebar = () => {
                   ) : (
                     <div className="space-y-3">
                       {items.map((item) => (
-                        <div
-                          key={`${item.product.id}-${item.selectedVariation ?? "default"}`}
-                          className="rounded-2xl border border-border bg-background p-3"
-                        >
+                        <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="rounded-2xl border border-border bg-background p-3">
                           <div className="flex gap-3">
-                            <img
-                              src={item.product.image}
-                              alt={item.product.name}
-                              className="h-16 w-16 rounded-xl bg-secondary/30 object-contain"
-                              loading="lazy"
-                            />
+                            <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-xl bg-secondary/30 object-contain" loading="lazy" />
                             <div className="flex flex-1 flex-col justify-between gap-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
                                   <p className="line-clamp-2 text-sm font-semibold text-foreground">{item.product.name}</p>
-                                  {item.selectedVariation && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                      {item.product.variationGroup?.name}: {item.selectedVariation}
-                                    </p>
-                                  )}
+                                  {item.selectedVariation && <p className="mt-1 text-xs text-muted-foreground">{item.product.variationGroup?.name}: {item.selectedVariation}</p>}
                                 </div>
-                                <button
-                                  onClick={() => handleRemoveItem(item.product.id, item.selectedVariation)}
-                                  className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-secondary"
-                                >
+                                <button onClick={() => handleRemoveItem(item.product.id, item.selectedVariation)} className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-secondary">
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
-
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-1 rounded-full border border-border bg-card px-1 py-1">
-                                  <button
-                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariation)}
-                                    className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
-                                  >
+                                  <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariation)} className="rounded-full p-1.5 text-muted-foreground hover:bg-secondary">
                                     <Minus className="h-3 w-3" />
                                   </button>
                                   <span className="min-w-[28px] text-center text-sm font-semibold text-foreground">{item.quantity}</span>
-                                  <button
-                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)}
-                                    className="rounded-full bg-primary p-1.5 text-primary-foreground"
-                                  >
+                                  <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)} className="rounded-full bg-primary p-1.5 text-primary-foreground">
                                     <Plus className="h-3 w-3" />
                                   </button>
                                 </div>
@@ -747,33 +697,13 @@ const CartSidebar = () => {
                     <div className="space-y-3">
                       <div>
                         <label className="mb-2 block text-sm font-medium text-foreground">Nome</label>
-                        <input
-                          value={name}
-                          onChange={(e) => handleNameChange(e.target.value)}
-                          placeholder="Seu nome"
-                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
-                        />
+                        <input value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Seu nome" className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm" />
                       </div>
                       <div>
                         <label className="mb-2 block text-sm font-medium text-foreground">Telefone</label>
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          autoComplete="tel"
-                          value={phone}
-                          onChange={(e) => handlePhoneChange(e.target.value)}
-                          placeholder="(67) 99999-9999"
-                          className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
-                        />
+                        <input type="tel" inputMode="numeric" autoComplete="tel" value={phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="(67) 99999-9999" className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm" />
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleSaveContact}
-                        disabled={!isContactValid}
-                        className={`w-full rounded-2xl py-3 text-sm font-semibold ${
-                          isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                        }`}
-                      >
+                      <button type="button" onClick={handleSaveContact} disabled={!isContactValid} className={`w-full rounded-2xl py-3 text-sm font-semibold ${isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                         Salvar contato
                       </button>
                     </div>
@@ -781,19 +711,10 @@ const CartSidebar = () => {
                     <div className="rounded-2xl border border-border bg-background p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-foreground">
-                            <User className="h-4 w-4 text-primary" />
-                            {name}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-foreground">
-                            <Phone className="h-4 w-4 text-primary" />
-                            {phone}
-                          </div>
+                          <div className="flex items-center gap-2 text-sm text-foreground"><User className="h-4 w-4 text-primary" />{name}</div>
+                          <div className="flex items-center gap-2 text-sm text-foreground"><Phone className="h-4 w-4 text-primary" />{phone}</div>
                         </div>
-                        <button type="button" onClick={() => setIsEditingContact(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                          <Pencil className="h-4 w-4" />
-                          Editar
-                        </button>
+                        <button type="button" onClick={() => setIsEditingContact(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary"><Pencil className="h-4 w-4" />Editar</button>
                       </div>
                     </div>
                   )}
@@ -807,41 +728,14 @@ const CartSidebar = () => {
                         <div>
                           <p className="text-sm font-semibold text-foreground">{structuredAddress.mainText}</p>
                           <p className="text-xs text-muted-foreground">{structuredAddress.secondaryText}</p>
-                          {structuredAddress.complement && (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Complemento: {structuredAddress.complement}
-                            </p>
-                          )}
-                          {structuredAddress.reference && (
-                            <p className="text-xs text-muted-foreground">
-                              Referência: {structuredAddress.reference}
-                            </p>
-                          )}
+                          {structuredAddress.complement && <p className="mt-1 text-xs text-muted-foreground">Complemento: {structuredAddress.complement}</p>}
+                          {structuredAddress.reference && <p className="text-xs text-muted-foreground">Referência: {structuredAddress.reference}</p>}
                         </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingAddress(null);
-                          setIsShowingSavedAddresses(savedAddresses.length > 0);
-                          setIsAddressModalOpen(true);
-                        }}
-                        className="text-sm font-medium text-primary"
-                      >
-                        Trocar
-                      </button>
+                      <button type="button" onClick={() => { setEditingAddress(null); setIsShowingSavedAddresses(savedAddresses.length > 0); setIsAddressModalOpen(true); }} className="text-sm font-medium text-primary">Trocar</button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingAddress(null);
-                        setIsShowingSavedAddresses(false);
-                        setIsAddressModalOpen(true);
-                      }}
-                      className="flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
-                    >
+                    <button type="button" onClick={() => { setEditingAddress(null); setIsShowingSavedAddresses(false); setIsAddressModalOpen(true); }} className="flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left">
                       <div>
                         <p className="text-sm font-semibold text-foreground">Cadastrar endereço</p>
                         <p className="text-xs text-muted-foreground">Informe onde deseja receber seu pedido</p>
@@ -853,26 +747,13 @@ const CartSidebar = () => {
 
                 <div className="rounded-3xl bg-card p-4 shadow-sm">
                   {isCalculatingFee ? (
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      <span>Calculando total com entrega...</span>
-                    </div>
+                    <div className="flex items-center gap-2 text-sm text-foreground"><Loader2 className="h-4 w-4 animate-spin text-primary" /><span>Calculando total com entrega...</span></div>
                   ) : deliveryError ? (
                     <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
                   ) : structuredAddress ? (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-base">
-                        <span className="font-medium text-muted-foreground">Total com entrega</span>
-                        <span className="text-lg font-bold text-primary">{formatPrice(totalWithDelivery)}</span>
-                      </div>
-                    </div>
+                    <div className="flex items-center justify-between text-base"><span className="font-medium text-muted-foreground">Total com entrega</span><span className="text-lg font-bold text-primary">{formatPrice(totalPrice + deliveryFee)}</span></div>
                   ) : (
-                    <div className="flex items-center justify-between text-base">
-                      <span className="font-medium text-muted-foreground">
-                        Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
-                      </span>
-                      <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
-                    </div>
+                    <div className="flex items-center justify-between text-base"><span className="font-medium text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})</span><span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span></div>
                   )}
                 </div>
               </div>
@@ -882,89 +763,34 @@ const CartSidebar = () => {
               <div className="space-y-4 p-4">
                 <div className="rounded-3xl bg-card p-4 shadow-sm">
                   <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                      <Wallet className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground">Pagamento</h3>
-                      <p className="text-xs text-muted-foreground">Escolha como deseja pagar</p>
-                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Wallet className="h-5 w-5" /></div>
+                    <div><h3 className="text-sm font-semibold text-foreground">Pagamento</h3><p className="text-xs text-muted-foreground">Escolha como deseja pagar</p></div>
                   </div>
 
                   {isEditingCoupon ? (
                     <div className="mb-4 rounded-2xl border border-border bg-background p-4">
                       <label className="mb-2 block text-sm font-medium text-foreground">Cupom</label>
-                      <input
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                        placeholder="Digite seu cupom"
-                        className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
-                      />
+                      <input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="Digite seu cupom" className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm" />
                       <div className="mt-3 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={handleSaveCoupon}
-                          disabled={!couponCode.trim()}
-                          className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-                        >
-                          Salvar cupom
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (savedCouponCode) {
-                              setCouponCode(savedCouponCode);
-                              setIsEditingCoupon(false);
-                              return;
-                            }
-                            setCouponCode("");
-                            setIsEditingCoupon(false);
-                          }}
-                          className="rounded-2xl border border-border px-4 py-3 text-sm font-medium text-foreground"
-                        >
-                          Cancelar
-                        </button>
+                        <button type="button" onClick={handleSaveCoupon} disabled={!couponCode.trim()} className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>Salvar cupom</button>
+                        <button type="button" onClick={() => { if (savedCouponCode) { setCouponCode(savedCouponCode); setIsEditingCoupon(false); return; } setCouponCode(""); setIsEditingCoupon(false); }} className="rounded-2xl border border-border px-4 py-3 text-sm font-medium text-foreground">Cancelar</button>
                       </div>
                     </div>
                   ) : savedCouponCode ? (
                     <div className="mb-4 rounded-2xl border border-border bg-background p-4">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 text-sm text-foreground">
-                          <Ticket className="h-4 w-4 text-primary" />
-                          <span>{savedCouponCode}</span>
-                        </div>
+                        <div className="flex items-center gap-2 text-sm text-foreground"><Ticket className="h-4 w-4 text-primary" /><span>{savedCouponCode}</span></div>
                         <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingCoupon(true)}
-                            className="inline-flex items-center gap-1 text-sm font-medium text-primary"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleRemoveCoupon}
-                            className="inline-flex items-center gap-1 text-sm font-medium text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <button type="button" onClick={() => setIsEditingCoupon(true)} className="inline-flex items-center gap-1 text-sm font-medium text-primary"><Pencil className="h-4 w-4" /></button>
+                          <button type="button" onClick={handleRemoveCoupon} className="inline-flex items-center gap-1 text-sm font-medium text-destructive"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingCoupon(true)}
-                      className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60"
-                    >
+                    <button type="button" onClick={() => setIsEditingCoupon(true)} className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 text-left transition-colors hover:bg-secondary/60">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
-                          <Ticket className="h-4 w-4" />
-                        </span>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">Adicionar cupom</p>
-                          <p className="text-xs text-muted-foreground">Se você tiver um código promocional</p>
-                        </div>
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Ticket className="h-4 w-4" /></span>
+                        <div><p className="text-sm font-medium text-foreground">Adicionar cupom</p><p className="text-xs text-muted-foreground">Se você tiver um código promocional</p></div>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </button>
@@ -974,41 +800,16 @@ const CartSidebar = () => {
                     {paymentOptions.map((option) => {
                       const Icon = option.icon;
                       const isSelected = paymentMethod === option.value;
-
                       return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => {
-                            setPaymentMethod(option.value);
-                            if (option.value === "credito") {
-                              setCreditMode("avista");
-                              setCreditInstallments(1);
-                            }
-                          }}
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${
-                            isSelected ? "border-primary bg-primary/5" : "border-border bg-background"
-                          }`}
-                        >
+                        <button key={option.value} type="button" onClick={() => { setPaymentMethod(option.value); if (option.value === "credito") { setCreditMode("avista"); setCreditInstallments(1); } }} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-border bg-background"}`}>
                           <div className="flex items-center gap-3">
-                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
-                              <Icon className="h-5 w-5" />
-                            </div>
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}><Icon className="h-5 w-5" /></div>
                             <div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-foreground">{option.title}</p>
-                                {option.highlight && (
-                                  <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                                    {option.highlight}
-                                  </span>
-                                )}
-                              </div>
+                              <div className="flex items-center gap-2"><p className="text-sm font-semibold text-foreground">{option.title}</p>{option.highlight && <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{option.highlight}</span>}</div>
                               <p className="text-xs text-muted-foreground">{option.subtitle}</p>
                             </div>
                           </div>
-                          <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>
-                            {isSelected && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
-                          </div>
+                          <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"}`}>{isSelected && <Check className="h-3.5 w-3.5 text-primary-foreground" />}</div>
                         </button>
                       );
                     })}
@@ -1018,65 +819,19 @@ const CartSidebar = () => {
                     <div className="mt-4 rounded-2xl bg-secondary p-4">
                       <label className="mb-2 block text-sm font-medium text-foreground">No crédito</label>
                       <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCreditMode("avista");
-                            setCreditInstallments(1);
-                          }}
-                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
-                            creditMode === "avista"
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-background text-foreground"
-                          }`}
-                        >
-                          À vista
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCreditMode("parcelado");
-                            if (creditInstallments < 2) {
-                              setCreditInstallments(2);
-                            }
-                          }}
-                          className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
-                            creditMode === "parcelado"
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border bg-background text-foreground"
-                          }`}
-                        >
-                          Parcelado
-                        </button>
+                        <button type="button" onClick={() => { setCreditMode("avista"); setCreditInstallments(1); }} className={`rounded-2xl border px-3 py-3 text-sm font-medium ${creditMode === "avista" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>À vista</button>
+                        <button type="button" onClick={() => { setCreditMode("parcelado"); if (creditInstallments < 2) setCreditInstallments(2); }} className={`rounded-2xl border px-3 py-3 text-sm font-medium ${creditMode === "parcelado" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>Parcelado</button>
                       </div>
-
                       {creditMode === "parcelado" && (
                         <div className="mt-4 space-y-2">
                           {CREDIT_INSTALLMENTS.filter((installment) => installment.value >= 2).map((installment) => {
                             const totalInstallmentPrice = totalPrice * (1 + installment.interest / 100);
                             const perInstallment = totalInstallmentPrice / installment.value;
                             const isSelected = creditInstallments === installment.value;
-
                             return (
-                              <button
-                                key={installment.value}
-                                type="button"
-                                onClick={() => setCreditInstallments(installment.value)}
-                                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${
-                                  isSelected ? "border-primary bg-background" : "border-border bg-background/70"
-                                }`}
-                              >
-                                <div>
-                                  <p className="text-sm font-semibold text-foreground">
-                                    {installment.value}x de {formatPrice(perInstallment)}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    + {installment.interest.toFixed(2).replace(".", ",")}%
-                                  </p>
-                                </div>
-                                <span className="text-sm font-medium text-foreground">
-                                  {formatPrice(totalInstallmentPrice)}
-                                </span>
+                              <button key={installment.value} type="button" onClick={() => setCreditInstallments(installment.value)} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${isSelected ? "border-primary bg-background" : "border-border bg-background/70"}`}>
+                                <div><p className="text-sm font-semibold text-foreground">{installment.value}x de {formatPrice(perInstallment)}</p><p className="text-xs text-muted-foreground">+ {installment.interest.toFixed(2).replace(".", ",")}%</p></div>
+                                <span className="text-sm font-medium text-foreground">{formatPrice(totalInstallmentPrice)}</span>
                               </button>
                             );
                           })}
@@ -1090,38 +845,15 @@ const CartSidebar = () => {
                       <div>
                         <label className="mb-2 block text-sm font-medium text-foreground">Precisa de troco?</label>
                         <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setNeedsChange("sim")}
-                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
-                          >
-                            Sim
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setNeedsChange("não")}
-                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
-                          >
-                            Não
-                          </button>
+                          <button type="button" onClick={() => setNeedsChange("sim")} className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "sim" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>Sim</button>
+                          <button type="button" onClick={() => setNeedsChange("não")} className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "não" ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}>Não</button>
                         </div>
                       </div>
                       {needsChange === "sim" && (
                         <div>
                           <label className="mb-2 block text-sm font-medium text-foreground">Troco para quanto?</label>
-                          <input
-                            value={changeFor}
-                            onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))}
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            placeholder="Ex: 100,00"
-                            className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
-                          />
-                          {!isChangeEnough && changeFor.trim().length > 0 && (
-                            <p className="mt-2 text-sm text-destructive">
-                              O valor do troco deve ser maior ou igual a {formatPrice(finalTotal)}.
-                            </p>
-                          )}
+                          <input value={changeFor} onChange={(e) => setChangeFor(formatCurrencyInput(e.target.value))} inputMode="numeric" pattern="[0-9]*" placeholder="Ex: 100,00" className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm" />
+                          {!isChangeEnough && changeFor.trim().length > 0 && <p className="mt-2 text-sm text-destructive">O valor do troco deve ser maior ou igual a {formatPrice(finalTotal)}.</p>}
                         </div>
                       )}
                     </div>
@@ -1131,36 +863,13 @@ const CartSidebar = () => {
                 <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
                   <h3 className="mb-3 text-sm font-semibold text-foreground">Resumo</h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
-                    </div>
-                    {paymentMethod === "pix" && (
-                      <div className="flex justify-between text-primary">
-                        <span>Desconto Pix</span>
-                        <span className="font-medium">-{formatPrice(pixDiscount)}</span>
-                      </div>
-                    )}
-                    {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>Juros do parcelamento</span>
-                        <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Entrega</span>
-                      <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
-                    </div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium text-foreground">{formatPrice(totalPrice)}</span></div>
+                    {paymentMethod === "pix" && <div className="flex justify-between text-primary"><span>Desconto Pix</span><span className="font-medium">-{formatPrice(pixDiscount)}</span></div>}
+                    {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && <div className="flex justify-between text-primary"><span>Juros do parcelamento</span><span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span></div>}
+                    <div className="flex justify-between"><span className="text-muted-foreground">Entrega</span><span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span></div>
                     <div className="border-t border-border pt-3">
-                      <div className="flex justify-between text-base">
-                        <span className="font-semibold text-foreground">Total</span>
-                        <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
-                      </div>
-                      {paymentMethod === "credito" && creditMode === "parcelado" && (
-                        <p className="mt-1 text-right text-xs text-muted-foreground">
-                          {effectiveCreditInstallments}x de {formatPrice((discountedProductsTotal + deliveryFee) / effectiveCreditInstallments)}
-                        </p>
-                      )}
+                      <div className="flex justify-between text-base"><span className="font-semibold text-foreground">Total</span><span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span></div>
+                      {paymentMethod === "credito" && creditMode === "parcelado" && <p className="mt-1 text-right text-xs text-muted-foreground">{effectiveCreditInstallments}x de {formatPrice((discountedProductsTotal + deliveryFee) / effectiveCreditInstallments)}</p>}
                     </div>
                   </div>
                 </div>
@@ -1172,18 +881,9 @@ const CartSidebar = () => {
                 <div className="rounded-3xl bg-card p-4 shadow-sm">
                   <h3 className="mb-3 text-sm font-semibold text-foreground">Entrega</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-foreground">
-                      <User className="h-4 w-4 text-primary" />
-                      <span>{name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-foreground">
-                      <Phone className="h-4 w-4 text-primary" />
-                      <span>{phone}</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-foreground">
-                      <MapPin className="mt-0.5 h-4 w-4 text-primary" />
-                      <span>{savedAddressDisplay || "-"}</span>
-                    </div>
+                    <div className="flex items-center gap-2 text-foreground"><User className="h-4 w-4 text-primary" /><span>{name}</span></div>
+                    <div className="flex items-center gap-2 text-foreground"><Phone className="h-4 w-4 text-primary" /><span>{phone}</span></div>
+                    <div className="flex items-start gap-2 text-foreground"><MapPin className="mt-0.5 h-4 w-4 text-primary" /><span>{savedAddressDisplay || "-"}</span></div>
                   </div>
                 </div>
 
@@ -1192,10 +892,7 @@ const CartSidebar = () => {
                   <div className="space-y-2">
                     {items.map((item) => (
                       <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">{item.quantity}x</span>
-                          <span className="text-foreground">{item.product.name}</span>
-                        </div>
+                        <div className="flex items-center gap-2"><span className="text-muted-foreground">{item.quantity}x</span><span className="text-foreground">{item.product.name}</span></div>
                         <span className="font-medium text-foreground">{formatPrice(item.product.price * item.quantity)}</span>
                       </div>
                     ))}
@@ -1205,56 +902,15 @@ const CartSidebar = () => {
                 <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
                   <h3 className="mb-3 text-sm font-semibold text-foreground">Pagamento e total</h3>
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Forma de pagamento</span>
-                      <span className="font-medium text-foreground">{paymentLabel}</span>
-                    </div>
-                    {paymentMethod === "credito" && creditMode === "parcelado" && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Parcelamento</span>
-                        <span className="font-medium text-foreground">
-                          {effectiveCreditInstallments}x de {formatPrice(finalTotal / effectiveCreditInstallments)}
-                        </span>
-                      </div>
-                    )}
-                    {savedCouponCode && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Cupom</span>
-                        <span className="font-medium text-foreground">{savedCouponCode}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
-                    </div>
-                    {paymentMethod === "pix" && (
-                      <div className="flex justify-between text-primary">
-                        <span>Desconto Pix</span>
-                        <span className="font-medium">-{formatPrice(pixDiscount)}</span>
-                      </div>
-                    )}
-                    {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
-                      <div className="flex justify-between text-primary">
-                        <span>Juros do parcelamento</span>
-                        <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Entrega</span>
-                      <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
-                    </div>
-                    {paymentMethod === "dinheiro" && needsChange === "sim" && changeFor && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Troco para</span>
-                        <span className="font-medium text-foreground">R$ {changeFor}</span>
-                      </div>
-                    )}
-                    <div className="border-t border-border pt-3">
-                      <div className="flex justify-between text-base">
-                        <span className="font-semibold text-foreground">Total</span>
-                        <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
-                      </div>
-                    </div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Forma de pagamento</span><span className="font-medium text-foreground">{paymentLabel}</span></div>
+                    {paymentMethod === "credito" && creditMode === "parcelado" && <div className="flex justify-between"><span className="text-muted-foreground">Parcelamento</span><span className="font-medium text-foreground">{effectiveCreditInstallments}x de {formatPrice(finalTotal / effectiveCreditInstallments)}</span></div>}
+                    {savedCouponCode && <div className="flex justify-between"><span className="text-muted-foreground">Cupom</span><span className="font-medium text-foreground">{savedCouponCode}</span></div>}
+                    <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="font-medium text-foreground">{formatPrice(totalPrice)}</span></div>
+                    {paymentMethod === "pix" && <div className="flex justify-between text-primary"><span>Desconto Pix</span><span className="font-medium">-{formatPrice(pixDiscount)}</span></div>}
+                    {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && <div className="flex justify-between text-primary"><span>Juros do parcelamento</span><span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span></div>}
+                    <div className="flex justify-between"><span className="text-muted-foreground">Entrega</span><span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span></div>
+                    {paymentMethod === "dinheiro" && needsChange === "sim" && changeFor && <div className="flex justify-between"><span className="text-muted-foreground">Troco para</span><span className="font-medium text-foreground">R$ {changeFor}</span></div>}
+                    <div className="border-t border-border pt-3"><div className="flex justify-between text-base"><span className="font-semibold text-foreground">Total</span><span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span></div></div>
                   </div>
                 </div>
               </div>
@@ -1262,56 +918,18 @@ const CartSidebar = () => {
           </div>
 
           <div className="border-t border-border bg-card p-4">
-            {step === "cart" &&
-              (items.length > 0 ? (
-                <div>
-                  <div className="mb-3 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
-                    </span>
-                    <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
-                  </div>
-                  <button type="button" onClick={goToDelivery} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
-                    Continuar
-                  </button>
-                </div>
-              ) : (
-                <button type="button" className="w-full rounded-2xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">
-                  Escolha os produtos para continuar
-                </button>
-              ))}
+            {step === "cart" && (items.length > 0 ? (
+              <div>
+                <div className="mb-3 flex items-center justify-between text-sm"><span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})</span><span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span></div>
+                <button type="button" onClick={goToDelivery} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">Continuar</button>
+              </div>
+            ) : (
+              <button type="button" className="w-full rounded-2xl bg-muted py-3.5 text-sm font-bold text-muted-foreground">Escolha os produtos para continuar</button>
+            ))}
 
-            {step === "delivery" && (
-              <button
-                type="button"
-                onClick={goToPayment}
-                disabled={!canContinueDelivery}
-                className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
-                  canContinueDelivery ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                Ir para pagamento
-              </button>
-            )}
-
-            {step === "payment" && (
-              <button
-                type="button"
-                onClick={goToConfirmation}
-                disabled={!isPaymentValid}
-                className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
-                  isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                Revisar pedido
-              </button>
-            )}
-
-            {step === "confirmation" && (
-              <button type="button" onClick={handleCheckout} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">
-                Enviar pedido via WhatsApp
-              </button>
-            )}
+            {step === "delivery" && <button type="button" onClick={goToPayment} disabled={!canContinueDelivery} className={`w-full rounded-2xl py-3.5 text-sm font-bold ${canContinueDelivery ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>Ir para pagamento</button>}
+            {step === "payment" && <button type="button" onClick={goToConfirmation} disabled={!isPaymentValid} className={`w-full rounded-2xl py-3.5 text-sm font-bold ${isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>Revisar pedido</button>}
+            {step === "confirmation" && <button type="button" onClick={finalizeOrder} className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground">Finalizar</button>}
           </div>
         </div>
       </div>
@@ -1323,63 +941,118 @@ const CartSidebar = () => {
               {isShowingSavedAddresses ? (
                 <>
                   <div className="flex items-center gap-3 border-b border-border px-4 py-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAddressModalOpen(false);
-                        setIsShowingSavedAddresses(false);
-                      }}
-                      className="rounded-full p-1 text-muted-foreground"
-                      aria-label="Voltar"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
+                    <button type="button" onClick={() => { setIsAddressModalOpen(false); setIsShowingSavedAddresses(false); }} className="rounded-full p-1 text-muted-foreground" aria-label="Voltar"><ChevronLeft className="h-5 w-5" /></button>
                     <h3 className="text-base font-semibold text-foreground">Endereços</h3>
                   </div>
-
                   <div className="flex-1 overflow-y-auto bg-[#f7f7f7] p-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingAddress(null);
-                        setIsShowingSavedAddresses(false);
-                      }}
-                      className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Buscar novo endereço</p>
-                        <p className="text-xs text-muted-foreground">Digite e selecione pelo Google</p>
-                      </div>
+                    <button type="button" onClick={() => { setEditingAddress(null); setIsShowingSavedAddresses(false); }} className="mb-4 flex w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left">
+                      <div><p className="text-sm font-semibold text-foreground">Buscar novo endereço</p><p className="text-xs text-muted-foreground">Digite e selecione pelo Google</p></div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </button>
-
-                    <SavedAddressesList
-                      addresses={savedAddresses}
-                      selectedAddressId={structuredAddress?.id}
-                      onSelect={handleSelectSavedAddress}
-                      onEdit={handleEditSavedAddress}
-                      onDelete={handleDeleteSavedAddress}
-                    />
+                    <SavedAddressesList addresses={savedAddresses} selectedAddressId={structuredAddress?.id} onSelect={handleSelectSavedAddress} onEdit={handleEditSavedAddress} onDelete={handleDeleteSavedAddress} />
                   </div>
                 </>
               ) : (
-                <AddressSearch
-                  onSave={handleSaveAddress}
-                  onCancel={() => {
-                    if (savedAddresses.length > 0 && !editingAddress) {
-                      setIsShowingSavedAddresses(true);
-                      return;
-                    }
-                    setEditingAddress(null);
-                    setIsAddressModalOpen(false);
-                  }}
-                  initialAddress={editingAddress}
-                />
+                <AddressSearch onSave={handleSaveAddress} onCancel={() => { if (savedAddresses.length > 0 && !editingAddress) { setIsShowingSavedAddresses(true); return; } setEditingAddress(null); setIsAddressModalOpen(false); }} initialAddress={editingAddress} />
               )}
             </div>
           </div>
         </div>
       )}
+
+      <Dialog
+        open={isFinishModalOpen}
+        onOpenChange={(open) => {
+          if (paymentMethod === "pix" && !hasCopiedPix && !open) {
+            return;
+          }
+          setIsFinishModalOpen(open);
+        }}
+      >
+        <DialogContent
+          className="max-w-md rounded-[28px] border-0 bg-background p-0 shadow-2xl"
+          onPointerDownOutside={(event) => {
+            if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
+          }}
+          onEscapeKeyDown={(event) => {
+            if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
+          }}
+        >
+          <div className="p-6">
+            <div className="text-center">
+              <h3 className="text-3xl font-bold text-foreground">Agora é só enviar seu pedido via WhatsApp</h3>
+            </div>
+
+            <div className="mt-6 space-y-4 rounded-3xl bg-muted/30 p-4">
+              <div>
+                <p className="text-xl font-bold text-foreground">Pedido #{Date.now().toString().slice(-4)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{new Date().toLocaleDateString("pt-BR")} - {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+                <p className="mt-3 text-base font-medium text-foreground">{name}</p>
+                <p className="text-sm text-muted-foreground">Contato: <span className="font-semibold text-foreground">{phone}</span></p>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                {items.map((item) => (
+                  <div key={`${item.product.id}-${item.selectedVariation ?? "default"}`} className="mb-3 flex items-start gap-3 last:mb-0">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{item.quantity}</div>
+                    <img src={item.product.image} alt={item.product.name} className="h-16 w-16 rounded-2xl bg-background object-contain" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="line-clamp-1 text-sm font-semibold text-foreground">{item.product.name}</p>
+                        <span className="text-sm font-bold text-foreground">{formatPrice(item.product.price * item.quantity)}</span>
+                      </div>
+                      {item.selectedVariation && <p className="mt-1 text-sm text-muted-foreground">1x {item.selectedVariation}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border pt-4 text-sm">
+                <div className="flex justify-between"><span>Total dos itens ({totalItems})</span><span className="font-semibold">{formatPrice(totalPrice)}</span></div>
+                <div className="mt-1 flex justify-between"><span>Frete</span><span className="font-semibold">{formatPrice(deliveryFee)}</span></div>
+                {paymentMethod === "pix" && <div className="mt-1 flex justify-between text-primary"><span>Desconto PIX</span><span className="font-semibold">-{formatPrice(pixDiscount)}</span></div>}
+                <div className="mt-1 flex justify-between text-base font-bold"><span>Total pedido</span><span>{formatPrice(finalTotal)}</span></div>
+              </div>
+
+              <div className="border-t border-border pt-4 text-sm">
+                <p><span className="font-semibold text-foreground">Pagamento:</span> {paymentMethod === "pix" ? "Online" : "Na entrega"}</p>
+                <p><span className="font-semibold text-foreground">Forma de pagamento:</span> {paymentLabel}</p>
+                {paymentMethod === "pix" && (
+                  <>
+                    <p className="mt-1"><span className="font-semibold text-foreground">Chave PIX:</span> {PIX_KEY}</p>
+                    <p><span className="font-semibold text-foreground">Titular PIX:</span> {PIX_HOLDER}</p>
+                  </>
+                )}
+              </div>
+
+              <div className="border-t border-border pt-4 text-sm">
+                <p className="font-semibold text-foreground">Para entregar:</p>
+                <p className="text-muted-foreground">{savedAddressDisplay}</p>
+              </div>
+            </div>
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              {paymentMethod === "pix" && !hasCopiedPix
+                ? "Copie a chave PIX para continuar o pedido."
+                : "Clique no botão abaixo para encaminhar o pedido para o WhatsApp do vendedor."}
+            </p>
+
+            <div className="mt-6">
+              {paymentMethod === "pix" && !hasCopiedPix ? (
+                <button type="button" onClick={handleCopyPix} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-bold text-primary-foreground">
+                  <Copy className="h-5 w-5" />
+                  Copiar PIX
+                </button>
+              ) : (
+                <button type="button" onClick={handleSendWhatsApp} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 py-4 text-base font-bold text-white">
+                  <MessageCircle className="h-5 w-5" />
+                  Enviar via WhatsApp
+                </button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
