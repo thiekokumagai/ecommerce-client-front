@@ -75,9 +75,8 @@ const Index = () => {
       <PromotionsSection />
       <BestSellersSection />
       <SiteFooter />
-      <div className="hidden md:block">
-        <WhatsAppButton />
-      </div>
+      <WhatsAppButton />
+      <BackToTopButton />
       <CartSidebar />
       <AddedToCartModal />
       <MobileBottomNav />

@@ -389,9 +389,7 @@ const ProductPage = () => {
       </div>
 
       <SiteFooter />
-      <div className="hidden lg:block">
-        <WhatsAppButton />
-      </div>
+      <WhatsAppButton />
       <CartSidebar />
       <AddedToCartModal />
       <MobileBottomNav />
