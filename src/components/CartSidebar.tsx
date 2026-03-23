@@ -941,18 +941,14 @@ const CartSidebar = () => {
                     ) : deliveryError ? (
                       <p className="text-sm font-semibold text-destructive">{deliveryError}</p>
                     ) : structuredAddress ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Subtotal</span>
-                          <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
-                        </div>
+                      <div className="space-y-3">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">
                             Entrega{deliveryDistanceKm ? ` (${deliveryDistanceKm} km)` : ""}
                           </span>
                           <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
                         </div>
-                        <div className="border-t border-border pt-2">
+                        <div className="border-t border-border pt-3">
                           <div className="flex items-center justify-between text-base">
                             <span className="font-medium text-muted-foreground">Total com entrega</span>
                             <span className="text-lg font-bold text-primary">{formatPrice(totalPrice + deliveryFee)}</span>
@@ -962,7 +958,7 @@ const CartSidebar = () => {
                     ) : (
                       <div className="flex items-center justify-between text-base">
                         <span className="font-medium text-muted-foreground">
-                          Subtotal ({totalItems} {totalItems === 1 ? "item" : "itens"})
+                          Total com entrega
                         </span>
                         <span className="text-lg font-bold text-primary">{formatPrice(totalPrice)}</span>
                       </div>
