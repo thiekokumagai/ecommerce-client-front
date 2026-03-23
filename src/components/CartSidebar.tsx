@@ -971,7 +971,7 @@ const CartSidebar = () => {
         }}
       >
         <DialogContent
-          className="max-w-md rounded-[28px] border-0 bg-background p-0 shadow-2xl"
+          className="h-[100dvh] w-screen max-w-none rounded-none border-0 bg-background p-0 shadow-none sm:h-auto sm:w-full sm:max-w-md sm:rounded-[28px] sm:shadow-2xl"
           onPointerDownOutside={(event) => {
             if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
           }}
@@ -979,6 +979,7 @@ const CartSidebar = () => {
             if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
           }}
         >
+
           <div className="p-6">
             <div className="text-center">
               <h3 className="text-3xl font-bold text-foreground">Agora é só enviar seu pedido via WhatsApp</h3>
