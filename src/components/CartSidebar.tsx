@@ -667,9 +667,14 @@ const CartSidebar = () => {
   };
 
   const handleSendWhatsApp = () => {
-    window.open(whatsappHref, "_blank", "noopener,noreferrer");
+    const whatsappWindow = window.open(whatsappHref, "_blank", "noopener,noreferrer");
     setIsFinishModalOpen(false);
     setIsCartOpen(false);
+
+    // Attempt to close the current tab after a short delay
+    setTimeout(() => {
+      window.close();
+    }, 1500);
   };
 
   const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
