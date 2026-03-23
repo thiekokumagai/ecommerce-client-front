@@ -1516,7 +1516,7 @@ const CartSidebar = () => {
         }}
       >
         <DialogContent
-          className="h-[100dvh] w-screen max-w-none rounded-none border-0 bg-[#5d5d5d]/85 p-0 shadow-none sm:h-auto sm:w-full sm:max-w-md sm:rounded-[32px] sm:border sm:border-border sm:bg-background sm:p-0 sm:shadow-2xl"
+          className="z-[120] h-[100dvh] w-screen max-w-none rounded-none border-0 bg-[#5d5d5d]/85 p-0 shadow-none sm:h-auto sm:w-full sm:max-w-md sm:rounded-[32px] sm:border sm:border-border sm:bg-background sm:p-0 sm:shadow-2xl"
           onPointerDownOutside={(event) => {
             if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
           }}
@@ -1524,8 +1524,8 @@ const CartSidebar = () => {
             if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
           }}
         >
-          <div className="flex h-full w-full items-center justify-center p-5 sm:p-0">
-            <div className="flex h-full max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-[28px] bg-background shadow-2xl sm:max-h-[90vh] sm:rounded-[32px]">
+          <div className="flex h-full w-full items-center justify-center p-0 sm:p-0">
+            <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-background sm:h-full sm:max-h-[90vh] sm:max-w-md sm:rounded-[32px] sm:shadow-2xl">
               <div className="flex-1 overflow-y-auto px-6 pb-6 pt-8 sm:px-8">
                 <div className="mx-auto max-w-[320px] text-center">
                   <h3 className="text-[22px] font-bold leading-tight text-[#686868]">
@@ -1628,7 +1628,7 @@ const CartSidebar = () => {
                 </p>
               </div>
 
-              <div className="border-t border-[#e6e6e6] px-6 pb-6 pt-4 sm:px-8">
+              <div className="border-t border-[#e6e6e6] px-6 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-4 sm:px-8 sm:pb-6">
                 {checkoutPaymentMethod === "pix" && !hasCopiedPix ? (
                   <button
                     type="button"
