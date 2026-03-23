@@ -391,6 +391,7 @@ const ProductPage = () => {
 
       <SiteFooter />
       <WhatsAppButton />
+      <BackToTopButton />
       <CartSidebar />
       <AddedToCartModal />
       <MobileBottomNav />
