@@ -661,7 +661,6 @@ const CartSidebar = () => {
     try {
       await navigator.clipboard.writeText(PIX_KEY);
       setHasCopiedPix(true);
-      toast.success("Chave PIX copiada.");
     } catch {
       toast.error("Não foi possível copiar a chave PIX.");
     }
@@ -671,7 +670,6 @@ const CartSidebar = () => {
     window.open(whatsappHref, "_blank", "noopener,noreferrer");
     setIsFinishModalOpen(false);
     setIsCartOpen(false);
-    toast.success("Pedido enviado com sucesso!");
   };
 
   const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
@@ -1495,6 +1493,7 @@ const CartSidebar = () => {
         }}
       >
         <DialogContent
+          showCloseButton={false}
           className="z-[120] h-[100dvh] w-screen max-w-none rounded-none border-0 bg-[#5d5d5d]/85 p-0 shadow-none sm:h-auto sm:w-full sm:max-w-md sm:rounded-[32px] sm:border sm:border-border sm:bg-background sm:p-0 sm:shadow-2xl"
           onPointerDownOutside={(event) => {
             if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
