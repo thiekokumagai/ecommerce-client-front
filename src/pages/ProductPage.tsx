@@ -371,7 +371,7 @@ const ProductPage = () => {
 
       <div
         className={`fixed inset-x-0 z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden ${
-          totalItems > 0 ? "bottom-[97px]" : "bottom-0"
+          totalItems > 0 ? "bottom-[64px]" : "bottom-0"
         }`}
       >
         <button
