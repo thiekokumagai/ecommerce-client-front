@@ -4,6 +4,7 @@ import { CheckCircle2, Minus, Plus, ShoppingCart } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import ProductVariationModal from "@/components/ProductVariationModal";
+import { useProductDetail } from "@/hooks/useVendizapProducts";
 
 interface ProductCardProps {
   product: Product;
@@ -16,6 +17,11 @@ const formatPrice = (price: number) =>
 const ProductCard = ({ product }: ProductCardProps) => {
   const { items, addToCart, updateQuantity, removeFromCart } = useCart();
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
+  const [showVariationModal, setShowVariationModal] = useState(false);
+  
+  // Lazy-load product detail to get image
+  const { data: detail } = useProductDetail(product.id);
+  const productImage = detail?.imagens?.[0] || product.image || "";
   const [showVariationModal, setShowVariationModal] = useState(false);
 
   const availableOptions = product.variationGroup?.options.filter((option) => option.available) ?? [];
@@ -93,12 +99,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         <Link to={`/produto/${product.id}`} className="block">
           <div className="relative overflow-hidden bg-secondary/30 p-4 pb-0">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="mx-auto aspect-square w-full rounded-sm object-contain"
-              loading="lazy"
-            />
+            {productImage ? (
+              <img
+                src={productImage}
+                alt={product.name}
+                className="mx-auto aspect-square w-full rounded-sm object-contain"
+                loading="lazy"
+              />
+            ) : (
+              <div className="mx-auto aspect-square w-full animate-pulse rounded-sm bg-secondary" />
+            )}
           </div>
         </Link>
 
