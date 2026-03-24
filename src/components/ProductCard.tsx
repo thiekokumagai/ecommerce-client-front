@@ -22,7 +22,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
   // Lazy-load product detail to get image
   const { data: detail } = useProductDetail(product.id);
   const productImage = detail?.imagens?.[0] || product.image || "";
-  const [showVariationModal, setShowVariationModal] = useState(false);
 
   const availableOptions = product.variationGroup?.options.filter((option) => option.available) ?? [];
   const cartItem = items.find(
