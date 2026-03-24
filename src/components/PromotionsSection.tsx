@@ -1,11 +1,14 @@
-import { promoProducts } from "@/data/products";
 import ProductCard from "./ProductCard";
 import { Flame } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useProducts } from "@/hooks/useVendizapProducts";
 
 const PromotionsSection = () => {
   const { selectedCategory, searchTerm, selectedNicotineStrength } = useCart();
+  const { data: allProducts = [] } = useProducts();
   const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const promoProducts = allProducts.filter((p) => p.isPromo);
 
   const visibleProducts = promoProducts.filter((product) => {
     const hasAvailableVariations = product.variationGroup

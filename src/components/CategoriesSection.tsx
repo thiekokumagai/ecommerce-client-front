@@ -1,24 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import catDescartavel from "@/assets/cat-descartavel.webp";
-import catLifepod from "@/assets/cat-lifepod.webp";
-import catNicsalt from "@/assets/cat-nicsalt.webp";
-import catResistencia from "@/assets/cat-resistencia.webp";
-import catJuice from "@/assets/cat-juice.webp";
-import catPodsystem from "@/assets/cat-podsystem.webp";
-import catAcessorios from "@/assets/cat-acessorios.webp";
 import { useCart } from "@/contexts/CartContext";
+import { useCategories } from "@/hooks/useVendizapProducts";
 import { cn } from "@/lib/utils";
-
-const categories = [
-  { name: "Descartável", image: catDescartavel },
-  { name: "Life Pod", image: catLifepod },
-  { name: "NicSalt", image: catNicsalt },
-  { name: "Resistência", image: catResistencia },
-  { name: "Juice", image: catJuice },
-  { name: "Pod System", image: catPodsystem },
-  { name: "Acessórios", image: catAcessorios },
-];
 
 const CategoriesSection = () => {
   const {
@@ -29,16 +13,21 @@ const CategoriesSection = () => {
     setSelectedNicotineStrength,
   } = useCart();
 
+  const { data: apiCategories = [] } = useCategories();
   const scrollRef = useRef<HTMLDivElement>(null);
   const normalizedSearch = searchTerm.trim();
   const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
+  const categories = apiCategories.map((cat) => ({
+    name: cat.nome.trim(),
+    image: cat.imagem || "",
+  }));
+
   const updateScrollState = () => {
     const container = scrollRef.current;
     if (!container) return;
-
     const maxScrollLeft = container.scrollWidth - container.clientWidth;
     setCanScrollLeft(container.scrollLeft > 4);
     setCanScrollRight(container.scrollLeft < maxScrollLeft - 4);
@@ -48,20 +37,17 @@ const CategoriesSection = () => {
     updateScrollState();
     const container = scrollRef.current;
     if (!container) return;
-
     container.addEventListener("scroll", updateScrollState);
     window.addEventListener("resize", updateScrollState);
-
     return () => {
       container.removeEventListener("scroll", updateScrollState);
       window.removeEventListener("resize", updateScrollState);
     };
-  }, []);
+  }, [apiCategories]);
 
   const handleCategoryChange = (category: string, isActive: boolean) => {
     const nextCategory = isActive ? null : category;
     setSelectedCategory(nextCategory);
-
     if (nextCategory !== "NicSalt") {
       setSelectedNicotineStrength(null);
     }
@@ -70,7 +56,6 @@ const CategoriesSection = () => {
   const scrollByAmount = (direction: "left" | "right") => {
     const container = scrollRef.current;
     if (!container) return;
-
     const amount = Math.min(320, container.clientWidth * 0.75);
     container.scrollBy({
       left: direction === "left" ? -amount : amount,
@@ -135,7 +120,6 @@ const CategoriesSection = () => {
             <div className="flex min-w-max gap-2 px-1 pb-2 md:gap-6">
               {categories.map((cat) => {
                 const isActive = selectedCategory === cat.name;
-
                 return (
                   <button
                     key={cat.name}
@@ -149,11 +133,15 @@ const CategoriesSection = () => {
                         isActive ? "border-primary" : "border-transparent"
                       )}
                     >
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="aspect-square w-20 rounded-full object-cover md:w-24"
-                      />
+                      {cat.image ? (
+                        <img
+                          src={cat.image}
+                          alt={cat.name}
+                          className="aspect-square w-20 rounded-full object-cover md:w-24"
+                        />
+                      ) : (
+                        <div className="aspect-square w-20 rounded-full bg-muted md:w-24" />
+                      )}
                     </div>
                     <span
                       className={cn(

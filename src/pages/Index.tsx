@@ -11,7 +11,7 @@ import CartSidebar from "@/components/CartSidebar";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { useCart } from "@/contexts/CartContext";
-import { allProducts } from "@/data/products";
+import { useProducts } from "@/hooks/useVendizapProducts";
 
 const Index = () => {
   const {
@@ -23,6 +23,7 @@ const Index = () => {
     setSelectedNicotineStrength,
     totalItems
   } = useCart();
+  const { data: allProducts = [], isLoading } = useProducts();
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
 
@@ -60,7 +61,7 @@ const Index = () => {
       {showBanner && <HeroBanner />}
       <CategoriesSection />
       <NicotineFilter />
-      {!hasResults && (normalizedSearch || selectedNicotineStrength) && (
+      {!isLoading && !hasResults && (normalizedSearch || selectedNicotineStrength) && (
         <section className="py-12">
           <div className="mx-auto max-w-7xl px-4 text-center md:px-8">
             <h2 className="text-2xl font-bold text-foreground">Nenhum produto encontrado</h2>

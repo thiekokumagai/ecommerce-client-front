@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useCart } from "@/contexts/CartContext";
-import { allProducts } from "@/data/products";
+import { useProducts } from "@/hooks/useVendizapProducts";
 import { cn } from "@/lib/utils";
 
 const NicotineFilter = () => {
@@ -9,6 +9,8 @@ const NicotineFilter = () => {
     selectedNicotineStrength,
     setSelectedNicotineStrength,
   } = useCart();
+
+  const { data: allProducts = [] } = useProducts();
 
   const options = useMemo(() => {
     const strengths = new Set<string>();
@@ -26,7 +28,7 @@ const NicotineFilter = () => {
     return Array.from(strengths).sort((a, b) =>
       a.localeCompare(b, "pt-BR", { numeric: true })
     );
-  }, []);
+  }, [allProducts]);
 
   if (selectedCategory !== "NicSalt" || options.length === 0) return null;
 

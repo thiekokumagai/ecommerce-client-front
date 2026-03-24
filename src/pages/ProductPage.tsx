@@ -14,8 +14,9 @@ import ProductFreightCalculator from "@/components/product/ProductFreightCalcula
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductMobileGallery from "@/components/product/ProductMobileGallery";
 import ProductNotes from "@/components/product/ProductNotes";
-import { getProductById, getProductMockDetails } from "@/data/products";
+import { useProducts, useProductDetail } from "@/hooks/useVendizapProducts";
 import { useCart } from "@/contexts/CartContext";
+import { Loader2 } from "lucide-react";
 
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
 
@@ -34,7 +35,47 @@ const ProductPage = () => {
   const [hasJustUpdated, setHasJustUpdated] = useState(false);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const product = useMemo(() => getProductById(Number(id)), [id]);
+  // Get product from the list (basic info)
+  const { data: allProducts = [] } = useProducts();
+  const product = useMemo(() => allProducts.find((p) => p.id === id), [allProducts, id]);
+
+  // Get product detail (with images)
+  const { data: productDetail, isLoading: isDetailLoading } = useProductDetail(id);
+
+  // Build gallery from detail images
+  const gallery = useMemo(() => {
+    if (productDetail?.imagens && productDetail.imagens.length > 0) {
+      return productDetail.imagens as string[];
+    }
+    return product?.image ? [product.image] : [];
+  }, [productDetail, product]);
+
+  // Build specs from detail
+  const description = productDetail?.detalhesFormatado || productDetail?.detalhes || product?.description || "";
+  const cleanDescription = description.replace(/<[^>]*>/g, "").trim();
+
+  const specs = useMemo(() => {
+    const items: string[] = [];
+    if (cleanDescription) items.push(cleanDescription);
+    if (product) {
+      items.push(`Categoria: ${product.category}`);
+      items.push("Design pensado para uso confortável no dia a dia");
+      items.push("Acabamento premium com foco em praticidade e desempenho");
+    }
+    return items;
+  }, [cleanDescription, product]);
+
+  const includes = useMemo(() => {
+    if (!product) return [];
+    return [
+      `1x ${product.name}`,
+      "1x item principal pronto para uso",
+      "1x cabo USB-C",
+      "1x manual",
+    ];
+  }, [product]);
+
+  const tag = product?.name.split(" ")[0]?.toLowerCase() || "";
 
   useEffect(() => {
     return () => {
@@ -44,7 +85,7 @@ const ProductPage = () => {
     };
   }, []);
 
-  if (!product) {
+  if (!product && allProducts.length > 0) {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
@@ -59,15 +100,22 @@ const ProductPage = () => {
     );
   }
 
-  const details = getProductMockDetails(product);
-  const visibleSpecs = showFullDescription ? details.specs : details.specs.slice(0, 3);
+  if (!product) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const visibleSpecs = showFullDescription ? specs : specs.slice(0, 3);
   const isNicSalt = product.category === "NicSalt";
   const nicotineOptions = product.variationGroup?.options ?? [];
   const availableNicotineOptions = nicotineOptions.filter((option) => option.available);
   const canAddToCart = !isNicSalt || nicotineStrength !== null;
   const isUnavailable = isNicSalt && availableNicotineOptions.length === 0;
   const hasNicotineOptions = nicotineOptions.length > 0;
-  const productDescription = isNicSalt ? "Hortelã gelada" : details.specs[0];
+  const productDescription = cleanDescription || specs[0] || "";
   const notePlaceholder = isNicSalt
     ? "Inclua algum detalhe para este produto (opcional)"
     : "Observações";
@@ -80,15 +128,6 @@ const ProductPage = () => {
   );
   const isInCart = !!cartItem;
   const totalPrice = product.price * quantity;
-
-  useEffect(() => {
-    if (cartItem) {
-      setQuantity(cartItem.quantity);
-      return;
-    }
-
-    setQuantity(1);
-  }, [cartItem]);
 
   const handleNavigateToList = () => {
     if (redirectTimeoutRef.current) {
@@ -166,7 +205,7 @@ const ProductPage = () => {
         <section className="lg:hidden">
           <ProductMobileGallery
             productName={product.name}
-            images={details.gallery}
+            images={gallery}
             selectedImage={selectedImage}
             onBack={handleGoBack}
             onOpenModal={() => setIsImageModalOpen(true)}
@@ -209,9 +248,9 @@ const ProductPage = () => {
               isNicSalt={isNicSalt}
               productDescription={productDescription}
               visibleSpecs={visibleSpecs}
-              allSpecs={details.specs}
-              includes={details.includes}
-              tag={details.tag}
+              allSpecs={specs}
+              includes={includes}
+              tag={tag}
               nicotineOptions={nicotineOptions}
               hasNicotineOptions={hasNicotineOptions}
               nicotineStrength={nicotineStrength}
@@ -265,7 +304,7 @@ const ProductPage = () => {
           <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-left">
             <ProductDesktopGallery
               productName={product.name}
-              images={details.gallery}
+              images={gallery}
               selectedImage={selectedImage}
               isNicSalt={false}
               onSelectImage={setSelectedImage}
@@ -307,9 +346,9 @@ const ProductPage = () => {
                 isNicSalt={isNicSalt}
                 productDescription={productDescription}
                 visibleSpecs={visibleSpecs}
-                allSpecs={details.specs}
-                includes={details.includes}
-                tag={details.tag}
+                allSpecs={specs}
+                includes={includes}
+                tag={tag}
                 nicotineOptions={nicotineOptions}
                 hasNicotineOptions={hasNicotineOptions}
                 nicotineStrength={nicotineStrength}
@@ -402,7 +441,7 @@ const ProductPage = () => {
       <MobileBottomNav />
       {isImageModalOpen && (
         <ProductImageModal
-          images={details.gallery}
+          images={gallery}
           selectedIndex={selectedImage}
           onSelect={setSelectedImage}
           onClose={() => setIsImageModalOpen(false)}

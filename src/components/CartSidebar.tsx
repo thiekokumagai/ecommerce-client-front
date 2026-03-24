@@ -89,11 +89,9 @@ type FinalizedOrder = {
   savedCouponCode: string;
   needsChange: string;
   changeFor: string;
-  items: typeof import("@/contexts/CartContext").useCart extends never
-    ? never
-    : Array<{
+  items: Array<{
         product: {
-          id: number;
+          id: string;
           name: string;
           image: string;
           price: number;
@@ -464,7 +462,7 @@ const CartSidebar = () => {
     toast.success("Cupom removido.");
   };
 
-  const handleRemoveItem = (productId: number, selectedVariation?: string) => {
+  const handleRemoveItem = (productId: string, selectedVariation?: string) => {
     removeFromCart(productId, selectedVariation);
   };
 
