@@ -102,7 +102,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               <img
                 src={productImage}
                 alt={product.name}
-                className="mx-auto aspect-square w-full rounded-sm object-contain"
+                className="mx-auto aspect-square w-full rounded-sm object-cover"
                 loading="lazy"
               />
             ) : (
