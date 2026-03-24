@@ -21,6 +21,7 @@ const CategoriesSection = () => {
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const categories = apiCategories.map((cat) => ({
+    id: cat.id,
     name: cat.nome.trim(),
     image: cat.imagem || "",
   }));
@@ -45,12 +46,13 @@ const CategoriesSection = () => {
     };
   }, [apiCategories]);
 
-  const handleCategoryChange = (category: string, isActive: boolean) => {
-    const nextCategory = isActive ? null : category;
-    setSelectedCategory(nextCategory);
-    if (nextCategory !== "NicSalt") {
-      setSelectedNicotineStrength(null);
+  const handleCategoryChange = (category: string, categoryId: string, isActive: boolean) => {
+    if (isActive) {
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(category, categoryId);
     }
+    setSelectedNicotineStrength(null);
   };
 
   const scrollByAmount = (direction: "left" | "right") => {
@@ -124,7 +126,7 @@ const CategoriesSection = () => {
                   <button
                     key={cat.name}
                     type="button"
-                    onClick={() => handleCategoryChange(cat.name, isActive)}
+                    onClick={() => handleCategoryChange(cat.name, cat.id, isActive)}
                     className="flex w-[88px] shrink-0 flex-col items-center gap-2 md:w-[104px]"
                   >
                     <div

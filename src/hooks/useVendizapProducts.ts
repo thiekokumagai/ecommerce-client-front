@@ -62,25 +62,28 @@ export function transformProduct(raw: VendizapProduct): Product {
   };
 }
 
-export function useProducts() {
+export function useProducts(categoryId?: string | null) {
   return useQuery({
-    queryKey: ["vendizap-products"],
+    queryKey: categoryId ? ["vendizap-products-category", categoryId] : ["vendizap-products"],
     queryFn: async (): Promise<Product[]> => {
+      const body = categoryId
+        ? { action: "productsByCategory", categoryId }
+        : { action: "products" };
+
       const { data, error } = await supabase.functions.invoke("vendizap-api", {
-        body: { action: "products" },
+        body,
       });
 
       if (error) throw error;
 
       const products = (data as VendizapProduct[]).map(transformProduct);
       
-      // Filter out products where all variations are unavailable (if has variations)
       return products.filter((p) => {
         if (!p.variationGroup) return true;
         return p.variationGroup.options.some((o) => o.available);
       });
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }

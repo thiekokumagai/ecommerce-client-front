@@ -18,12 +18,13 @@ const Index = () => {
     searchTerm,
     setSearchTerm,
     selectedCategory,
+    selectedCategoryId,
     setSelectedCategory,
     selectedNicotineStrength,
     setSelectedNicotineStrength,
     totalItems
   } = useCart();
-  const { data: allProducts = [], isLoading } = useProducts();
+  const { data: allProducts = [], isLoading } = useProducts(selectedCategoryId);
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
 

@@ -7,8 +7,8 @@ import { useProducts } from "@/hooks/useVendizapProducts";
 const ITEMS_PER_PAGE = 12;
 
 const AllProductsSection = () => {
-  const { selectedCategory, searchTerm, selectedNicotineStrength } = useCart();
-  const { data: allProducts = [] } = useProducts();
+  const { selectedCategory, selectedCategoryId, searchTerm, selectedNicotineStrength } = useCart();
+  const { data: allProducts = [], isLoading } = useProducts(selectedCategoryId);
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const loaderRef = useRef<HTMLDivElement>(null);
@@ -18,9 +18,6 @@ const AllProductsSection = () => {
     .filter((product) => {
       const hasAvailableVariations = product.variationGroup
         ? product.variationGroup.options.some((option) => option.available)
-        : true;
-      const matchesCategory = selectedCategory
-        ? product.category === selectedCategory
         : true;
       const matchesSearch = normalizedSearch
         ? product.name.toLowerCase().includes(normalizedSearch) ||
@@ -34,7 +31,7 @@ const AllProductsSection = () => {
           ) ?? false
         : true;
 
-      return hasAvailableVariations && matchesCategory && matchesSearch && matchesNicotine;
+      return hasAvailableVariations && matchesSearch && matchesNicotine;
     });
 
   // Reset visible count when filters change

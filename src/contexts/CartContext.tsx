@@ -35,7 +35,8 @@ interface CartContextType {
   setShowAddedModal: (show: boolean) => void;
   triggerAddedModal: (item: Product | SelectedProduct) => void;
   selectedCategory: string | null;
-  setSelectedCategory: (category: string | null) => void;
+  selectedCategoryId: string | null;
+  setSelectedCategory: (category: string | null, categoryId?: string | null) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   selectedNicotineStrength: string | null;
@@ -66,7 +67,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [lastAdded, setLastAdded] = useState<CartItem | null>(null);
   const [showAddedModal, setShowAddedModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategoryState] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const setSelectedCategory = useCallback((category: string | null, categoryId?: string | null) => {
+    setSelectedCategoryState(category);
+    setSelectedCategoryId(categoryId ?? null);
+  }, []);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNicotineStrength, setSelectedNicotineStrength] = useState<string | null>(null);
   const [orders, setOrders] = useState<SavedOrder[]>([]);
@@ -216,6 +222,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setShowAddedModal,
         triggerAddedModal,
         selectedCategory,
+        selectedCategoryId,
         setSelectedCategory,
         searchTerm,
         setSearchTerm,
