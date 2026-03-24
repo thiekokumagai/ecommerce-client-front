@@ -599,9 +599,6 @@ const CartSidebar = () => {
     checkoutSubtotal,
     checkoutTotal,
   ]);
-
-  //const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
-
   const finalizeOrder = () => {
     if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod || !hasValidDeliveryFee) {
       toast.info("Preencha todas as etapas obrigatórias para finalizar.");
@@ -668,29 +665,19 @@ const CartSidebar = () => {
 
   const handleSendWhatsApp = () => {
     const numero = '5567991032937';
-
-    const urlApp = `whatsapp://send?phone=${numero}&text=${checkoutMessage}`;
+    const urlApp = `whatsapp://send?phone=${numero}&text=${checkoutMessage}`;    
     const urlWeb = `https://wa.me/${numero}?text=${checkoutMessage}`;
-
-    // Detecta mobile
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
     setIsFinishModalOpen(false);
     setIsCartOpen(false);
-
     if (isMobile) {
-      // 📱 Mobile → tenta abrir app
       window.location.href = urlApp;
-
-    // fallback se não tiver WhatsApp
-    setTimeout(() => {
-      // só executa se ainda estiver na página
-      if (document.visibilityState === 'visible') {
-        window.location.href = urlWeb;
-      }
-    }, 1500);
+      setTimeout(() => {
+        if (document.visibilityState === 'visible') {
+          window.open(urlWeb, "_blank", "noopener,noreferrer");
+        }
+      }, 1500);
     } else {
-      // 💻 Desktop → abre nova aba
       window.open(urlWeb, "_blank", "noopener,noreferrer");
     }
   };
