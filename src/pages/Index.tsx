@@ -3,7 +3,7 @@ import HeroBanner from "@/components/HeroBanner";
 import CategoriesSection from "@/components/CategoriesSection";
 import NicotineFilter from "@/components/NicotineFilter";
 import PromotionsSection from "@/components/PromotionsSection";
-import BestSellersSection from "@/components/BestSellersSection";
+import AllProductsSection from "@/components/AllProductsSection";
 import SiteFooter from "@/components/SiteFooter";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import BackToTopButton from "@/components/BackToTopButton";
@@ -79,7 +79,7 @@ const Index = () => {
         </section>
       )}
       <PromotionsSection />
-      <BestSellersSection />
+      <AllProductsSection />
       <SiteFooter />
       <WhatsAppButton />
       <BackToTopButton />
