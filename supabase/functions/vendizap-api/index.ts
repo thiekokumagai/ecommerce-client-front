@@ -59,13 +59,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, id } = await req.json();
+    const { action, id, categoryId } = await req.json();
 
     let data: any;
 
     switch (action) {
       case "products":
         data = await fetchAllProducts();
+        break;
+      case "productsByCategory":
+        if (!categoryId) {
+          return new Response(
+            JSON.stringify({ error: "ID da categoria é obrigatório" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        data = await vendizapFetch(`/produtos?categoria=${categoryId}&exibir=true`);
+        data = (data as any[]).filter((p: any) => p.exibir !== false);
         break;
       case "product":
         if (!id) {
