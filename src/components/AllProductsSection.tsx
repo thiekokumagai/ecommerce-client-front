@@ -81,9 +81,6 @@ const AllProductsSection = () => {
                 ? selectedCategory
                 : "Todos os Produtos"}
           </h2>
-          <span className="text-sm text-muted-foreground">
-            ({filteredProducts.length})
-          </span>
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
