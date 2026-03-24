@@ -89,11 +89,9 @@ type FinalizedOrder = {
   savedCouponCode: string;
   needsChange: string;
   changeFor: string;
-  items: typeof import("@/contexts/CartContext").useCart extends never
-    ? never
-    : Array<{
+  items: Array<{
         product: {
-          id: number;
+          id: string;
           name: string;
           image: string;
           price: number;

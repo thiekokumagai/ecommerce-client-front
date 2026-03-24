@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import type { Product, SelectedProduct } from "@/data/products";
-import { allProducts } from "@/data/products";
 
 export interface CartItem {
   product: Product;
@@ -24,8 +23,8 @@ export interface SavedOrder {
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Product | SelectedProduct) => void;
-  removeFromCart: (productId: number, selectedVariation?: string) => void;
-  updateQuantity: (productId: number, quantity: number, selectedVariation?: string) => void;
+  removeFromCart: (productId: string, selectedVariation?: string) => void;
+  updateQuantity: (productId: string, quantity: number, selectedVariation?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -62,48 +61,6 @@ const normalizeItem = (item: Product | SelectedProduct) => {
   return { product: item };
 };
 
-const sampleOrders: SavedOrder[] = [
-  {
-    id: "pedido-exemplo-001",
-    createdAt: "2025-03-18T14:30:00.000Z",
-    customerName: "Cliente Exemplo",
-    customerPhone: "(67) 99112-2210",
-    customerAddress: "Rua Glauce Rocha, 539, Campo Grande - MS",
-    paymentMethod: "pix",
-    deliveryFee: 10,
-    subtotal: 149.8,
-    total: 152.31,
-    items: [
-      {
-        product: allProducts[0],
-        quantity: 1,
-        selectedVariation: "35mg",
-      },
-      {
-        product: allProducts[5],
-        quantity: 1,
-      },
-    ],
-  },
-  {
-    id: "pedido-exemplo-002",
-    createdAt: "2025-03-19T18:10:00.000Z",
-    customerName: "Cliente Exemplo",
-    customerPhone: "(67) 99112-2210",
-    customerAddress: "Rua Glauce Rocha, 539, Campo Grande - MS",
-    paymentMethod: "credito",
-    deliveryFee: 12,
-    subtotal: 189.9,
-    total: 201.9,
-    items: [
-      {
-        product: allProducts[9],
-        quantity: 1,
-      },
-    ],
-  },
-];
-
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -118,21 +75,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
     if (!storedOrders) {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(sampleOrders));
-      setOrders(sampleOrders);
+      setOrders([]);
       return;
     }
 
     try {
       const parsedOrders = JSON.parse(storedOrders) as SavedOrder[];
-      setOrders(parsedOrders.length > 0 ? parsedOrders : sampleOrders);
-
-      if (parsedOrders.length === 0) {
-        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(sampleOrders));
-      }
+      setOrders(parsedOrders);
     } catch {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(sampleOrders));
-      setOrders(sampleOrders);
+      setOrders([]);
     }
   }, []);
 
@@ -199,7 +150,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const removeFromCart = useCallback((productId: number, selectedVariation?: string) => {
+  const removeFromCart = useCallback((productId: string, selectedVariation?: string) => {
     setItems((prev) =>
       prev.filter(
         (item) =>
@@ -208,7 +159,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
-  const updateQuantity = useCallback((productId: number, quantity: number, selectedVariation?: string) => {
+  const updateQuantity = useCallback((productId: string, quantity: number, selectedVariation?: string) => {
     if (quantity <= 0) {
       setItems((prev) =>
         prev.filter(
