@@ -600,7 +600,7 @@ const CartSidebar = () => {
     checkoutTotal,
   ]);
 
-  const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
+  //const whatsappHref = useMemo(() => `https://wa.me/5567991032937?text=${checkoutMessage}`, [checkoutMessage]);
 
   const finalizeOrder = () => {
     if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod || !hasValidDeliveryFee) {
@@ -666,15 +666,24 @@ const CartSidebar = () => {
     }
   };
 
-  const handleSendWhatsApp = () => {
-    const whatsappWindow = window.open(whatsappHref, "_blank", "noopener,noreferrer");
+ const handleSendWhatsApp = () => {
+    const numero = '5567991032937';
+    const mensagem = encodeURIComponent(checkoutMessage);
+
+    const urlApp = `whatsapp://send?phone=${numero}&text=${mensagem}`;
+    const urlWeb = `https://wa.me/${numero}?text=${mensagem}`;
+
+    // Fecha modais antes
     setIsFinishModalOpen(false);
     setIsCartOpen(false);
 
-    // Attempt to close the current tab after a short delay
+    // Tenta abrir app
+    window.location.href = urlApp;
+
+    // Fallback pro web
     setTimeout(() => {
-      window.close();
-    }, 1500);
+      window.location.href = urlWeb;
+    }, 1200);
   };
 
   const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
