@@ -682,10 +682,13 @@ const CartSidebar = () => {
       // 📱 Mobile → tenta abrir app
       window.location.href = urlApp;
 
-      // fallback
-      setTimeout(() => {
+    // fallback se não tiver WhatsApp
+    setTimeout(() => {
+      // só executa se ainda estiver na página
+      if (document.visibilityState === 'visible') {
         window.location.href = urlWeb;
-      }, 1200);
+      }
+    }, 1500);
     } else {
       // 💻 Desktop → abre nova aba
       window.open(urlWeb, "_blank", "noopener,noreferrer");
