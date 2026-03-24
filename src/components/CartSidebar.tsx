@@ -666,24 +666,30 @@ const CartSidebar = () => {
     }
   };
 
- const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = () => {
     const numero = '5567991032937';
-    const mensagem = encodeURIComponent(checkoutMessage);
 
-    const urlApp = `whatsapp://send?phone=${numero}&text=${mensagem}`;
-    const urlWeb = `https://wa.me/${numero}?text=${mensagem}`;
+    const urlApp = `whatsapp://send?phone=${numero}&text=${checkoutMessage}`;
+    const urlWeb = `https://wa.me/${numero}?text=${checkoutMessage}`;
 
-    // Fecha modais antes
+    // Detecta mobile
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     setIsFinishModalOpen(false);
     setIsCartOpen(false);
 
-    // Tenta abrir app
-    window.location.href = urlApp;
+    if (isMobile) {
+      // 📱 Mobile → tenta abrir app
+      window.location.href = urlApp;
 
-    // Fallback pro web
-    setTimeout(() => {
-      window.location.href = urlWeb;
-    }, 1200);
+      // fallback
+      setTimeout(() => {
+        window.location.href = urlWeb;
+      }, 1200);
+    } else {
+      // 💻 Desktop → abre nova aba
+      window.open(urlWeb, "_blank", "noopener,noreferrer");
+    }
   };
 
   const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
