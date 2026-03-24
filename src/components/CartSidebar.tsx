@@ -462,7 +462,7 @@ const CartSidebar = () => {
     toast.success("Cupom removido.");
   };
 
-  const handleRemoveItem = (productId: number, selectedVariation?: string) => {
+  const handleRemoveItem = (productId: string, selectedVariation?: string) => {
     removeFromCart(productId, selectedVariation);
   };
 
