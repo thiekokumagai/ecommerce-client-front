@@ -35,15 +35,6 @@ const SiteFooter = () => {
               <MapPin className="h-4 w-4 shrink-0" />
               <span>Campo Grande - MS</span>
             </div>
-            <a
-              href="https://wa.me/5567991032937"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Fale com vendedor
-            </a>
           </div>
 
           <div className="hidden h-full w-full items-center justify-center md:flex">

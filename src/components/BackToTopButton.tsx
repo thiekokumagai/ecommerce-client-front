@@ -22,20 +22,20 @@ const BackToTopButton = () => {
   if (!isVisible) return null;
 
   // Position above WhatsApp button (+56px gap)
-  let mobileBottom = "bottom-[62px]";
+  let mobileBottom = "bottom-[74px]";
   if (isProductPage && hasCartItems) {
-    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+196px)]";
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+210px)]";
   } else if (isProductPage) {
-    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+128px)]";
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+150px)]";
   } else if (hasCartItems) {
-    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+136px)]";
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+130px)]";
   }
 
   return (
     <button
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className={`fixed right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md border border-border transition-all hover:shadow-lg active:scale-95 md:bottom-[72px] md:right-6 ${mobileBottom}`}
+      className={`fixed right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-white border border-border transition-all  md:bottom-[72px] md:right-6 ${mobileBottom}`}
       aria-label="Voltar ao topo"
     >
       <ArrowUp className="h-4 w-4 text-primary" />

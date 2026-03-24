@@ -150,9 +150,14 @@ const ProductPage = () => {
       : isInCart
         ? "Atualizar"
         : "Adicionar ao Pedido";
+  let mobileBottom = "pb-[77px]";
+  if (totalItems > 0) {
+    mobileBottom = "pb-[calc(env(safe-area-inset-bottom)+133px)]";
+  } 
 
   return (
-    <div className="min-h-screen bg-background pb-[270px] lg:pb-0">
+    <div 
+      className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>
       <div className="hidden lg:block">
         <SiteHeader />
       </div>

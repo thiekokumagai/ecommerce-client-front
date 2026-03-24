@@ -1,6 +1,6 @@
-import { MessageCircle } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useLocation } from "react-router-dom";
+import whatsappIcon from "@/assets/whatsapp-original.svg";
 
 const WhatsAppButton = () => {
   const { totalItems } = useCart();
@@ -12,9 +12,9 @@ const WhatsAppButton = () => {
   // On home mobile: if cart items, bottom nav (~64px)
   let mobileBottom = "bottom-6";
   if (isProductPage && hasCartItems) {
-    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+140px)]";
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+160px)]";
   } else if (isProductPage) {
-    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+72px)]";
+    mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+100px)]";
   } else if (hasCartItems) {
     mobileBottom = "bottom-[calc(env(safe-area-inset-bottom)+80px)]";
   }
@@ -24,10 +24,10 @@ const WhatsAppButton = () => {
       href="https://wa.me/5567991032937"
       target="_blank"
       rel="noopener noreferrer"
-      className={`fixed right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[hsl(142,70%,45%)] shadow-lg shadow-[hsl(142,70%,45%,0.3)] transition-all hover:scale-110 active:scale-95 md:bottom-6 md:right-6 ${mobileBottom}`}
+      className={`fixed right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(142,70%,45%)]  transition-all  md:bottom-6 md:right-6 ${mobileBottom}`}
       aria-label="Fale conosco no WhatsApp"
     >
-      <MessageCircle className="h-5 w-5 text-white" />
+      <img src={whatsappIcon} />
     </a>
   );
 };

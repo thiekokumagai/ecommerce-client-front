@@ -21,6 +21,7 @@ const Index = () => {
     setSelectedCategory,
     selectedNicotineStrength,
     setSelectedNicotineStrength,
+    totalItems
   } = useCart();
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
@@ -49,9 +50,12 @@ const Index = () => {
     setSelectedCategory(null);
     setSelectedNicotineStrength(null);
   };
-
+  let mobileBottom = "pb-0";
+  if (totalItems > 0) {
+    mobileBottom = "pb-[calc(env(safe-area-inset-bottom)+64px)]";
+  } 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-0">
+    <div className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>
       <SiteHeader />
       {showBanner && <HeroBanner />}
       <CategoriesSection />
