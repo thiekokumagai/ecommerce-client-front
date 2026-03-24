@@ -1,15 +1,18 @@
 import { useState } from "react";
-import { bestSellers } from "@/data/products";
 import ProductCard from "./ProductCard";
 import { TrendingUp } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useProducts } from "@/hooks/useVendizapProducts";
 
 const BestSellersSection = () => {
   const [showAll, setShowAll] = useState(false);
   const { selectedCategory, searchTerm, selectedNicotineStrength } = useCart();
+  const { data: allProducts = [] } = useProducts();
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  const filteredProducts = bestSellers.filter((product) => {
+  const nonPromoProducts = allProducts.filter((p) => !p.isPromo);
+
+  const filteredProducts = nonPromoProducts.filter((product) => {
     const hasAvailableVariations = product.variationGroup
       ? product.variationGroup.options.some((option) => option.available)
       : true;
