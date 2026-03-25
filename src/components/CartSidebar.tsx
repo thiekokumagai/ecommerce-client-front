@@ -26,6 +26,7 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
 import SavedAddressesList from "@/components/checkout/SavedAddressesList";
+import CartItemImage from "@/components/CartItemImage";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
@@ -759,11 +760,11 @@ const CartSidebar = () => {
                             className="rounded-2xl border border-border bg-background p-3"
                           >
                             <div className="flex gap-3">
-                              <img
-                                src={item.product.image}
-                                alt={item.product.name}
-                                className="h-16 w-16 rounded-xl bg-secondary/30 object-contain"
-                                loading="lazy"
+                              <CartItemImage
+                                productId={item.product.id}
+                                productImage={item.product.image}
+                                productName={item.product.name}
+                                className="h-16 w-16 rounded-xl bg-secondary/30"
                               />
                               <div className="flex flex-1 flex-col justify-between gap-2">
                                 <div className="flex items-start justify-between gap-2">
@@ -1542,10 +1543,11 @@ const CartSidebar = () => {
                           {item.quantity}
                         </div>
 
-                        <img
-                          src={item.product.image}
-                          alt={item.product.name}
-                          className="h-16 w-16 shrink-0 rounded-2xl bg-[#f4f4f4] object-contain"
+                        <CartItemImage
+                          productId={item.product.id}
+                          productImage={item.product.image}
+                          productName={item.product.name}
+                          className="h-16 w-16 shrink-0 rounded-2xl bg-[#f4f4f4]"
                         />
 
                         <div className="min-w-0 flex-1">
