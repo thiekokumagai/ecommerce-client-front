@@ -18,21 +18,12 @@ import { useProducts, useProductDetail } from "@/hooks/useVendizapProducts";
 import { useCart } from "@/contexts/CartContext";
 import { Loader2 } from "lucide-react";
 
-const formatPrice = (price: number) =>
-  `R$ ${price.toFixed(2).replace(".", ",")}`;
+const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
 
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {
-    items,
-    addToCart,
-    updateQuantity,
-    removeFromCart,
-    triggerAddedModal,
-    totalItems,
-  } = useCart();
-
+  const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal, totalItems } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [zipCode, setZipCode] = useState("");
@@ -44,30 +35,35 @@ const ProductPage = () => {
   const [hasJustUpdated, setHasJustUpdated] = useState(false);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Get product from the list (basic info)
   const { data: allProducts = [] } = useProducts();
-  const product = useMemo(
-    () => allProducts.find((p) => p.id === id),
-    [allProducts, id]
-  );
+  const product = useMemo(() => allProducts.find((p) => p.id === id), [allProducts, id]);
 
-  const { data: productDetail } = useProductDetail(id);
+  // Get product detail (with images)
+  const { data: productDetail, isLoading: isDetailLoading } = useProductDetail(id);
 
+  // Build gallery from detail images
   const gallery = useMemo(() => {
-    if (productDetail?.imagens?.length) {
+    if (productDetail?.imagens && productDetail.imagens.length > 0) {
       return productDetail.imagens as string[];
     }
     return product?.image ? [product.image] : [];
   }, [productDetail, product]);
 
-  // ❌ REMOVIDO descrição completamente
+  // Build specs from detail
+  const description = productDetail?.detalhesFormatado || productDetail?.detalhes || product?.description || "";
+  const cleanDescription = description.replace(/<[^>]*>/g, "").trim();
+
   const specs = useMemo(() => {
-    if (!product) return [];
-    return [
-      `Categoria: ${product.category}`,
-      "Design pensado para uso confortável no dia a dia",
-      "Acabamento premium com foco em praticidade e desempenho",
-    ];
-  }, [product]);
+    const items: string[] = [];
+    if (cleanDescription) items.push(cleanDescription);
+    if (product) {
+      items.push(`Categoria: ${product.category}`);
+      items.push("Design pensado para uso confortável no dia a dia");
+      items.push("Acabamento premium com foco em praticidade e desempenho");
+    }
+    return items;
+  }, [cleanDescription, product]);
 
   const includes = useMemo(() => {
     if (!product) return [];
@@ -94,8 +90,8 @@ const ProductPage = () => {
       <div className="min-h-screen bg-background">
         <SiteHeader />
         <main className="mx-auto flex max-w-7xl flex-col items-center px-4 py-16 text-center lg:px-8">
-          <h1 className="text-2xl font-bold">Produto não encontrado</h1>
-          <Link to="/" className="mt-6 border px-6 py-3">
+          <h1 className="text-2xl font-bold text-foreground">Produto não encontrado</h1>
+          <Link to="/" className="mt-6 rounded-xl border border-primary px-6 py-3 text-sm font-medium text-primary">
             Voltar para a loja
           </Link>
         </main>
@@ -106,32 +102,30 @@ const ProductPage = () => {
 
   if (!product) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   const visibleSpecs = showFullDescription ? specs : specs.slice(0, 3);
-
   const isNicSalt = product.category === "NicSalt";
   const nicotineOptions = product.variationGroup?.options ?? [];
-  const availableNicotineOptions = nicotineOptions.filter(
-    (o) => o.available
-  );
-
+  const availableNicotineOptions = nicotineOptions.filter((option) => option.available);
   const canAddToCart = !isNicSalt || nicotineStrength !== null;
   const isUnavailable = isNicSalt && availableNicotineOptions.length === 0;
   const hasNicotineOptions = nicotineOptions.length > 0;
+  const productDescription = cleanDescription || specs[0] || "";
+  const notePlaceholder = isNicSalt
+    ? "Inclua algum detalhe para este produto (opcional)"
+    : "Observações";
 
   const selectedVariation = nicotineStrength ?? undefined;
-
   const cartItem = items.find(
     (item) =>
       item.product.id === product.id &&
       item.selectedVariation === selectedVariation
   );
-
   const isInCart = !!cartItem;
   const totalPrice = product.price * quantity;
 
@@ -139,6 +133,7 @@ const ProductPage = () => {
     if (redirectTimeoutRef.current) {
       clearTimeout(redirectTimeoutRef.current);
     }
+
     redirectTimeoutRef.current = setTimeout(() => {
       navigate("/");
     }, 1200);
@@ -149,60 +144,109 @@ const ProductPage = () => {
 
     if (cartItem) {
       updateQuantity(product.id, quantity, selectedVariation);
-    } else {
-      for (let i = 0; i < quantity; i++) {
-        addToCart({ product, selectedVariation });
-      }
+      triggerAddedModal({
+        product,
+        selectedVariation,
+      });
+      setHasJustUpdated(true);
+      handleNavigateToList();
+      return;
     }
 
-    triggerAddedModal({ product, selectedVariation });
+    for (let i = 0; i < quantity; i += 1) {
+      addToCart({
+        product,
+        selectedVariation,
+      });
+    }
+
+    triggerAddedModal({
+      product,
+      selectedVariation,
+    });
+
     setHasJustUpdated(true);
     handleNavigateToList();
   };
 
   const handleRemoveFromCart = () => {
     if (!cartItem) return;
+
     removeFromCart(product.id, selectedVariation);
+    setHasJustUpdated(false);
     setQuantity(1);
   };
 
+  const handleBackToStore = () => navigate("/");
+  const handleGoBack = () => navigate(-1);
+  const handleDecreaseQuantity = () => setQuantity((current) => Math.max(1, current - 1));
+  const handleIncreaseQuantity = () => setQuantity((current) => current + 1);
+
+  const primaryButtonLabel = isUnavailable
+    ? "Indisponível"
+    : !canAddToCart
+      ? "Selecione"
+      : isInCart
+        ? "Atualizar"
+        : "Adicionar ao Pedido";
   let mobileBottom = "pb-[77px]";
   if (totalItems > 0) {
     mobileBottom = "pb-[calc(env(safe-area-inset-bottom)+133px)]";
-  }
+  } 
 
   return (
-    <div className={`min-h-screen ${mobileBottom}`}>
+    <div 
+      className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>
       <div className="hidden lg:block">
         <SiteHeader />
       </div>
 
       <main className="mx-auto max-w-[1220px] lg:px-8 lg:py-8">
-        {/* MOBILE */}
         <section className="lg:hidden">
           <ProductMobileGallery
             productName={product.name}
             images={gallery}
             selectedImage={selectedImage}
-            onBack={() => navigate(-1)}
+            onBack={handleGoBack}
             onOpenModal={() => setIsImageModalOpen(true)}
           />
 
-          <div className="px-5 pb-8 pt-7">
-            <h1 className="text-[24px] font-medium">{product.name}</h1>
+          <div className="-mt-6 rounded-t-[28px] bg-background px-5 pb-8 pt-7">
+            <h1 className="text-[24px] font-medium leading-tight text-[#4b4b4b]">
+              {product.name}
+            </h1>
 
-            <div className="mt-6 flex justify-between">
-              <div>
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))}>-</button>
-                <span>{quantity}</span>
-                <button onClick={() => setQuantity((q) => q + 1)}>+</button>
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-4 py-2.5">
+                <button
+                  type="button"
+                  onClick={handleDecreaseQuantity}
+                  className="text-[#7a7a7a]"
+                  aria-label="Diminuir quantidade"
+                >
+                  <span className="text-base">−</span>
+                </button>
+                <span className="min-w-5 text-center text-lg text-[#5c5c5c]">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={handleIncreaseQuantity}
+                  className="text-[#7a7a7a]"
+                  aria-label="Aumentar quantidade"
+                >
+                  <span className="text-base">+</span>
+                </button>
+                <span className="text-sm text-[#9b9b9b]">un</span>
               </div>
-              <div>{formatPrice(totalPrice)}</div>
+
+              <div className="text-[20px] font-semibold text-[#5a5a5a]">
+                {formatPrice(totalPrice)}
+              </div>
             </div>
 
             <ProductInfo
               productName={product.name}
               isNicSalt={isNicSalt}
+              productDescription={productDescription}
               visibleSpecs={visibleSpecs}
               allSpecs={specs}
               includes={includes}
@@ -224,42 +268,83 @@ const ProductPage = () => {
 
             <ProductNotes
               note={note}
-              placeholder="Observações"
+              placeholder={notePlaceholder}
               onChange={setNote}
             />
 
-            <button onClick={handleAddOrUpdateCart}>
-              {isInCart ? "Atualizar" : "Adicionar ao Pedido"}
-            </button>
+            {isInCart && (
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={handleRemoveFromCart}
+                  className="w-full rounded-xl bg-black px-6 py-3.5 text-base font-bold text-white"
+                >
+                  Remover do carrinho
+                </button>
+              </div>
+            )}
+
+            {!isInCart && (
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={handleBackToStore}
+                  className="w-full rounded-xl border border-primary px-6 py-3 text-center text-base font-medium text-primary"
+                >
+                  Voltar pra loja
+                </button>
+              </div>
+            )}
+
+            <ProductContact />
           </div>
         </section>
 
-        {/* DESKTOP */}
         <section className="hidden lg:block">
-          <div className="grid gap-8 lg:grid-cols-2">
+          <div className="grid gap-8 lg:grid-cols-[540px_minmax(0,420px)] xl:justify-left">
             <ProductDesktopGallery
               productName={product.name}
               images={gallery}
               selectedImage={selectedImage}
+              isNicSalt={false}
               onSelectImage={setSelectedImage}
               onOpenModal={() => setIsImageModalOpen(true)}
             />
 
-            <div>
-              <h1 className="text-[27px]">{product.name}</h1>
+            <div className="max-w-[420px] pt-16">
+              <h1 className="text-[27px] font-semibold leading-[1.15] text-[#545454]">
+                {product.name}
+              </h1>
 
-              <div className="mt-6 flex justify-between">
-                <div>
-                  <button onClick={() => setQuantity((q) => Math.max(1, q - 1))}>-</button>
-                  <span>{quantity}</span>
-                  <button onClick={() => setQuantity((q) => q + 1)}>+</button>
+              <div className="mt-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-5 py-2.5 text-[#666666]">
+                  <button
+                    type="button"
+                    onClick={handleDecreaseQuantity}
+                    aria-label="Diminuir quantidade"
+                  >
+                    <span className="text-base">−</span>
+                  </button>
+                  <span className="min-w-4 text-center text-lg">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={handleIncreaseQuantity}
+                    aria-label="Aumentar quantidade"
+                  >
+                    <span className="text-base">+</span>
+                  </button>
+                  <span className="text-sm text-[#979797]">un</span>
                 </div>
-                <div>{formatPrice(totalPrice)}</div>
+
+                <div className="text-[28px] font-semibold text-[#555555]">
+                  {formatPrice(totalPrice)}
+                </div>
               </div>
 
               <ProductInfo
                 productName={product.name}
                 isNicSalt={isNicSalt}
+                productDescription={productDescription}
                 visibleSpecs={visibleSpecs}
                 allSpecs={specs}
                 includes={includes}
@@ -273,13 +358,80 @@ const ProductPage = () => {
                 onShowMore={() => setShowFullDescription(true)}
               />
 
-              <button onClick={handleAddOrUpdateCart}>
-                {isInCart ? "Atualizar" : "Adicionar ao Pedido"}
-              </button>
+              <ProductFreightCalculator
+                zipCode={zipCode}
+                addressNumber={addressNumber}
+                isDesktop
+                isNicSalt={isNicSalt}
+                onZipCodeChange={setZipCode}
+                onAddressNumberChange={setAddressNumber}
+              />
+
+              <ProductNotes
+                note={note}
+                placeholder="Inclua algum detalhe para este produto (opcional)"
+                isDesktop
+                isNicSalt={isNicSalt}
+                onChange={setNote}
+              />
+
+              <div className="mt-6 space-y-3">
+                <button
+                  type="button"
+                  onClick={handleAddOrUpdateCart}
+                  disabled={!canAddToCart || isUnavailable}
+                  className={`w-full rounded-lg px-6 py-3.5 text-base font-bold ${
+                    !canAddToCart || isUnavailable
+                      ? "bg-[#bfbfbf] text-white"
+                      : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  {primaryButtonLabel}
+                </button>
+
+                {isInCart ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveFromCart}
+                    className="w-full rounded-lg bg-black px-6 py-3.5 text-base font-bold text-white"
+                  >
+                    Remover do carrinho
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleBackToStore}
+                    className="w-full rounded-lg border border-primary px-6 py-3 text-base font-medium text-primary"
+                  >
+                    Voltar pra loja
+                  </button>
+                )}
+              </div>
+
+              <ProductContact isDesktop />
             </div>
           </div>
         </section>
       </main>
+
+      <div
+        className={`fixed inset-x-0 z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden ${
+          totalItems > 0 ? "bottom-[calc(env(safe-area-inset-bottom)+64px)]" : "bottom-0"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={handleAddOrUpdateCart}
+          disabled={!canAddToCart || isUnavailable}
+          className={`w-full rounded-xl px-6 py-3.5 text-base font-bold ${
+            !canAddToCart || isUnavailable
+              ? "bg-[#c7c7c7] text-white"
+              : "bg-primary text-primary-foreground"
+          }`}
+        >
+          {primaryButtonLabel}
+        </button>
+      </div>
 
       <SiteFooter />
       <WhatsAppButton />
@@ -287,7 +439,6 @@ const ProductPage = () => {
       <CartSidebar />
       <AddedToCartModal />
       <MobileBottomNav />
-
       {isImageModalOpen && (
         <ProductImageModal
           images={gallery}
