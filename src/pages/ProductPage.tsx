@@ -202,6 +202,7 @@ const ProductPage = () => {
 
             <ProductInfo
               productName={product.name}
+              productDescription={product.description}
               isNicSalt={isNicSalt}
               visibleSpecs={visibleSpecs}
               allSpecs={specs}
@@ -241,6 +242,7 @@ const ProductPage = () => {
               productName={product.name}
               images={gallery}
               selectedImage={selectedImage}
+              isNicSalt={isNicSalt}
               onSelectImage={setSelectedImage}
               onOpenModal={() => setIsImageModalOpen(true)}
             />
@@ -259,6 +261,7 @@ const ProductPage = () => {
 
               <ProductInfo
                 productName={product.name}
+                productDescription={product.description}
                 isNicSalt={isNicSalt}
                 visibleSpecs={visibleSpecs}
                 allSpecs={specs}
