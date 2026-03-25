@@ -42,7 +42,7 @@ export default function AdminCoupons() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Remover?")); return;
+    if (!confirm("Remover?")) return;
     await supabase.from("coupons").delete().eq("id", id);
     toast.success("Removido"); fetchData();
   };
