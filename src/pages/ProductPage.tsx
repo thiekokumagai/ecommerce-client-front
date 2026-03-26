@@ -10,10 +10,8 @@ import ProductImageModal from "@/components/ProductImageModal";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ProductContact from "@/components/product/ProductContact";
 import ProductDesktopGallery from "@/components/product/ProductDesktopGallery";
-import ProductFreightCalculator from "@/components/product/ProductFreightCalculator";
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductMobileGallery from "@/components/product/ProductMobileGallery";
-import ProductNotes from "@/components/product/ProductNotes";
 import { useProducts, useProductDetail } from "@/hooks/useVendizapProducts";
 import { useCart } from "@/contexts/CartContext";
 import { Loader2 } from "lucide-react";
@@ -26,23 +24,15 @@ const ProductPage = () => {
   const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal, totalItems } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [zipCode, setZipCode] = useState("");
-  const [addressNumber, setAddressNumber] = useState("");
-  const [note, setNote] = useState("");
-  const [showFullDescription, setShowFullDescription] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [nicotineStrength, setNicotineStrength] = useState<string | null>(null);
   const [hasJustUpdated, setHasJustUpdated] = useState(false);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Get product from the list (basic info)
   const { data: allProducts = [] } = useProducts();
   const product = useMemo(() => allProducts.find((p) => p.id === id), [allProducts, id]);
+  const { data: productDetail } = useProductDetail(id);
 
-  // Get product detail (with images)
-  const { data: productDetail, isLoading: isDetailLoading } = useProductDetail(id);
-
-  // Build gallery from detail images
   const gallery = useMemo(() => {
     if (productDetail?.imagens && productDetail.imagens.length > 0) {
       return productDetail.imagens as string[];
@@ -50,32 +40,8 @@ const ProductPage = () => {
     return product?.image ? [product.image] : [];
   }, [productDetail, product]);
 
-  // Build specs from detail
   const description = productDetail?.detalhesFormatado || productDetail?.detalhes || product?.description || "";
   const cleanDescription = description.replace(/<[^>]*>/g, "").trim();
-
-  const specs = useMemo(() => {
-    const items: string[] = [];
-    if (cleanDescription) items.push(cleanDescription);
-    if (product) {
-      items.push(`Categoria: ${product.category}`);
-      items.push("Design pensado para uso confortável no dia a dia");
-      items.push("Acabamento premium com foco em praticidade e desempenho");
-    }
-    return items;
-  }, [cleanDescription, product]);
-
-  const includes = useMemo(() => {
-    if (!product) return [];
-    return [
-      `1x ${product.name}`,
-      "1x item principal pronto para uso",
-      "1x cabo USB-C",
-      "1x manual",
-    ];
-  }, [product]);
-
-  const tag = product?.name.split(" ")[0]?.toLowerCase() || "";
 
   useEffect(() => {
     return () => {
@@ -108,23 +74,17 @@ const ProductPage = () => {
     );
   }
 
-  const visibleSpecs = showFullDescription ? specs : specs.slice(0, 3);
   const isNicSalt = product.category === "NicSalt";
   const nicotineOptions = product.variationGroup?.options ?? [];
   const availableNicotineOptions = nicotineOptions.filter((option) => option.available);
   const canAddToCart = !isNicSalt || nicotineStrength !== null;
   const isUnavailable = isNicSalt && availableNicotineOptions.length === 0;
   const hasNicotineOptions = nicotineOptions.length > 0;
-  const productDescription = cleanDescription || specs[0] || "";
-  const notePlaceholder = isNicSalt
-    ? "Inclua algum detalhe para este produto (opcional)"
-    : "Observações";
+  const productDescription = cleanDescription;
 
   const selectedVariation = nicotineStrength ?? undefined;
   const cartItem = items.find(
-    (item) =>
-      item.product.id === product.id &&
-      item.selectedVariation === selectedVariation
+    (item) => item.product.id === product.id && item.selectedVariation === selectedVariation,
   );
   const isInCart = !!cartItem;
   const totalPrice = product.price * quantity;
@@ -144,27 +104,17 @@ const ProductPage = () => {
 
     if (cartItem) {
       updateQuantity(product.id, quantity, selectedVariation);
-      triggerAddedModal({
-        product,
-        selectedVariation,
-      });
+      triggerAddedModal({ product, selectedVariation });
       setHasJustUpdated(true);
       handleNavigateToList();
       return;
     }
 
     for (let i = 0; i < quantity; i += 1) {
-      addToCart({
-        product,
-        selectedVariation,
-      });
+      addToCart({ product, selectedVariation });
     }
 
-    triggerAddedModal({
-      product,
-      selectedVariation,
-    });
-
+    triggerAddedModal({ product, selectedVariation });
     setHasJustUpdated(true);
     handleNavigateToList();
   };
@@ -189,14 +139,14 @@ const ProductPage = () => {
       : isInCart
         ? "Atualizar"
         : "Adicionar ao Pedido";
+
   let mobileBottom = "pb-[77px]";
   if (totalItems > 0) {
     mobileBottom = "pb-[calc(env(safe-area-inset-bottom)+133px)]";
-  } 
+  }
 
   return (
-    <div 
-      className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>
+    <div className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>
       <div className="hidden lg:block">
         <SiteHeader />
       </div>
@@ -212,9 +162,7 @@ const ProductPage = () => {
           />
 
           <div className="-mt-6 rounded-t-[28px] bg-background px-5 pb-8 pt-7">
-            <h1 className="text-[24px] font-medium leading-tight text-[#4b4b4b]">
-              {product.name}
-            </h1>
+            <h1 className="text-[24px] font-medium leading-tight text-[#4b4b4b]">{product.name}</h1>
 
             <div className="mt-6 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-4 py-2.5">
@@ -238,38 +186,16 @@ const ProductPage = () => {
                 <span className="text-sm text-[#9b9b9b]">un</span>
               </div>
 
-              <div className="text-[20px] font-semibold text-[#5a5a5a]">
-                {formatPrice(totalPrice)}
-              </div>
+              <div className="text-[20px] font-semibold text-[#5a5a5a]">{formatPrice(totalPrice)}</div>
             </div>
 
             <ProductInfo
-              productName={product.name}
               isNicSalt={isNicSalt}
               productDescription={productDescription}
-              visibleSpecs={visibleSpecs}
-              allSpecs={specs}
-              includes={includes}
-              tag={tag}
               nicotineOptions={nicotineOptions}
               hasNicotineOptions={hasNicotineOptions}
               nicotineStrength={nicotineStrength}
-              showFullDescription={showFullDescription}
               onSelectNicotine={setNicotineStrength}
-              onShowMore={() => setShowFullDescription(true)}
-            />
-
-            <ProductFreightCalculator
-              zipCode={zipCode}
-              addressNumber={addressNumber}
-              onZipCodeChange={setZipCode}
-              onAddressNumberChange={setAddressNumber}
-            />
-
-            <ProductNotes
-              note={note}
-              placeholder={notePlaceholder}
-              onChange={setNote}
             />
 
             {isInCart && (
@@ -312,9 +238,7 @@ const ProductPage = () => {
             />
 
             <div className="max-w-[420px] pt-16">
-              <h1 className="text-[27px] font-semibold leading-[1.15] text-[#545454]">
-                {product.name}
-              </h1>
+              <h1 className="text-[27px] font-semibold leading-[1.15] text-[#545454]">{product.name}</h1>
 
               <div className="mt-6 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-5 py-2.5 text-[#666666]">
@@ -336,43 +260,17 @@ const ProductPage = () => {
                   <span className="text-sm text-[#979797]">un</span>
                 </div>
 
-                <div className="text-[28px] font-semibold text-[#555555]">
-                  {formatPrice(totalPrice)}
-                </div>
+                <div className="text-[28px] font-semibold text-[#555555]">{formatPrice(totalPrice)}</div>
               </div>
 
               <ProductInfo
-                productName={product.name}
                 isNicSalt={isNicSalt}
                 productDescription={productDescription}
-                visibleSpecs={visibleSpecs}
-                allSpecs={specs}
-                includes={includes}
-                tag={tag}
                 nicotineOptions={nicotineOptions}
                 hasNicotineOptions={hasNicotineOptions}
                 nicotineStrength={nicotineStrength}
-                showFullDescription={showFullDescription}
                 isDesktop
                 onSelectNicotine={setNicotineStrength}
-                onShowMore={() => setShowFullDescription(true)}
-              />
-
-              <ProductFreightCalculator
-                zipCode={zipCode}
-                addressNumber={addressNumber}
-                isDesktop
-                isNicSalt={isNicSalt}
-                onZipCodeChange={setZipCode}
-                onAddressNumberChange={setAddressNumber}
-              />
-
-              <ProductNotes
-                note={note}
-                placeholder="Inclua algum detalhe para este produto (opcional)"
-                isDesktop
-                isNicSalt={isNicSalt}
-                onChange={setNote}
               />
 
               <div className="mt-6 space-y-3">
