@@ -953,7 +953,7 @@ const CartSidebar = () => {
                         onChange={(e) => setOrderNote(e.target.value)}
                         placeholder="Ex: tocar interfone, entregar na portaria, sem pressa..."
                         rows={3}
-                        className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none"
+                        className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none md:text-sm"
                       />
                     </div>
 
