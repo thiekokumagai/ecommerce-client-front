@@ -56,7 +56,7 @@ const extractAddressPart = (components: GeocoderAddressComponent[], types: strin
 };
 
 const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps) => {
-  const [phase, setPhase] = useState<"search" | "details">(initialAddress ? "details" : "search");
+  const [phase, setPhase] = useState<"search" | "details">(initialAddress ? "search" : "search");
   const [query, setQuery] = useState(initialAddress?.fullText || "");
   const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +78,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   const [reference, setReference] = useState(initialAddress?.reference || "");
   const [noNumber, setNoNumber] = useState(false);
   const [noComplement, setNoComplement] = useState(initialAddress?.noComplement || false);
-  const [manualEditAddress, setManualEditAddress] = useState(!!initialAddress);
+  const [manualEditAddress, setManualEditAddress] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<"manual" | "location" | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -111,8 +112,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
     setSelected(prediction);
     setStreet(prediction.mainText);
     setNeighborhood(prediction.secondaryText.split(",")[0]?.trim() || "");
-    setNumber("");
-    setNoNumber(false);
+    setSelectionMode("manual");
     setManualEditAddress(false);
     setPhase("details");
   };
@@ -158,6 +158,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           setNeighborhood(sublocality);
           setNumber(streetNumber);
           setNoNumber(!streetNumber);
+          setSelectionMode("location");
           setManualEditAddress(false);
           setPhase("details");
         } finally {
@@ -173,13 +174,18 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
   const handleSave = () => {
     if (!selected) return;
-    if ((!street.trim() || !neighborhood.trim()) && manualEditAddress) return;
-    if (!number.trim() && !noNumber) return;
+    if (selectionMode === "location") {
+      if ((!street.trim() || !neighborhood.trim()) && manualEditAddress) return;
+      if (!number.trim() && !noNumber) return;
+    }
 
-    const mainText = manualEditAddress ? street.trim() : selected.mainText;
-    const neighborhoodText = manualEditAddress ? neighborhood.trim() : neighborhood || selected.secondaryText.split(",")[0]?.trim() || "";
-    const secondaryText = selected.secondaryText || neighborhoodText;
-    const fullText = [mainText, noNumber ? "s/n" : number.trim(), secondaryText].filter(Boolean).join(", ");
+    const mainText = selectionMode === "location" && manualEditAddress ? street.trim() : selected.mainText;
+    const secondaryText = selectionMode === "location" && manualEditAddress
+      ? neighborhood.trim() || selected.secondaryText
+      : selected.secondaryText;
+    const fullText = selectionMode === "location"
+      ? [mainText, noNumber ? "s/n" : number.trim(), secondaryText].filter(Boolean).join(", ")
+      : selected.fullText;
 
     onSave({
       id: initialAddress?.id || selected.placeId || crypto.randomUUID(),
@@ -193,6 +199,11 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   };
 
   if (phase === "details" && selected) {
+    const isLocationMode = selectionMode === "location";
+    const canSave = isLocationMode
+      ? (((street.trim() && neighborhood.trim()) || !manualEditAddress) && (number || noNumber) && (complement || noComplement))
+      : (complement || noComplement);
+
     return (
       <div className="flex h-full flex-col bg-background">
         <div className="flex items-center gap-3 border-b border-border px-4 py-4">
@@ -206,24 +217,26 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           </button>
           <div className="min-w-0 flex-1">
             <p className="truncate text-base font-semibold text-foreground">
-              {manualEditAddress ? street || selected.mainText : selected.mainText}
+              {isLocationMode && manualEditAddress ? street || selected.mainText : selected.mainText}
             </p>
             <p className="truncate text-sm text-muted-foreground">
-              {manualEditAddress ? neighborhood || selected.secondaryText : selected.secondaryText}
+              {isLocationMode && manualEditAddress ? neighborhood || selected.secondaryText : selected.secondaryText}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setManualEditAddress((current) => !current)}
-            className="rounded-full p-1 text-muted-foreground"
-            aria-label="Editar endereço"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          {isLocationMode && (
+            <button
+              type="button"
+              onClick={() => setManualEditAddress((current) => !current)}
+              className="rounded-full p-1 text-muted-foreground"
+              aria-label="Editar endereço"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          {manualEditAddress && (
+          {isLocationMode && manualEditAddress && (
             <>
               <div>
                 <label className="mb-2 block text-sm font-medium text-foreground">Rua *</label>
@@ -247,30 +260,32 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             </>
           )}
 
-          <div>
-            <input
-              value={number}
-              onChange={(e) => {
-                setNumber(e.target.value);
-                if (e.target.value) setNoNumber(false);
-              }}
-              placeholder="Número *"
-              disabled={noNumber}
-              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none disabled:opacity-50"
-            />
-            <label className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
+          {isLocationMode && (
+            <div>
               <input
-                type="checkbox"
-                checked={noNumber}
+                value={number}
                 onChange={(e) => {
-                  setNoNumber(e.target.checked);
-                  if (e.target.checked) setNumber("");
+                  setNumber(e.target.value);
+                  if (e.target.value) setNoNumber(false);
                 }}
-                className="h-5 w-5 rounded border-border accent-primary"
+                placeholder="Número *"
+                disabled={noNumber}
+                className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none disabled:opacity-50"
               />
-              Endereço sem número
-            </label>
-          </div>
+              <label className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={noNumber}
+                  onChange={(e) => {
+                    setNoNumber(e.target.checked);
+                    if (e.target.checked) setNumber("");
+                  }}
+                  className="h-5 w-5 rounded border-border accent-primary"
+                />
+                Endereço sem número
+              </label>
+            </div>
+          )}
 
           <div>
             <input
@@ -319,11 +334,9 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             <button
               type="button"
               onClick={handleSave}
-              disabled={((manualEditAddress && (!street.trim() || !neighborhood.trim())) || (!number && !noNumber) || (!complement && !noComplement))}
+              disabled={!canSave}
               className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
-                (((street.trim() && neighborhood.trim()) || !manualEditAddress) && (number || noNumber) && (complement || noComplement))
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
+                canSave ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
               <Check className="h-4 w-4" />
@@ -368,7 +381,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               onClick={() => {
                 setQuery("");
                 setPredictions([]);
-                inputRef.current?.blur();
+                inputRef.current?.focus();
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
               aria-label="Limpar busca"
@@ -394,7 +407,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           </div>
           <div>
             <p className="text-base font-semibold text-foreground">Usar minha localização</p>
-            <p className="text-sm text-muted-foreground">Preencher rua, bairro e número automaticamente</p>
+            <p className="text-sm text-muted-foreground">Preencher rua atual e continuar com número, complemento e referência</p>
           </div>
         </button>
 
