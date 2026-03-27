@@ -40,75 +40,89 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
     });
   };
 
-  return (
-    <div className="fixed inset-0 z-[75] flex justify-start md:justify-end">
-      <aside className="h-full w-[88%] max-w-sm overflow-y-auto bg-background shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-5">
-          <h2 className="text-2xl font-semibold text-foreground">Categorias</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            aria-label="Fechar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+  const menuPanel = (
+    <aside className="h-full w-[88%] max-w-sm overflow-y-auto bg-background shadow-2xl">
+      <div className="flex items-center justify-between border-b border-border px-5 py-5">
+        <h2 className="text-2xl font-semibold text-foreground">Categorias</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          aria-label="Fechar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
-        <div className="space-y-2 p-3">
-          {categories.map((category) => {
-            const isActive = selectedCategory === category.name;
+      <div className="space-y-2 p-3">
+        {categories.map((category) => {
+          const isActive = selectedCategory === category.name;
 
-            return (
-              <button
-                key={category.name}
-                type="button"
-                onClick={() => {
-                  setSelectedCategory(category.name);
-                  if (category.name !== "NicSalt") {
-                    setSelectedNicotineStrength(null);
-                  }
-                  onClose();
-                  if (window.location.pathname !== "/") {
-                    navigate("/#produtos");
-                    setTimeout(scrollToProducts, 50);
-                    return;
-                  }
-                  scrollToProducts();
-                }}
+          return (
+            <button
+              key={category.name}
+              type="button"
+              onClick={() => {
+                setSelectedCategory(category.name);
+                if (category.name !== "NicSalt") {
+                  setSelectedNicotineStrength(null);
+                }
+                onClose();
+                if (window.location.pathname !== "/") {
+                  navigate("/#produtos");
+                  setTimeout(scrollToProducts, 50);
+                  return;
+                }
+                scrollToProducts();
+              }}
+              className={cn(
+                "flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left transition-colors",
+                isActive ? "bg-secondary" : "hover:bg-secondary/70",
+              )}
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              </div>
+              <span
                 className={cn(
-                  "flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left transition-colors",
-                  isActive ? "bg-secondary" : "hover:bg-secondary/70",
+                  "text-lg font-medium",
+                  isActive ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="h-9 w-9 rounded-full object-cover"
-                  />
-                </div>
-                <span
-                  className={cn(
-                    "text-lg font-medium",
-                    isActive ? "text-primary" : "text-muted-foreground",
-                  )}
-                >
-                  {category.name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </aside>
+                {category.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
 
-      <button
-        type="button"
-        aria-label="Fechar menu de categorias"
-        className="flex-1 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
-      />
-    </div>
+  const backdrop = (
+    <button
+      type="button"
+      aria-label="Fechar menu de categorias"
+      className="flex-1 bg-black/30 backdrop-blur-sm"
+      onClick={onClose}
+    />
+  );
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[75] flex justify-start md:hidden">
+        {menuPanel}
+        {backdrop}
+      </div>
+
+      <div className="fixed inset-0 z-[75] hidden md:flex md:justify-end">
+        {backdrop}
+        {menuPanel}
+      </div>
+    </>
   );
 };
 
