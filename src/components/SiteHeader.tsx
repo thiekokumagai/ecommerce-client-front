@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, ShoppingCart, LayoutGrid } from "lucide-react";
+import { Search, ShoppingCart, LayoutGrid, X } from "lucide-react";
+
 import logo from "@/assets/logo.webp";
 import { useCart } from "@/contexts/CartContext";
 import CategoriesMenu from "@/components/CategoriesMenu";
 
 const SiteHeader = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const { totalItems, setIsCartOpen, searchTerm, setSearchTerm, setSelectedCategory } = useCart();
+  const { totalItems, setIsCartOpen, searchTerm, setSearchTerm } = useCart();
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    if (value.trim()) {
-      setSelectedCategory(null);
-    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
   };
 
   return (
@@ -56,6 +58,16 @@ const SiteHeader = () => {
               placeholder="Faça sua busca"
               className="w-full bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
             />
+            {searchTerm.trim() && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+                aria-label="Limpar busca"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -66,8 +78,6 @@ const SiteHeader = () => {
             <Link to="/" className="flex items-center gap-2">
               <img src={logo} alt="Pod & Mais" className="h-20 w-20 object-contain" />
             </Link>
-
-           
           </div>
 
           <div className="flex items-center gap-2">
@@ -79,6 +89,16 @@ const SiteHeader = () => {
                 placeholder="Faça sua busca"
                 className="w-40 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none lg:w-52"
               />
+              {searchTerm.trim() && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
               <button type="button" className="text-primary hover:text-primary/80" aria-label="Buscar">
                 <Search className="h-4 w-4" />
               </button>

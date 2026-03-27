@@ -69,7 +69,6 @@ const parseCurrencyInput = (value: string) => {
 
 type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
 type CheckoutStep = "cart" | "delivery" | "payment" | "confirmation";
-
 type CreditMode = "avista" | "parcelado";
 
 type FinalizedOrder = {
@@ -78,6 +77,7 @@ type FinalizedOrder = {
   customerName: string;
   customerPhone: string;
   customerAddress: string;
+  orderNote: string;
   paymentMethod: PaymentMethod;
   paymentLabel: string;
   deliveryFee: number;
@@ -91,16 +91,16 @@ type FinalizedOrder = {
   needsChange: string;
   changeFor: string;
   items: Array<{
-        product: {
-          id: string;
-          name: string;
-          image: string;
-          price: number;
-          variationGroup?: { name: string; options: { label: string; available: boolean }[] };
-        };
-        quantity: number;
-        selectedVariation?: string;
-      }>;
+    product: {
+      id: string;
+      name: string;
+      image: string;
+      price: number;
+      variationGroup?: { name: string; options: { label: string; available: boolean }[] };
+    };
+    quantity: number;
+    selectedVariation?: string;
+  }>;
 };
 
 const STEPS: { key: CheckoutStep; label: string }[] = [
@@ -201,6 +201,7 @@ const CartSidebar = () => {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(null);
   const [deliveryError, setDeliveryError] = useState<string>("");
+  const [orderNote, setOrderNote] = useState("");
   const [isCalculatingFee, setIsCalculatingFee] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
@@ -533,6 +534,7 @@ const CartSidebar = () => {
   const checkoutName = finalizedOrder?.customerName ?? name;
   const checkoutPhone = finalizedOrder?.customerPhone ?? phone;
   const checkoutAddress = finalizedOrder?.customerAddress ?? savedAddressDisplay;
+  const checkoutOrderNote = finalizedOrder?.orderNote ?? orderNote;
   const checkoutSubtotal = finalizedOrder?.subtotal ?? totalPrice;
   const checkoutDeliveryFee = finalizedOrder?.deliveryFee ?? deliveryFee;
   const checkoutTotal = finalizedOrder?.total ?? finalTotal;
@@ -554,6 +556,7 @@ const CartSidebar = () => {
     `Nome: ${checkoutName || "-"}`,
     `Telefone: ${checkoutPhone || "-"}`,
     `Endereço completo: ${checkoutAddress || "-"}`,
+    ...(checkoutOrderNote.trim() ? [`Observação do pedido: ${checkoutOrderNote.trim()}`] : []),
     ...(checkoutSavedCouponCode ? [`Cupom: ${checkoutSavedCouponCode}`] : []),
     "",
     `Subtotal dos produtos: ${formatPrice(checkoutSubtotal)}`,
@@ -591,6 +594,7 @@ const CartSidebar = () => {
     checkoutItems,
     checkoutName,
     checkoutNeedsChange,
+    checkoutOrderNote,
     checkoutPaymentMethod,
     checkoutPhone,
     checkoutPixDiscount,
@@ -598,6 +602,7 @@ const CartSidebar = () => {
     checkoutSubtotal,
     checkoutTotal,
   ]);
+
   const finalizeOrder = () => {
     if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod || !hasValidDeliveryFee) {
       toast.info("Preencha todas as etapas obrigatórias para finalizar.");
@@ -632,6 +637,7 @@ const CartSidebar = () => {
       customerName: name.trim(),
       customerPhone: phone.trim(),
       customerAddress: savedAddressDisplay,
+      orderNote,
       paymentMethod,
       paymentLabel,
       deliveryFee,
@@ -663,8 +669,8 @@ const CartSidebar = () => {
   };
 
   const handleSendWhatsApp = () => {
-    const numero = '5567991032937';
-    const urlApp = `whatsapp://send?phone=${numero}&text=${checkoutMessage}`;    
+    const numero = "5567991032937";
+    const urlApp = `whatsapp://send?phone=${numero}&text=${checkoutMessage}`;
     const urlWeb = `https://wa.me/${numero}?text=${checkoutMessage}`;
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     setIsFinishModalOpen(false);
@@ -672,7 +678,7 @@ const CartSidebar = () => {
     if (isMobile) {
       window.location.href = urlApp;
       setTimeout(() => {
-        if (document.visibilityState === 'visible') {
+        if (document.visibilityState === "visible") {
           window.open(urlWeb, "_blank", "noopener,noreferrer");
         }
       }, 1500);
@@ -940,6 +946,17 @@ const CartSidebar = () => {
                   </div>
 
                   <div className="rounded-3xl bg-card p-4 shadow-sm">
+                    <div className="mb-4">
+                      <label className="mb-2 block text-sm font-medium text-foreground">Observação do pedido</label>
+                      <textarea
+                        value={orderNote}
+                        onChange={(e) => setOrderNote(e.target.value)}
+                        placeholder="Ex: tocar interfone, entregar na portaria, sem pressa..."
+                        rows={3}
+                        className="w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:outline-none"
+                      />
+                    </div>
+
                     {isCalculatingFee ? (
                       <div className="flex items-center gap-2 text-sm text-foreground">
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -1280,6 +1297,12 @@ const CartSidebar = () => {
                         <MapPin className="mt-0.5 h-4 w-4 text-primary" />
                         <span>{savedAddressDisplay || "-"}</span>
                       </div>
+                      {orderNote.trim() && (
+                        <div className="flex items-start gap-2 text-foreground">
+                          <Pencil className="mt-0.5 h-4 w-4 text-primary" />
+                          <span>{orderNote.trim()}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1565,6 +1588,13 @@ const CartSidebar = () => {
                     ))}
                   </div>
                 </div>
+
+                {checkoutOrderNote.trim() && (
+                  <div className="mt-5 rounded-2xl bg-[#f7f7f7] p-4 text-[15px] text-[#666666]">
+                    <p className="font-semibold">Observação do pedido</p>
+                    <p className="mt-1 leading-[1.35]">{checkoutOrderNote.trim()}</p>
+                  </div>
+                )}
 
                 <div className="mt-6 border-t border-[#e6e6e6] pt-5 text-[15px] text-[#666666]">
                   <div className="flex items-center justify-between gap-4">

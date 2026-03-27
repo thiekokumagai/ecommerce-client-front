@@ -110,10 +110,8 @@ const ProductPage = () => {
       return;
     }
 
-    for (let i = 0; i < quantity; i += 1) {
-      addToCart({ product, selectedVariation });
-    }
-
+    addToCart({ product, selectedVariation });
+    updateQuantity(product.id, quantity, selectedVariation);
     triggerAddedModal({ product, selectedVariation });
     setHasJustUpdated(true);
     handleNavigateToList();
