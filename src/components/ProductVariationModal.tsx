@@ -83,10 +83,10 @@ const ProductVariationModal = ({
     setIsLocked(true);
     addToCart({ product, selectedVariation: selectedOption });
 
-    if (hadItemsInCart) {
+    /*if (hadItemsInCart) {
       onClose();
       return;
-    }
+    }*/
 
     startAutoClose(selectedOption);
   };
