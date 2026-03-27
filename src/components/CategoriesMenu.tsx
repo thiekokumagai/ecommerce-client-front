@@ -27,11 +27,7 @@ const categories = [
 
 const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
   const navigate = useNavigate();
-  const {
-    selectedCategory,
-    setSelectedCategory,
-    setSelectedNicotineStrength,
-  } = useCart();
+  const { selectedCategory, setSelectedCategory, setSelectedNicotineStrength } = useCart();
 
   if (!open) return null;
 
@@ -45,13 +41,7 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[75] flex justify-end">
-      <button
-        type="button"
-        aria-label="Fechar menu de categorias"
-        className="flex-1 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-[75] flex justify-start">
       <aside className="h-full w-[88%] max-w-sm overflow-y-auto bg-background shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-5">
           <h2 className="text-2xl font-semibold text-foreground">Categorias</h2>
@@ -88,7 +78,7 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
                 }}
                 className={cn(
                   "flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left transition-colors",
-                  isActive ? "bg-secondary" : "hover:bg-secondary/70"
+                  isActive ? "bg-secondary" : "hover:bg-secondary/70",
                 )}
               >
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
@@ -101,7 +91,7 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
                 <span
                   className={cn(
                     "text-lg font-medium",
-                    isActive ? "text-primary" : "text-muted-foreground"
+                    isActive ? "text-primary" : "text-muted-foreground",
                   )}
                 >
                   {category.name}
@@ -111,6 +101,13 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
           })}
         </div>
       </aside>
+
+      <button
+        type="button"
+        aria-label="Fechar menu de categorias"
+        className="flex-1 bg-black/30 backdrop-blur-sm"
+        onClick={onClose}
+      />
     </div>
   );
 };

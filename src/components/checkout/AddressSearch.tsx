@@ -111,6 +111,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
     setSelected(prediction);
     setStreet(prediction.mainText);
     setNeighborhood(prediction.secondaryText.split(",")[0]?.trim() || "");
+    setNumber("");
+    setNoNumber(false);
     setManualEditAddress(false);
     setPhase("details");
   };
