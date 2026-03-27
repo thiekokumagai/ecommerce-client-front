@@ -41,7 +41,7 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[75] flex justify-start">
+    <div className="fixed inset-0 z-[75] flex justify-start md:justify-end">
       <aside className="h-full w-[88%] max-w-sm overflow-y-auto bg-background shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-5">
           <h2 className="text-2xl font-semibold text-foreground">Categorias</h2>
