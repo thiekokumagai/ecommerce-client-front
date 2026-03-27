@@ -1,6 +1,31 @@
 import { useState, useCallback, useRef } from "react";
-import { MapPin, Search, Loader2, Check, ChevronLeft, X, Pencil } from "lucide-react";
+import { MapPin, Search, Loader2, Check, ChevronLeft, X, Pencil, LocateFixed } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+
+type GeocoderAddressComponent = {
+  long_name: string;
+  types: string[];
+};
+
+type GeocoderResult = {
+  place_id?: string;
+  formatted_address: string;
+  address_components: GeocoderAddressComponent[];
+};
+
+type BrowserGeocoder = {
+  geocode: (request: { location: { lat: number; lng: number } }) => Promise<{ results: GeocoderResult[] }>;
+};
+
+declare global {
+  interface Window {
+    google?: {
+      maps?: {
+        Geocoder: new () => BrowserGeocoder;
+      };
+    };
+  }
+}
 
 interface AddressPrediction {
   placeId: string;
@@ -25,11 +50,17 @@ interface AddressSearchProps {
   initialAddress?: StructuredAddress | null;
 }
 
+const extractAddressPart = (components: GeocoderAddressComponent[], types: string[]) => {
+  const component = components.find((item) => types.some((type) => item.types.includes(type)));
+  return component?.long_name ?? "";
+};
+
 const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps) => {
   const [phase, setPhase] = useState<"search" | "details">(initialAddress ? "details" : "search");
   const [query, setQuery] = useState(initialAddress?.fullText || "");
   const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [selected, setSelected] = useState<AddressPrediction | null>(
     initialAddress
       ? {
@@ -38,11 +69,16 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           secondaryText: initialAddress.secondaryText,
           fullText: initialAddress.fullText,
         }
-      : null
+      : null,
   );
+  const [street, setStreet] = useState(initialAddress?.mainText || "");
+  const [neighborhood, setNeighborhood] = useState(initialAddress?.secondaryText.split(",")[0]?.trim() || "");
+  const [number, setNumber] = useState("");
   const [complement, setComplement] = useState(initialAddress?.complement || "");
   const [reference, setReference] = useState(initialAddress?.reference || "");
+  const [noNumber, setNoNumber] = useState(false);
   const [noComplement, setNoComplement] = useState(initialAddress?.noComplement || false);
+  const [manualEditAddress, setManualEditAddress] = useState(!!initialAddress);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -73,17 +109,81 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
   const handleSelect = (prediction: AddressPrediction) => {
     setSelected(prediction);
+    setStreet(prediction.mainText);
+    setNeighborhood(prediction.secondaryText.split(",")[0]?.trim() || "");
+    setManualEditAddress(false);
     setPhase("details");
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation || !window.google?.maps?.Geocoder) {
+      return;
+    }
+
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const geocoder = new window.google!.maps!.Geocoder();
+          const response = await geocoder.geocode({
+            location: { lat: coords.latitude, lng: coords.longitude },
+          });
+
+          const result = response.results[0];
+          if (!result) {
+            setIsLocating(false);
+            return;
+          }
+
+          const components = result.address_components;
+          const route = extractAddressPart(components, ["route"]);
+          const streetNumber = extractAddressPart(components, ["street_number"]);
+          const sublocality = extractAddressPart(components, ["sublocality", "sublocality_level_1", "neighborhood"]);
+          const city = extractAddressPart(components, ["administrative_area_level_2"]);
+          const state = extractAddressPart(components, ["administrative_area_level_1"]);
+
+          const mainText = route || result.formatted_address;
+          const secondaryText = [sublocality, city, state].filter(Boolean).join(", ");
+
+          setSelected({
+            placeId: result.place_id || crypto.randomUUID(),
+            mainText,
+            secondaryText,
+            fullText: result.formatted_address,
+          });
+          setStreet(mainText);
+          setNeighborhood(sublocality);
+          setNumber(streetNumber);
+          setNoNumber(!streetNumber);
+          setManualEditAddress(false);
+          setPhase("details");
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      () => {
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   };
 
   const handleSave = () => {
     if (!selected) return;
+    if ((!street.trim() || !neighborhood.trim()) && manualEditAddress) return;
+    if (!number.trim() && !noNumber) return;
+
+    const mainText = manualEditAddress ? street.trim() : selected.mainText;
+    const neighborhoodText = manualEditAddress ? neighborhood.trim() : neighborhood || selected.secondaryText.split(",")[0]?.trim() || "";
+    const secondaryText = selected.secondaryText || neighborhoodText;
+    const fullText = [mainText, noNumber ? "s/n" : number.trim(), secondaryText].filter(Boolean).join(", ");
 
     onSave({
-      id: initialAddress?.id || crypto.randomUUID(),
-      mainText: selected.mainText,
-      secondaryText: selected.secondaryText,
-      fullText: selected.fullText,
+      id: initialAddress?.id || selected.placeId || crypto.randomUUID(),
+      mainText,
+      secondaryText,
+      fullText,
       complement,
       reference,
       noComplement,
@@ -103,12 +203,16 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-semibold text-foreground">{selected.mainText}</p>
-            <p className="truncate text-sm text-muted-foreground">{selected.secondaryText}</p>
+            <p className="truncate text-base font-semibold text-foreground">
+              {manualEditAddress ? street || selected.mainText : selected.mainText}
+            </p>
+            <p className="truncate text-sm text-muted-foreground">
+              {manualEditAddress ? neighborhood || selected.secondaryText : selected.secondaryText}
+            </p>
           </div>
           <button
             type="button"
-            onClick={() => setPhase("search")}
+            onClick={() => setManualEditAddress((current) => !current)}
             className="rounded-full p-1 text-muted-foreground"
             aria-label="Editar endereço"
           >
@@ -117,6 +221,55 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+          {manualEditAddress && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">Rua *</label>
+                <input
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  placeholder="Rua"
+                  className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-foreground">Bairro *</label>
+                <input
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                  placeholder="Bairro"
+                  className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none"
+                />
+              </div>
+            </>
+          )}
+
+          <div>
+            <input
+              value={number}
+              onChange={(e) => {
+                setNumber(e.target.value);
+                if (e.target.value) setNoNumber(false);
+              }}
+              placeholder="Número *"
+              disabled={noNumber}
+              className="h-14 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground outline-none focus:outline-none disabled:opacity-50"
+            />
+            <label className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={noNumber}
+                onChange={(e) => {
+                  setNoNumber(e.target.checked);
+                  if (e.target.checked) setNumber("");
+                }}
+                className="h-5 w-5 rounded border-border accent-primary"
+              />
+              Endereço sem número
+            </label>
+          </div>
+
           <div>
             <input
               value={complement}
@@ -164,9 +317,11 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             <button
               type="button"
               onClick={handleSave}
-              disabled={!complement && !noComplement}
+              disabled={((manualEditAddress && (!street.trim() || !neighborhood.trim())) || (!number && !noNumber) || (!complement && !noComplement))}
               className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
-                complement || noComplement ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                (((street.trim() && neighborhood.trim()) || !manualEditAddress) && (number || noNumber) && (complement || noComplement))
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               <Check className="h-4 w-4" />
@@ -219,13 +374,28 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               <X className="h-4 w-4" />
             </button>
           )}
-          {isLoading && (
+          {(isLoading || isLocating) && (
             <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
           )}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
+        <button
+          type="button"
+          onClick={handleUseCurrentLocation}
+          disabled={isLocating}
+          className="mb-4 flex w-full items-start gap-3 rounded-2xl border border-border bg-background px-4 py-4 text-left"
+        >
+          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground">
+            <LocateFixed className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-base font-semibold text-foreground">Usar minha localização</p>
+            <p className="text-sm text-muted-foreground">Preencher rua, bairro e número automaticamente</p>
+          </div>
+        </button>
+
         {query.length >= 3 && (
           <p className="mb-3 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
             powered by <span className="font-medium">Google</span>
