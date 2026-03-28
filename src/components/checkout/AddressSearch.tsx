@@ -25,6 +25,7 @@ declare global {
         Geocoder: new () => BrowserGeocoder;
       };
     };
+    __googleMapsLoaded?: boolean;
   }
 }
 
@@ -54,6 +55,23 @@ interface AddressSearchProps {
 const extractAddressPart = (components: GeocoderAddressComponent[], types: string[]) => {
   const component = components.find((item) => types.some((type) => item.types.includes(type)));
   return component?.long_name ?? "";
+};
+
+const waitForGoogleMaps = async () => {
+  if (window.google?.maps?.Geocoder) return true;
+
+  await new Promise<void>((resolve) => {
+    let attempts = 0;
+    const interval = window.setInterval(() => {
+      attempts += 1;
+      if (window.google?.maps?.Geocoder || window.__googleMapsLoaded || attempts >= 30) {
+        window.clearInterval(interval);
+        resolve();
+      }
+    }, 250);
+  });
+
+  return !!window.google?.maps?.Geocoder;
 };
 
 const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps) => {
@@ -118,19 +136,22 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
     setPhase("details");
   };
 
-  const handleUseCurrentLocation = () => {
+  const handleUseCurrentLocation = async () => {
     if (!navigator.geolocation) {
       toast.error("Seu navegador não suporta localização.");
       return;
     }
 
-    if (!window.google?.maps?.Geocoder) {
-      toast.error("O Google Maps ainda não carregou. Tente novamente em alguns segundos.");
-      return;
-    }
-
     setIsLocating(true);
     toast.info("Buscando sua localização atual...");
+
+    const mapsReady = await waitForGoogleMaps();
+
+    if (!mapsReady) {
+      setIsLocating(false);
+      toast.error("O Google Maps não carregou corretamente. Verifique sua chave e tente novamente.");
+      return;
+    }
 
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {

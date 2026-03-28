@@ -5,6 +5,7 @@ declare global {
     google?: {
       maps?: unknown;
     };
+    __googleMapsLoaded?: boolean;
   }
 }
 
@@ -14,12 +15,20 @@ const GoogleMapsLoader = () => {
   useEffect(() => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-    if (!apiKey || window.google?.maps) {
+    if (!apiKey) {
       return;
     }
 
-    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID);
+    if (window.google?.maps) {
+      window.__googleMapsLoaded = true;
+      return;
+    }
+
+    const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID) as HTMLScriptElement | null;
     if (existingScript) {
+      existingScript.addEventListener("load", () => {
+        window.__googleMapsLoaded = true;
+      });
       return;
     }
 
@@ -28,6 +37,9 @@ const GoogleMapsLoader = () => {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=pt-BR&region=BR`;
     script.async = true;
     script.defer = true;
+    script.onload = () => {
+      window.__googleMapsLoaded = true;
+    };
     document.head.appendChild(script);
   }, []);
 
