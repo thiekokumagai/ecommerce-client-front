@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { MapPin, Search, Loader2, Check, ChevronLeft, X, Pencil, LocateFixed } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 type GeocoderAddressComponent = {
@@ -118,11 +119,18 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   };
 
   const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation || !window.google?.maps?.Geocoder) {
+    if (!navigator.geolocation) {
+      toast.error("Seu navegador não suporta localização.");
+      return;
+    }
+
+    if (!window.google?.maps?.Geocoder) {
+      toast.error("O Google Maps ainda não carregou. Tente novamente em alguns segundos.");
       return;
     }
 
     setIsLocating(true);
+    toast.info("Buscando sua localização atual...");
 
     navigator.geolocation.getCurrentPosition(
       async ({ coords }) => {
@@ -134,6 +142,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
           const result = response.results[0];
           if (!result) {
+            toast.error("Não foi possível identificar seu endereço.");
             setIsLocating(false);
             return;
           }
@@ -161,12 +170,30 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           setSelectionMode("location");
           setManualEditAddress(false);
           setPhase("details");
+          toast.success("Localização encontrada.");
         } finally {
           setIsLocating(false);
         }
       },
-      () => {
+      (error) => {
         setIsLocating(false);
+
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error("Permissão de localização negada. Libere o acesso no navegador.");
+          return;
+        }
+
+        if (error.code === error.POSITION_UNAVAILABLE) {
+          toast.error("Não foi possível obter sua localização agora.");
+          return;
+        }
+
+        if (error.code === error.TIMEOUT) {
+          toast.error("A localização demorou demais para responder.");
+          return;
+        }
+
+        toast.error("Não foi possível usar sua localização.");
       },
       { enableHighAccuracy: true, timeout: 10000 },
     );
@@ -400,7 +427,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
           type="button"
           onClick={handleUseCurrentLocation}
           disabled={isLocating}
-          className="mb-4 flex w-full items-start gap-3 rounded-2xl border border-border bg-background px-4 py-4 text-left"
+          className="mb-4 flex w-full items-start gap-3 rounded-2xl border border-border bg-background px-4 py-4 text-left disabled:opacity-60"
         >
           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground">
             <LocateFixed className="h-5 w-5" />
