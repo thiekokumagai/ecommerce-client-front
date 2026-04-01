@@ -5,12 +5,8 @@ import NicotineFilter from "@/components/NicotineFilter";
 import PromotionsSection from "@/components/PromotionsSection";
 import AllProductsSection from "@/components/AllProductsSection";
 import SiteFooter from "@/components/SiteFooter";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import BackToTopButton from "@/components/BackToTopButton";
-import CartSidebar from "@/components/CartSidebar";
-import AddedToCartModal from "@/components/AddedToCartModal";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import { useCart } from "@/contexts/CartContext";
+import { useStoreMobilePadding } from "@/hooks/use-store-mobile-padding";
 import { useProducts } from "@/hooks/useVendizapProducts";
 
 const Index = () => {
@@ -22,8 +18,8 @@ const Index = () => {
     setSelectedCategory,
     selectedNicotineStrength,
     setSelectedNicotineStrength,
-    totalItems
   } = useCart();
+  const mobileBottom = useStoreMobilePadding("home");
   const { data: allProducts = [], isLoading } = useProducts(selectedCategoryId);
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const showBanner = !selectedCategory && !normalizedSearch && !selectedNicotineStrength;
@@ -52,10 +48,7 @@ const Index = () => {
     setSelectedCategory(null);
     setSelectedNicotineStrength(null);
   };
-  let mobileBottom = "pb-0";
-  if (totalItems > 0) {
-    mobileBottom = "pb-[calc(env(safe-area-inset-bottom)+64px)]";
-  } 
+
   return (
     <div className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>
       <SiteHeader />
@@ -82,11 +75,6 @@ const Index = () => {
       <PromotionsSection />
       <AllProductsSection />
       <SiteFooter />
-      <WhatsAppButton />
-      <BackToTopButton />
-      <CartSidebar />
-      <AddedToCartModal />
-      <MobileBottomNav />
     </div>
   );
 };

@@ -2,18 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import BackToTopButton from "@/components/BackToTopButton";
-import CartSidebar from "@/components/CartSidebar";
-import AddedToCartModal from "@/components/AddedToCartModal";
 import ProductImageModal from "@/components/ProductImageModal";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import ProductContact from "@/components/product/ProductContact";
 import ProductDesktopGallery from "@/components/product/ProductDesktopGallery";
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductMobileGallery from "@/components/product/ProductMobileGallery";
 import { useProducts, useProductDetail } from "@/hooks/useVendizapProducts";
 import { useCart } from "@/contexts/CartContext";
+import { useStoreMobilePadding } from "@/hooks/use-store-mobile-padding";
 import { Loader2 } from "lucide-react";
 
 const formatPrice = (price: number) => `R$ ${price.toFixed(2).replace(".", ",")}`;
@@ -22,6 +18,7 @@ const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { items, addToCart, updateQuantity, removeFromCart, triggerAddedModal, totalItems } = useCart();
+  const mobileBottom = useStoreMobilePadding("product");
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
@@ -138,11 +135,6 @@ const ProductPage = () => {
         ? "Atualizar"
         : "Adicionar ao Pedido";
 
-  let mobileBottom = "pb-[77px]";
-  if (totalItems > 0) {
-    mobileBottom = "pb-[calc(env(safe-area-inset-bottom)+133px)]";
-  }
-
   return (
     <div className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>
       <div className="hidden lg:block">
@@ -160,31 +152,35 @@ const ProductPage = () => {
           />
 
           <div className="-mt-6 rounded-t-[28px] bg-background px-5 pb-8 pt-7">
-            <h1 className="text-[24px] font-medium leading-tight text-[#4b4b4b]">{product.name}</h1>
+            <h1 className="font-display text-[24px] font-medium leading-tight text-fg-secondary">
+              {product.name}
+            </h1>
 
             <div className="mt-6 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-4 py-2.5">
+              <div className="flex items-center gap-3 rounded-full border border-border-subtle bg-surface-muted px-4 py-2.5">
                 <button
                   type="button"
                   onClick={handleDecreaseQuantity}
-                  className="text-[#7a7a7a]"
+                  className="text-fg-tertiary transition-colors hover:text-fg-secondary"
                   aria-label="Diminuir quantidade"
                 >
                   <span className="text-base">−</span>
                 </button>
-                <span className="min-w-5 text-center text-lg text-[#5c5c5c]">{quantity}</span>
+                <span className="min-w-5 text-center text-lg text-fg-secondary">{quantity}</span>
                 <button
                   type="button"
                   onClick={handleIncreaseQuantity}
-                  className="text-[#7a7a7a]"
+                  className="text-fg-tertiary transition-colors hover:text-fg-secondary"
                   aria-label="Aumentar quantidade"
                 >
                   <span className="text-base">+</span>
                 </button>
-                <span className="text-sm text-[#9b9b9b]">un</span>
+                <span className="text-sm text-fg-subtle">un</span>
               </div>
 
-              <div className="text-[20px] font-semibold text-[#5a5a5a]">{formatPrice(totalPrice)}</div>
+              <div className="text-[20px] font-semibold tabular-nums text-fg-secondary">
+                {formatPrice(totalPrice)}
+              </div>
             </div>
 
             <ProductInfo
@@ -201,7 +197,7 @@ const ProductPage = () => {
                 <button
                   type="button"
                   onClick={handleRemoveFromCart}
-                  className="w-full rounded-xl bg-black px-6 py-3.5 text-base font-bold text-white"
+                  className="w-full rounded-xl bg-destructive px-6 py-3.5 text-base font-bold text-destructive-foreground transition-colors hover:bg-destructive/90"
                 >
                   Remover do carrinho
                 </button>
@@ -236,29 +232,35 @@ const ProductPage = () => {
             />
 
             <div className="max-w-[420px] pt-16">
-              <h1 className="text-[27px] font-semibold leading-[1.15] text-[#545454]">{product.name}</h1>
+              <h1 className="font-display text-[27px] font-semibold leading-[1.15] text-fg-secondary">
+                {product.name}
+              </h1>
 
               <div className="mt-6 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 rounded-full bg-[#f2f0ef] px-5 py-2.5 text-[#666666]">
+                <div className="flex items-center gap-3 rounded-full border border-border-subtle bg-surface-muted px-5 py-2.5 text-fg-secondary">
                   <button
                     type="button"
                     onClick={handleDecreaseQuantity}
+                    className="text-fg-tertiary transition-colors hover:text-fg-secondary"
                     aria-label="Diminuir quantidade"
                   >
                     <span className="text-base">−</span>
                   </button>
-                  <span className="min-w-4 text-center text-lg">{quantity}</span>
+                  <span className="min-w-4 text-center text-lg tabular-nums">{quantity}</span>
                   <button
                     type="button"
                     onClick={handleIncreaseQuantity}
+                    className="text-fg-tertiary transition-colors hover:text-fg-secondary"
                     aria-label="Aumentar quantidade"
                   >
                     <span className="text-base">+</span>
                   </button>
-                  <span className="text-sm text-[#979797]">un</span>
+                  <span className="text-sm text-fg-subtle">un</span>
                 </div>
 
-                <div className="text-[28px] font-semibold text-[#555555]">{formatPrice(totalPrice)}</div>
+                <div className="text-[28px] font-semibold tabular-nums text-fg-secondary">
+                  {formatPrice(totalPrice)}
+                </div>
               </div>
 
               <ProductInfo
@@ -276,10 +278,10 @@ const ProductPage = () => {
                   type="button"
                   onClick={handleAddOrUpdateCart}
                   disabled={!canAddToCart || isUnavailable}
-                  className={`w-full rounded-lg px-6 py-3.5 text-base font-bold ${
+                  className={`w-full rounded-lg px-6 py-3.5 text-base font-bold transition-colors ${
                     !canAddToCart || isUnavailable
-                      ? "bg-[#bfbfbf] text-white"
-                      : "bg-primary text-primary-foreground"
+                      ? "cursor-not-allowed bg-muted text-muted-foreground"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
                   }`}
                 >
                   {primaryButtonLabel}
@@ -289,7 +291,7 @@ const ProductPage = () => {
                   <button
                     type="button"
                     onClick={handleRemoveFromCart}
-                    className="w-full rounded-lg bg-black px-6 py-3.5 text-base font-bold text-white"
+                    className="w-full rounded-lg bg-destructive px-6 py-3.5 text-base font-bold text-destructive-foreground transition-colors hover:bg-destructive/90"
                   >
                     Remover do carrinho
                   </button>
@@ -311,7 +313,7 @@ const ProductPage = () => {
       </main>
 
       <div
-        className={`fixed inset-x-0 z-[79] border-t border-border bg-background px-5 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:hidden ${
+        className={`fixed inset-x-0 z-[79] border-t border-border-subtle bg-background px-5 py-3 shadow-sticky-up md:hidden ${
           totalItems > 0 ? "bottom-[calc(env(safe-area-inset-bottom)+64px)]" : "bottom-0"
         }`}
       >
@@ -319,10 +321,10 @@ const ProductPage = () => {
           type="button"
           onClick={handleAddOrUpdateCart}
           disabled={!canAddToCart || isUnavailable}
-          className={`w-full rounded-xl px-6 py-3.5 text-base font-bold ${
+          className={`w-full rounded-xl px-6 py-3.5 text-base font-bold transition-colors ${
             !canAddToCart || isUnavailable
-              ? "bg-[#c7c7c7] text-white"
-              : "bg-primary text-primary-foreground"
+              ? "cursor-not-allowed bg-muted text-muted-foreground"
+              : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
         >
           {primaryButtonLabel}
@@ -330,11 +332,6 @@ const ProductPage = () => {
       </div>
 
       <SiteFooter />
-      <WhatsAppButton />
-      <BackToTopButton />
-      <CartSidebar />
-      <AddedToCartModal />
-      <MobileBottomNav />
       {isImageModalOpen && (
         <ProductImageModal
           images={gallery}

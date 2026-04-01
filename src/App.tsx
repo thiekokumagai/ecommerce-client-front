@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import GoogleMapsLoader from "@/components/GoogleMapsLoader";
+import StoreChromeLayout from "@/layouts/StoreChromeLayout";
 import Index from "./pages/Index.tsx";
 import ProductPage from "./pages/ProductPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -20,8 +21,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/produto/:id" element={<ProductPage />} />
+            <Route element={<StoreChromeLayout />}>
+              <Route path="/" element={<Index />} />
+              <Route path="/produto/:id" element={<ProductPage />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

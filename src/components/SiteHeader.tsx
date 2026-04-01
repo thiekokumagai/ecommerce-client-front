@@ -20,13 +20,13 @@ const SiteHeader = () => {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-[70] border-b border-border bg-background/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur-md md:hidden">
+      <div className="fixed inset-x-0 top-0 z-[70] border-b border-border-subtle bg-background/95 px-4 pb-3 pt-3 backdrop-blur-md md:hidden">
         <div className="mx-auto max-w-7xl space-y-2.5">
           <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => setCategoriesOpen(true)}
-              className="rounded-full p-1.5 text-muted-foreground"
+              className="rounded-full p-1.5 text-fg-subtle transition-colors hover:bg-muted hover:text-fg-secondary"
               aria-label="Categorias"
             >
               <LayoutGrid className="h-5 w-5" />
@@ -38,7 +38,7 @@ const SiteHeader = () => {
 
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative rounded-full p-1.5 text-muted-foreground"
+              className="relative rounded-full p-1.5 text-fg-subtle transition-colors hover:bg-muted hover:text-fg-secondary"
             >
               <ShoppingCart className="h-5 w-5" />
               {totalItems > 0 && (
@@ -49,20 +49,20 @@ const SiteHeader = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2">
-            <Search className="h-4 w-4 shrink-0 text-primary" />
+          <div className="flex items-center gap-2 rounded-full border border-border-subtle bg-muted/80 px-4 py-2 transition-colors focus-within:border-border focus-within:ring-2 focus-within:ring-ring/25">
+            <Search className="h-4 w-4 shrink-0 text-primary" aria-hidden />
             <input
               type="text"
               value={searchTerm}
               onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Faça sua busca"
-              className="w-full bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-sm"
+              className="w-full bg-transparent text-base text-fg-secondary placeholder:text-fg-subtle focus:outline-none md:text-sm"
             />
             {searchTerm.trim() && (
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="shrink-0 text-muted-foreground hover:text-foreground"
+                className="shrink-0 rounded-full text-fg-subtle transition-colors hover:bg-background hover:text-fg-secondary"
                 aria-label="Limpar busca"
               >
                 <X className="h-4 w-4" />
@@ -72,7 +72,7 @@ const SiteHeader = () => {
         </div>
       </div>
 
-      <header className="sticky top-0 z-50 hidden border-b border-border bg-background/95 shadow-sm backdrop-blur-md md:block">
+      <header className="sticky top-0 z-50 hidden border-b border-border-subtle bg-background/95 backdrop-blur-md md:block">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2">
@@ -81,19 +81,19 @@ const SiteHeader = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2">
+            <div className="flex items-center gap-2 rounded-full border border-border-subtle bg-muted/80 px-4 py-2 transition-colors focus-within:border-border focus-within:ring-2 focus-within:ring-ring/25">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder="Faça sua busca"
-                className="w-40 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none lg:w-52"
+                className="w-40 bg-transparent text-sm text-fg-secondary placeholder:text-fg-subtle focus:outline-none lg:w-52"
               />
               {searchTerm.trim() && (
                 <button
                   type="button"
                   onClick={handleClearSearch}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="rounded-full text-fg-subtle transition-colors hover:bg-background hover:text-fg-secondary"
                   aria-label="Limpar busca"
                 >
                   <X className="h-4 w-4" />
@@ -107,7 +107,7 @@ const SiteHeader = () => {
             <button
               type="button"
               onClick={() => setCategoriesOpen(true)}
-              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="rounded-full p-2 text-fg-subtle transition-colors hover:bg-muted hover:text-fg-secondary"
               aria-label="Categorias"
             >
               <LayoutGrid className="h-5 w-5" />
@@ -115,7 +115,7 @@ const SiteHeader = () => {
 
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="relative rounded-full p-2 text-fg-subtle transition-colors hover:bg-muted hover:text-fg-secondary"
             >
               <ShoppingCart className="h-5 w-5" />
               {totalItems > 0 && (
