@@ -1,8 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { MapPin, Search, Loader2, Check, ChevronLeft, X, Pencil, LocateFixed } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-
+import useAddressAutocomplete from "./useAddressAutocomplete";
 type GeocoderAddressComponent = {
   long_name: string;
   types: string[];
@@ -75,19 +74,17 @@ const waitForGoogleMaps = async () => {
 };
 
 const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps) => {
-  const [phase, setPhase] = useState<"search" | "details">(initialAddress ? "search" : "search");
+  const [phase, setPhase] = useState<"search" | "details">("search");
   const [query, setQuery] = useState(initialAddress?.fullText || "");
-  const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [selected, setSelected] = useState<AddressPrediction | null>(
     initialAddress
       ? {
-          placeId: initialAddress.id || "",
-          mainText: initialAddress.mainText,
-          secondaryText: initialAddress.secondaryText,
-          fullText: initialAddress.fullText,
-        }
+        placeId: initialAddress.id || "",
+        mainText: initialAddress.mainText,
+        secondaryText: initialAddress.secondaryText,
+        fullText: initialAddress.fullText,
+      }
       : null,
   );
   const [street, setStreet] = useState(initialAddress?.mainText || "");
@@ -99,41 +96,33 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   const [noComplement, setNoComplement] = useState(initialAddress?.noComplement || false);
   const [manualEditAddress, setManualEditAddress] = useState(false);
   const [selectionMode, setSelectionMode] = useState<"manual" | "location" | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const inputRef = useRef<HTMLInputElement>(null);
+  const extractNumberFromQuery = (text: string) => {
+    const match = text.match(/(?:,|\s)(\d{1,6})\b/);
+    return match ? match[1] : "";
+  };
+  const { predictions, loading: isLoading, handleSelect } = useAddressAutocomplete({
+    value: query,
+    onChange: setQuery,
+    onSelect: (p) => {
+      const extractedNumber = extractNumberFromQuery(query);
 
-  const fetchPredictions = useCallback(async (input: string) => {
-    if (input.trim().length < 3) {
-      setPredictions([]);
-      return;
+      setSelected(p);
+      setStreet(p.mainText);
+      setNeighborhood(p.secondaryText.split(",")[0]?.trim() || "");
+
+      if (extractedNumber) {
+        setNumber(extractedNumber);
+        setNoNumber(false);
+      }
+
+      setSelectionMode("manual");
+      setManualEditAddress(false);
+      setPhase("details");
     }
-
-    setIsLoading(true);
-    try {
-      const { data } = await supabase.functions.invoke("autocomplete-address", {
-        body: { input },
-      });
-      setPredictions(data?.predictions || []);
-    } catch {
-      setPredictions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  });
   const handleInputChange = (value: string) => {
     setQuery(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchPredictions(value), 350);
-  };
-
-  const handleSelect = (prediction: AddressPrediction) => {
-    setSelected(prediction);
-    setStreet(prediction.mainText);
-    setNeighborhood(prediction.secondaryText.split(",")[0]?.trim() || "");
-    setSelectionMode("manual");
-    setManualEditAddress(false);
-    setPhase("details");
   };
 
   const handleUseCurrentLocation = async () => {
@@ -142,101 +131,127 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       return;
     }
 
-    setIsLocating(true);
-    toast.info("Buscando sua localização atual...");
+    try {
+      const permission = await navigator.permissions.query({
+        name: "geolocation" as PermissionName,
+      });
 
-    const mapsReady = await waitForGoogleMaps();
+      if (permission.state === "denied") {
+        toast.error("Você bloqueou a localização. Ative nas configurações do navegador.");
+        return;
+      }
 
-    if (!mapsReady) {
-      setIsLocating(false);
-      toast.error("O Google Maps não carregou corretamente. Verifique sua chave e tente novamente.");
-      return;
-    }
+      setIsLocating(true);
 
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const geocoder = new window.google!.maps!.Geocoder();
-          const response = await geocoder.geocode({
-            location: { lat: coords.latitude, lng: coords.longitude },
-          });
+      const mapsReady = await waitForGoogleMaps();
 
-          const result = response.results[0];
-          if (!result) {
-            toast.error("Não foi possível identificar seu endereço.");
-            setIsLocating(false);
-            return;
-          }
-
-          const components = result.address_components;
-          const route = extractAddressPart(components, ["route"]);
-          const streetNumber = extractAddressPart(components, ["street_number"]);
-          const sublocality = extractAddressPart(components, ["sublocality", "sublocality_level_1", "neighborhood"]);
-          const city = extractAddressPart(components, ["administrative_area_level_2"]);
-          const state = extractAddressPart(components, ["administrative_area_level_1"]);
-
-          const mainText = route || result.formatted_address;
-          const secondaryText = [sublocality, city, state].filter(Boolean).join(", ");
-
-          setSelected({
-            placeId: result.place_id || crypto.randomUUID(),
-            mainText,
-            secondaryText,
-            fullText: result.formatted_address,
-          });
-          setStreet(mainText);
-          setNeighborhood(sublocality);
-          setNumber(streetNumber);
-          setNoNumber(!streetNumber);
-          setSelectionMode("location");
-          setManualEditAddress(false);
-          setPhase("details");
-          toast.success("Localização encontrada.");
-        } finally {
-          setIsLocating(false);
-        }
-      },
-      (error) => {
+      if (!mapsReady) {
+        toast.error("Google Maps não carregou.");
         setIsLocating(false);
+        return;
+      }
 
-        if (error.code === error.PERMISSION_DENIED) {
-          toast.error("Permissão de localização negada. Libere o acesso no navegador.");
-          return;
-        }
+      navigator.geolocation.getCurrentPosition(
+        async ({ coords }) => {
+          try {
+            const geocoder = new window.google!.maps!.Geocoder();
 
-        if (error.code === error.POSITION_UNAVAILABLE) {
-          toast.error("Não foi possível obter sua localização agora.");
-          return;
-        }
+            const response = await geocoder.geocode({
+              location: {
+                lat: coords.latitude,
+                lng: coords.longitude,
+              },
+            });
 
-        if (error.code === error.TIMEOUT) {
-          toast.error("A localização demorou demais para responder.");
-          return;
-        }
+            const result = response.results[0];
 
-        toast.error("Não foi possível usar sua localização.");
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
+            if (!result) {
+              toast.error("Endereço não encontrado.");
+              return;
+            }
+
+            const components = result.address_components;
+
+            const route = extractAddressPart(components, ["route"]);
+            const streetNumber = extractAddressPart(components, ["street_number"]);
+            const neighborhood = extractAddressPart(components, [
+              "sublocality",
+              "neighborhood",
+            ]);
+            const city = extractAddressPart(components, ["administrative_area_level_2"]);
+            const state = extractAddressPart(components, ["administrative_area_level_1"]);
+
+            const mainText = route || result.formatted_address;
+            const secondaryText = [neighborhood, city, state].filter(Boolean).join(", ");
+
+            setSelected({
+              placeId: result.place_id || crypto.randomUUID(),
+              mainText,
+              secondaryText,
+              fullText: result.formatted_address,
+            });
+
+            setStreet(mainText);
+            setNeighborhood(neighborhood);
+            setNumber(streetNumber);
+            setSelectionMode("location");
+            setPhase("details");
+          } catch (err) {
+            console.error(err);
+            toast.error("Erro ao buscar endereço.");
+          } finally {
+            setIsLocating(false);
+          }
+        },
+        (error) => {
+          setIsLocating(false);
+
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              toast.error("Permissão negada.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              toast.error("Localização indisponível.");
+              break;
+            case error.TIMEOUT:
+              toast.error("Tempo esgotado.");
+              break;
+            default:
+              toast.error("Erro ao obter localização.");
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao verificar permissão.");
+    }
   };
 
   const handleSave = () => {
     if (!selected) return;
-    if (selectionMode === "location") {
-      if ((!street.trim() || !neighborhood.trim()) && manualEditAddress) return;
-      if (!number.trim() && !noNumber) return;
+
+    if (!number.trim() && !noNumber) {
+      toast.error("Informe o número");
+      return;
     }
 
-    const mainText = selectionMode === "location" && manualEditAddress ? street.trim() : selected.mainText;
-    const secondaryText = selectionMode === "location" && manualEditAddress
-      ? neighborhood.trim() || selected.secondaryText
+    const mainText = manualEditAddress && street.trim()
+      ? street.trim()
+      : selected.mainText;
+
+    const secondaryText = manualEditAddress && neighborhood.trim()
+      ? neighborhood.trim()
       : selected.secondaryText;
-    const fullText = selectionMode === "location"
-      ? [mainText, noNumber ? "s/n" : number.trim(), secondaryText].filter(Boolean).join(", ")
-      : selected.fullText;
+
+    const finalNumber = noNumber ? "s/n" : number.trim();
+
+    const fullText = [mainText, finalNumber, secondaryText]
+      .filter(Boolean)
+      .join(", ");
 
     onSave({
-      id: initialAddress?.id || selected.placeId || crypto.randomUUID(),
+      id: selected.placeId || crypto.randomUUID(),
       mainText,
       secondaryText,
       fullText,
@@ -245,11 +260,10 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       noComplement,
     });
   };
-
   if (phase === "details" && selected) {
     const isLocationMode = selectionMode === "location";
     const canSave = isLocationMode
-      ? (((street.trim() && neighborhood.trim()) || !manualEditAddress) && (number || noNumber) && (complement || noComplement))
+      ? (number || noNumber) && (complement || noComplement)
       : (complement || noComplement);
 
     return (
@@ -383,9 +397,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               type="button"
               onClick={handleSave}
               disabled={!canSave}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${
-                canSave ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-              }`}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold ${canSave ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}
             >
               <Check className="h-4 w-4" />
               Salvar endereço
@@ -428,7 +441,6 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               type="button"
               onClick={() => {
                 setQuery("");
-                setPredictions([]);
                 inputRef.current?.focus();
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -472,9 +484,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
                 key={prediction.placeId}
                 type="button"
                 onClick={() => handleSelect(prediction)}
-                className={`flex w-full items-start gap-3 py-4 text-left ${
-                  index !== predictions.length - 1 ? "border-b border-border" : ""
-                }`}
+                className={`flex w-full items-start gap-3 py-4 text-left ${index !== predictions.length - 1 ? "border-b border-border" : ""
+                  }`}
               >
                 <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground">
                   <MapPin className="h-4 w-4" />
