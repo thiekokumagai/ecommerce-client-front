@@ -23,7 +23,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useFreight } from "@/hooks/use-calculator-freight";
+
+
 import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
 import SavedAddressesList from "@/components/checkout/SavedAddressesList";
 import CartItemImage from "@/components/CartItemImage";
@@ -111,6 +113,7 @@ const STEPS: { key: CheckoutStep; label: string }[] = [
 ];
 
 const StepIndicator = ({ currentStep }: { currentStep: CheckoutStep }) => {
+
   const currentIndex = STEPS.findIndex((s) => s.key === currentStep);
 
   return (
@@ -126,9 +129,8 @@ const StepIndicator = ({ currentStep }: { currentStep: CheckoutStep }) => {
             )}
             <div className="flex flex-col items-center gap-1">
               <div
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                  isDone || isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${isDone || isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
               >
                 {isDone ? <Check className="h-3.5 w-3.5" /> : index + 1}
               </div>
@@ -150,34 +152,35 @@ const paymentOptions: {
   icon: typeof Wallet;
   highlight?: string;
 }[] = [
-  {
-    value: "pix",
-    title: "Pix",
-    subtitle: "Pagamento instantâneo com 5% de desconto",
-    icon: Wallet,
-    highlight: "5% OFF",
-  },
-  {
-    value: "debito",
-    title: "Cartão de débito",
-    subtitle: "Pague na entrega",
-    icon: CreditCard,
-  },
-  {
-    value: "credito",
-    title: "Cartão de crédito",
-    subtitle: "Pague na entrega",
-    icon: CreditCard,
-  },
-  {
-    value: "dinheiro",
-    title: "Dinheiro",
-    subtitle: "Leve troco se precisar",
-    icon: Receipt,
-  },
-];
+    {
+      value: "pix",
+      title: "Pix",
+      subtitle: "Pagamento instantâneo com 5% de desconto",
+      icon: Wallet,
+      highlight: "5% OFF",
+    },
+    {
+      value: "debito",
+      title: "Cartão de débito",
+      subtitle: "Pague na entrega",
+      icon: CreditCard,
+    },
+    {
+      value: "credito",
+      title: "Cartão de crédito",
+      subtitle: "Pague na entrega",
+      icon: CreditCard,
+    },
+    {
+      value: "dinheiro",
+      title: "Dinheiro",
+      subtitle: "Leve troco se precisar",
+      icon: Receipt,
+    },
+  ];
 
 const CartSidebar = () => {
+  const { calculate } = useFreight();
   const {
     items,
     isCartOpen,
@@ -216,13 +219,11 @@ const CartSidebar = () => {
   const [hasCopiedPix, setHasCopiedPix] = useState(false);
   const [finalizedOrder, setFinalizedOrder] = useState<FinalizedOrder | null>(null);
   const previousTotalItems = useRef(totalItems);
-
   useEffect(() => {
     const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY);
     const storedAddresses = sessionStorage.getItem(SESSION_ADDRESSES_KEY);
     const storedName = sessionStorage.getItem(SESSION_NAME_KEY) ?? "";
     const storedPhone = sessionStorage.getItem(SESSION_PHONE_KEY) ?? "";
-
     if (storedAddresses) {
       try {
         const parsedAddresses = JSON.parse(storedAddresses) as StructuredAddress[];
@@ -231,40 +232,40 @@ const CartSidebar = () => {
         setSavedAddresses([]);
       }
     }
-
     if (storedAddress) {
       try {
         const parsed = JSON.parse(storedAddress) as StructuredAddress;
         setStructuredAddress(parsed);
 
-        const fullDest = [parsed.fullText, parsed.complement].filter(Boolean).join(", ");
-        supabase.functions
-          .invoke("calculate-freight", { body: { destination: fullDest } })
-          .then(({ data }) => {
-            if (typeof data?.freightPrice === "number") {
-              setDeliveryFee(data.freightPrice);
-              setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
-              setDeliveryError(data?.error ?? "");
-            } else {
-              setDeliveryFee(0);
-              setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
-              setDeliveryError(data?.error ?? "");
-            }
-          })
-          .catch(() => {
+        const fullDest = [parsed.fullText, parsed.complement]
+          .filter(Boolean)
+          .join(", ");
+        calculate(fullDest).then((result) => {
+          if (!result) return;
+          if (result.error) {
             setDeliveryFee(0);
-            setDeliveryDistanceKm(null);
-            setDeliveryError("Não foi possível recalcular a taxa de entrega.");
-          });
+            setDeliveryDistanceKm(result.distanceKm ?? null);
+            setDeliveryError(result.error || "");
+            return;
+          }
+          if ('freightPrice' in result && typeof result.freightPrice === "number") {
+            setDeliveryFee(result.freightPrice);
+            setDeliveryDistanceKm(result.distanceKm ?? null);
+            setDeliveryError("");
+          } else {
+            setDeliveryFee(0);
+            setDeliveryDistanceKm(result.distanceKm ?? null);
+            setDeliveryError(result.error || "");
+          }
+        });
       } catch {
-        // ignore invalid session data
       }
     }
 
     if (storedName) setName(storedName);
     if (storedPhone) setPhone(storedPhone);
     if (storedName && storedPhone) setIsEditingContact(false);
-  }, []);
+  }, [calculate]);
 
   useEffect(() => {
     if (!isCartOpen && !isFinishModalOpen) {
@@ -338,36 +339,49 @@ const CartSidebar = () => {
     sessionStorage.setItem(SESSION_ADDRESSES_KEY, JSON.stringify(addresses));
   };
 
-  const calculateDeliveryFee = useCallback(async (addr: StructuredAddress) => {
-    setIsCalculatingFee(true);
-    setDeliveryError("");
+  const calculateDeliveryFee = useCallback(
+    async (addr: StructuredAddress) => {
+      setIsCalculatingFee(true);
+      setDeliveryError("");
 
-    try {
-      const fullDest = [addr.fullText, addr.complement].filter(Boolean).join(", ");
-      const { data } = await supabase.functions.invoke("calculate-freight", {
-        body: { destination: fullDest },
-      });
+      try {
+        const fullDest = [addr.fullText, addr.complement]
+          .filter(Boolean)
+          .join(", ");
+        const result = await calculate(fullDest);
 
-      if (typeof data?.freightPrice === "number") {
-        setDeliveryFee(data.freightPrice);
-        setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
-        setDeliveryError("");
-        return;
+        if (!result) return;
+        if (result.error) {
+          setDeliveryFee(0);
+          setDeliveryDistanceKm(result.distanceKm ?? null);
+          setDeliveryError(result.error || "Não foi possível calcular a entrega.");
+          return;
+        }
+        if ('freightPrice' in result && typeof result.freightPrice === "number") {
+          setDeliveryFee(result.freightPrice);
+          setDeliveryDistanceKm(result.distanceKm ?? null);
+          setDeliveryError("");
+          return;
+        }
+
+        setDeliveryFee(0);
+        setDeliveryDistanceKm(result.distanceKm ?? null);
+        setDeliveryError(result.error || "Não foi possível calcular a entrega.");
+
+        if (result.error) {
+          toast.info(result.error);
+        }
+      } catch {
+        setDeliveryFee(0);
+        setDeliveryDistanceKm(null);
+        setDeliveryError("Não foi possível calcular a entrega.");
+        toast.info("Não foi possível calcular a entrega.");
+      } finally {
+        setIsCalculatingFee(false);
       }
-
-      setDeliveryFee(0);
-      setDeliveryDistanceKm(typeof data?.distanceKm === "number" ? data.distanceKm : null);
-      setDeliveryError(data?.error || "Não foi possível calcular a entrega.");
-      if (data?.error) toast.info(data.error);
-    } catch {
-      setDeliveryFee(0);
-      setDeliveryDistanceKm(null);
-      setDeliveryError("Não foi possível calcular a entrega.");
-      toast.info("Não foi possível calcular a entrega.");
-    } finally {
-      setIsCalculatingFee(false);
-    }
-  }, []);
+    },
+    [calculate]
+  );
 
   const hasSelectedPaymentMethod = paymentMethod !== null;
   const isPaymentValid =
@@ -861,9 +875,8 @@ const CartSidebar = () => {
                           type="button"
                           onClick={handleSaveContact}
                           disabled={!isContactValid}
-                          className={`w-full rounded-2xl py-3 text-sm font-semibold ${
-                            isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                          }`}
+                          className={`w-full rounded-2xl py-3 text-sm font-semibold ${isContactValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}
                         >
                           Salvar contato
                         </button>
@@ -1001,9 +1014,8 @@ const CartSidebar = () => {
                             type="button"
                             onClick={handleSaveCoupon}
                             disabled={!couponCode.trim()}
-                            className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${
-                              couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                            }`}
+                            className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                              }`}
                           >
                             Salvar cupom
                           </button>
@@ -1084,15 +1096,13 @@ const CartSidebar = () => {
                                 setCreditInstallments(1);
                               }
                             }}
-                            className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${
-                              isSelected ? "border-primary bg-primary/5" : "border-border bg-background"
-                            }`}
+                            className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${isSelected ? "border-primary bg-primary/5" : "border-border bg-background"
+                              }`}
                           >
                             <div className="flex items-center gap-3">
                               <div
-                                className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                                  isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                                }`}
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                                  }`}
                               >
                                 <Icon className="h-5 w-5" />
                               </div>
@@ -1109,9 +1119,8 @@ const CartSidebar = () => {
                               </div>
                             </div>
                             <div
-                              className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-                                isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"
-                              }`}
+                              className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"
+                                }`}
                             >
                               {isSelected && <Check className="h-3.5 w-3.5 text-primary-foreground" />}
                             </div>
@@ -1130,11 +1139,10 @@ const CartSidebar = () => {
                               setCreditMode("avista");
                               setCreditInstallments(1);
                             }}
-                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
-                              creditMode === "avista"
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border bg-background text-foreground"
-                            }`}
+                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${creditMode === "avista"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground"
+                              }`}
                           >
                             À vista
                           </button>
@@ -1144,11 +1152,10 @@ const CartSidebar = () => {
                               setCreditMode("parcelado");
                               if (creditInstallments < 2) setCreditInstallments(2);
                             }}
-                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
-                              creditMode === "parcelado"
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border bg-background text-foreground"
-                            }`}
+                            className={`rounded-2xl border px-3 py-3 text-sm font-medium ${creditMode === "parcelado"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground"
+                              }`}
                           >
                             Parcelado
                           </button>
@@ -1166,9 +1173,8 @@ const CartSidebar = () => {
                                   key={installment.value}
                                   type="button"
                                   onClick={() => setCreditInstallments(installment.value)}
-                                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${
-                                    isSelected ? "border-primary bg-background" : "border-border bg-background/70"
-                                  }`}
+                                  className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left ${isSelected ? "border-primary bg-background" : "border-border bg-background/70"
+                                    }`}
                                 >
                                   <div>
                                     <p className="text-sm font-semibold text-foreground">
@@ -1197,22 +1203,20 @@ const CartSidebar = () => {
                             <button
                               type="button"
                               onClick={() => setNeedsChange("sim")}
-                              className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
-                                needsChange === "sim"
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border bg-background text-foreground"
-                              }`}
+                              className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "sim"
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background text-foreground"
+                                }`}
                             >
                               Sim
                             </button>
                             <button
                               type="button"
                               onClick={() => setNeedsChange("não")}
-                              className={`rounded-2xl border px-3 py-3 text-sm font-medium ${
-                                needsChange === "não"
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border bg-background text-foreground"
-                              }`}
+                              className={`rounded-2xl border px-3 py-3 text-sm font-medium ${needsChange === "não"
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background text-foreground"
+                                }`}
                             >
                               Não
                             </button>
@@ -1417,9 +1421,8 @@ const CartSidebar = () => {
                   type="button"
                   onClick={goToPayment}
                   disabled={!canContinueDelivery}
-                  className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
-                    canContinueDelivery ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`w-full rounded-2xl py-3.5 text-sm font-bold ${canContinueDelivery ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   Ir para pagamento
                 </button>
@@ -1430,9 +1433,8 @@ const CartSidebar = () => {
                   type="button"
                   onClick={goToConfirmation}
                   disabled={!isPaymentValid}
-                  className={`w-full rounded-2xl py-3.5 text-sm font-bold ${
-                    isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`w-full rounded-2xl py-3.5 text-sm font-bold ${isPaymentValid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   Revisar pedido
                 </button>

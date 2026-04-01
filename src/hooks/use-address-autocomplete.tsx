@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-
 export interface AddressPrediction {
     placeId: string;
     mainText: string;
@@ -9,11 +8,15 @@ export interface AddressPrediction {
 
 interface Props {
     value: string;
-    onChange: (value: string) => void;
     onSelect: (prediction: AddressPrediction) => void;
+    restrictToCampoGrande?: boolean;
 }
 
-const useAddressAutocomplete = ({ value, onChange, onSelect }: Props) => {
+const useAddressAutocomplete = ({
+    value,
+    onSelect,
+    restrictToCampoGrande = false,
+}: Props) => {
     const [predictions, setPredictions] = useState<AddressPrediction[]>([]);
     const [loading, setLoading] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -30,6 +33,25 @@ const useAddressAutocomplete = ({ value, onChange, onSelect }: Props) => {
             setLoading(true);
 
             try {
+                const body: any = {
+                    input: value.trim(),
+                    includedRegionCodes: ["br"],
+                    languageCode: "pt-BR",
+                };
+                if (restrictToCampoGrande) {
+                    body.locationRestriction = {
+                        circle: {
+                            center: {
+                                latitude: -20.4697,
+                                longitude: -54.6201,
+                            },
+                            radius: 30000,
+                        },
+                    };
+
+                    body.input = value.trim() + ", Campo Grande, MS, Brasil";
+                }
+
                 const res = await fetch(
                     "https://places.googleapis.com/v1/places:autocomplete",
                     {
@@ -38,20 +60,7 @@ const useAddressAutocomplete = ({ value, onChange, onSelect }: Props) => {
                             "Content-Type": "application/json",
                             "X-Goog-Api-Key": import.meta.env.VITE_GOOGLE_MAPS_KEY,
                         },
-                        body: JSON.stringify({
-                            input: value.trim() + ", Campo Grande, MS, Brasil",
-                            includedRegionCodes: ["br"],
-                            languageCode: "pt-BR",
-                            locationRestriction: {
-                                circle: {
-                                    center: {
-                                        latitude: -20.4697, // Campo Grande
-                                        longitude: -54.6201,
-                                    },
-                                    radius: 30000, // 30km (ajuste se quiser)
-                                },
-                            },
-                        }),
+                        body: JSON.stringify(body),
                     }
                 );
 
@@ -63,17 +72,14 @@ const useAddressAutocomplete = ({ value, onChange, onSelect }: Props) => {
 
                 const data = await res.json();
 
-                const formatted = (data.suggestions || [])
-                    .filter((s: any) => {
-                        const text = s.placePrediction?.text?.text || "";
-                        return text.toLowerCase().includes("campo grande");
-                    })
-                    .map((s: any) => ({
-                        placeId: s.placePrediction.placeId,
-                        mainText: s.placePrediction.structuredFormat?.mainText?.text || "",
-                        secondaryText: s.placePrediction.structuredFormat?.secondaryText?.text || "",
-                        fullText: s.placePrediction.text?.text || "",
-                    }));
+                const formatted = (data.suggestions || []).map((s: any) => ({
+                    placeId: s.placePrediction.placeId,
+                    mainText:
+                        s.placePrediction.structuredFormat?.mainText?.text || "",
+                    secondaryText:
+                        s.placePrediction.structuredFormat?.secondaryText?.text || "",
+                    fullText: s.placePrediction.text?.text || "",
+                }));
 
                 setPredictions(formatted);
             } catch (err) {
@@ -83,10 +89,11 @@ const useAddressAutocomplete = ({ value, onChange, onSelect }: Props) => {
                 setLoading(false);
             }
         }, 350);
+
         return () => {
             if (debounceRef.current) clearTimeout(debounceRef.current);
         };
-    }, [value]);
+    }, [value, restrictToCampoGrande]);
 
     return {
         predictions,

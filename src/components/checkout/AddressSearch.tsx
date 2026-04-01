@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
 import { MapPin, Search, Loader2, Check, ChevronLeft, X, Pencil, LocateFixed } from "lucide-react";
 import { toast } from "sonner";
-import useAddressAutocomplete from "./useAddressAutocomplete";
+import useAddressAutocomplete from "@/hooks/use-address-autocomplete";
 type GeocoderAddressComponent = {
   long_name: string;
   types: string[];
@@ -103,7 +103,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   };
   const { predictions, loading: isLoading, handleSelect } = useAddressAutocomplete({
     value: query,
-    onChange: setQuery,
+    restrictToCampoGrande: true,
     onSelect: (p) => {
       const extractedNumber = extractNumberFromQuery(query);
 
