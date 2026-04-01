@@ -39,7 +39,7 @@ const useAddressAutocomplete = ({ value, onChange, onSelect }: Props) => {
                             "X-Goog-Api-Key": import.meta.env.VITE_GOOGLE_MAPS_KEY,
                         },
                         body: JSON.stringify({
-                            input: value.trim() + ", Campo Grande MS",
+                            input: value.trim() + ", Campo Grande, MS, Brasil",
                             includedRegionCodes: ["br"],
                             languageCode: "pt-BR",
                             locationRestriction: {
