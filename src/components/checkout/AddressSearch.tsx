@@ -17,13 +17,10 @@ type BrowserGeocoder = {
   geocode: (request: { location: { lat: number; lng: number } }) => Promise<{ results: GeocoderResult[] }>;
 };
 
+export { };
+
 declare global {
   interface Window {
-    google?: {
-      maps?: {
-        Geocoder: new () => BrowserGeocoder;
-      };
-    };
     __googleMapsLoaded?: boolean;
   }
 }
@@ -57,20 +54,22 @@ const extractAddressPart = (components: GeocoderAddressComponent[], types: strin
 };
 
 const waitForGoogleMaps = async () => {
-  if (window.google?.maps?.Geocoder) return true;
+  if (window.google?.maps) return true;
 
   await new Promise<void>((resolve) => {
     let attempts = 0;
+
     const interval = window.setInterval(() => {
-      attempts += 1;
-      if (window.google?.maps?.Geocoder || window.__googleMapsLoaded || attempts >= 30) {
+      attempts++;
+
+      if (window.google?.maps || window.__googleMapsLoaded || attempts >= 30) {
         window.clearInterval(interval);
         resolve();
       }
     }, 250);
   });
 
-  return !!window.google?.maps?.Geocoder;
+  return !!window.google?.maps;
 };
 
 const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps) => {
