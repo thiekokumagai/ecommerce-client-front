@@ -180,9 +180,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             const city = extractAddressPart(components, ["administrative_area_level_2"]);
             const state = extractAddressPart(components, ["administrative_area_level_1"]);
 
-            const mainText = streetNumber
-              ? `${route}, ${streetNumber}`
-              : route || result.formatted_address;
+            const mainText = route || result.formatted_address.split(",")[0];
             const secondaryText = [neighborhood, city, state].filter(Boolean).join(", ");
 
             setSelected({
@@ -237,7 +235,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       return;
     }
 
-    const mainText = manualEditAddress && street.trim()
+    let baseMainText = manualEditAddress && street.trim()
       ? street.trim()
       : selected.mainText;
 
@@ -247,8 +245,12 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
     const finalNumber = noNumber ? "s/n" : number.trim();
 
+    const mainText = baseMainText.includes(finalNumber)
+      ? baseMainText
+      : `${baseMainText}, ${finalNumber}`;
+
     const fullText = [
-      mainText.includes(finalNumber) ? mainText : `${mainText}, ${finalNumber}`,
+      mainText,
       secondaryText
     ]
       .filter(Boolean)

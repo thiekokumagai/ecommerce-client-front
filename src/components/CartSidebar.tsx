@@ -1555,6 +1555,9 @@ const CartSidebar = () => {
                   <p className="text-[16px] text-[#666666]">
                     Contato: <span className="font-semibold">{checkoutPhone}</span>
                   </p>
+                  <p className="mt-1 text-[16px] text-[#666666] leading-[1.35]">
+                    Endereço: <span className="font-semibold">{checkoutAddress}</span>
+                  </p>
                 </div>
 
                 <div className="mt-5 border-t border-[#e6e6e6] pt-5">
