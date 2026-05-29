@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import HeroBanner from "@/components/HeroBanner";
 import CategoriesSection from "@/components/CategoriesSection";
@@ -48,6 +49,25 @@ const Index = () => {
     setSelectedCategory(null);
     setSelectedNicotineStrength(null);
   };
+
+  useEffect(() => {
+    if (!isLoading) {
+      const savedScroll = sessionStorage.getItem("store_scroll_pos");
+      if (savedScroll) {
+        // Use a small timeout to ensure the DOM has rendered the restored items from AllProductsSection
+        setTimeout(() => {
+          window.scrollTo({ top: parseInt(savedScroll, 10), behavior: "instant" });
+        }, 50);
+      }
+    }
+
+    const handleScroll = () => {
+      sessionStorage.setItem("store_scroll_pos", window.scrollY.toString());
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isLoading]);
 
   return (
     <div className={`min-h-screen bg-background md:pb-0 ${mobileBottom}`}>

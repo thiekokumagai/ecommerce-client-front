@@ -45,7 +45,13 @@ function buildVariationGroupFromNewApi(product: NewApiProduct): ProductVariation
   
   if (!firstVariation) return undefined;
 
-  const options = firstVariation.options.map(opt => {
+  const linkedOptions = firstVariation.options.filter(opt => {
+    return product.items?.some(item => 
+      item.options.some(o => o.option.value === opt.value)
+    ) ?? false;
+  });
+
+  const options = linkedOptions.map(opt => {
     // Check if there is any item with this option value that has stock > 0
     const available = product.items?.some(item => 
       item.stock > 0 && item.options.some(o => o.option.value === opt.value)
@@ -86,7 +92,7 @@ export function useProducts(categoryId?: string | null) {
   return useQuery({
     queryKey: categoryId ? ["api-products-category", categoryId] : ["api-products"],
     queryFn: async (): Promise<Product[]> => {
-      let url = `${import.meta.env.VITE_ADMIN_API}/store/products?limit=100`;
+      let url = `${import.meta.env.VITE_ADMIN_API}/store/products?limit=9999`;
       if (categoryId) {
         url += `&categoryId=${categoryId}`;
       }
@@ -115,23 +121,6 @@ export function useProducts(categoryId?: string | null) {
   });
 }
 
-export function useProductDetail(id: string | undefined) {
-  return useQuery({
-    queryKey: ["api-product", id],
-    queryFn: async () => {
-      if (!id) throw new Error("ID required");
-
-      const response = await fetch(`${import.meta.env.VITE_ADMIN_API}/store/products/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch product");
-      
-      const data = await response.json();
-      return data; // Needs further transformation where used, or we could return transformNewApiProduct
-    },
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-}
 
 export function useCategories() {
   return useQuery({

@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search, ShoppingCart, LayoutGrid, X } from "lucide-react";
 
-import logo from "@/assets/logo.webp";
+import logoFallback from "@/assets/logo.webp";
 import { useCart } from "@/contexts/CartContext";
 import CategoriesMenu from "@/components/CategoriesMenu";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 const SiteHeader = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const { totalItems, setIsCartOpen, searchTerm, setSearchTerm } = useCart();
+  const { data: settings } = useStoreSettings();
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -33,7 +35,7 @@ const SiteHeader = () => {
             </button>
 
             <Link to="/" className="absolute left-1/2 -translate-x-1/2">
-              <img src={logo} alt="Pod & Mais" className="h-10 w-10 object-contain" />
+              <img src={settings?.logoUrl || logoFallback} alt={settings?.storeName || "Pod & Mais"} className="h-10 w-10 object-contain" />
             </Link>
 
             <button
@@ -76,7 +78,7 @@ const SiteHeader = () => {
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Pod & Mais" className="h-20 w-20 object-contain" />
+              <img src={settings?.logoUrl || logoFallback} alt={settings?.storeName || "Pod & Mais"} className="h-20 w-20 object-contain" />
             </Link>
           </div>
 

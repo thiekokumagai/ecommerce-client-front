@@ -1,4 +1,3 @@
-import { useProductDetail } from "@/hooks/useVendizapProducts";
 
 interface CartItemImageProps {
   productId: string;
@@ -8,8 +7,7 @@ interface CartItemImageProps {
 }
 
 const CartItemImage = ({ productId, productImage, productName, className = "" }: CartItemImageProps) => {
-  const { data: detail } = useProductDetail(productImage ? undefined : productId);
-  const imageUrl = productImage || detail?.imagens?.[0] || "";
+  const imageUrl = productImage || "";
 
   if (!imageUrl) {
     return <div className={`bg-secondary/30 ${className}`} />;

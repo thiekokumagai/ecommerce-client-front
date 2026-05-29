@@ -7,7 +7,7 @@ import ProductContact from "@/components/product/ProductContact";
 import ProductDesktopGallery from "@/components/product/ProductDesktopGallery";
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductMobileGallery from "@/components/product/ProductMobileGallery";
-import { useProducts, useProductDetail } from "@/hooks/useVendizapProducts";
+import { useProducts } from "@/hooks/useVendizapProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useStoreMobilePadding } from "@/hooks/use-store-mobile-padding";
 import { Loader2 } from "lucide-react";
@@ -28,25 +28,21 @@ const ProductPage = () => {
 
   const { data: allProducts = [] } = useProducts();
   const product = useMemo(() => allProducts.find((p) => p.id === id), [allProducts, id]);
-  const { data: productDetail } = useProductDetail(id);
-
   const gallery = useMemo(() => {
-    if (productDetail?.imagens && productDetail.imagens.length > 0) {
-      return productDetail.imagens as string[];
-    }
     return product?.image ? [product.image] : [];
-  }, [productDetail, product]);
+  }, [product]);
 
-  const description = productDetail?.detalhesFormatado || productDetail?.detalhes || product?.description || "";
+  const description = product?.description || "";
   const cleanDescription = description.replace(/<[^>]*>/g, "").trim();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     return () => {
       if (redirectTimeoutRef.current) {
         clearTimeout(redirectTimeoutRef.current);
       }
     };
-  }, []);
+  }, [id]);
 
   if (!product && allProducts.length > 0) {
     return (

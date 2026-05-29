@@ -1,0 +1,55 @@
+import { useQuery } from "@tanstack/react-query";
+
+interface StoreSettings {
+  storeName: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  topHeaderText?: string;
+  bannerUrls: string[];
+  phone: string;
+  instagram?: string;
+  cep: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  complement?: string;
+  hideAddress: boolean;
+  pixEnabled: boolean;
+  payOnDeliveryCash: boolean;
+  payOnDeliveryCardDebit: boolean;
+  payOnDeliveryCardCredit: boolean;
+}
+
+function buildSettingsImageUrl(path?: string | null) {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  
+  // If the path already includes 'settings/', we don't need to add it again
+  if (path.startsWith('settings/')) {
+    return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/${path}`;
+  }
+  
+  return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/settings/${path}`;
+}
+
+export function useStoreSettings() {
+  return useQuery({
+    queryKey: ["store-settings"],
+    queryFn: async (): Promise<StoreSettings> => {
+      const response = await fetch(`${import.meta.env.VITE_ADMIN_API}/store/settings`);
+      if (!response.ok) throw new Error("Failed to fetch store settings");
+      const data = await response.json();
+
+      return {
+        ...data,
+        logoUrl: buildSettingsImageUrl(data.logoUrl),
+        faviconUrl: buildSettingsImageUrl(data.faviconUrl),
+        bannerUrls: (data.bannerUrls || []).map(buildSettingsImageUrl),
+      };
+    },
+    staleTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 24 * 60 * 60 * 1000,
+  });
+}

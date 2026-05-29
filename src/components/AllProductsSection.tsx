@@ -10,8 +10,13 @@ const AllProductsSection = () => {
   const { selectedCategory, selectedCategoryId, searchTerm, selectedNicotineStrength } = useCart();
   const { data: allProducts = [], isLoading } = useProducts(selectedCategoryId);
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [visibleCount, setVisibleCount] = useState(() => {
+    const saved = sessionStorage.getItem("store_visible_count");
+    return saved ? parseInt(saved, 10) : ITEMS_PER_PAGE;
+  });
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  const prevFiltersRef = useRef({ selectedCategory, searchTerm, selectedNicotineStrength });
 
   const filteredProducts = allProducts
     .filter((p) => !p.isPromo)
@@ -34,13 +39,26 @@ const AllProductsSection = () => {
       return hasAvailableVariations && matchesSearch && matchesNicotine;
     });
 
-  // Reset visible count when filters change
+  // Reset visible count ONLY when filters ACTUALLY change
   useEffect(() => {
-    setVisibleCount(ITEMS_PER_PAGE);
+    const prev = prevFiltersRef.current;
+    if (
+      prev.selectedCategory !== selectedCategory ||
+      prev.searchTerm !== searchTerm ||
+      prev.selectedNicotineStrength !== selectedNicotineStrength
+    ) {
+      setVisibleCount(ITEMS_PER_PAGE);
+      sessionStorage.setItem("store_visible_count", ITEMS_PER_PAGE.toString());
+      prevFiltersRef.current = { selectedCategory, searchTerm, selectedNicotineStrength };
+    }
   }, [selectedCategory, searchTerm, selectedNicotineStrength]);
 
   const loadMore = useCallback(() => {
-    setVisibleCount((prev) => Math.min(prev + ITEMS_PER_PAGE, filteredProducts.length));
+    setVisibleCount((prev) => {
+      const next = Math.min(prev + ITEMS_PER_PAGE, filteredProducts.length);
+      sessionStorage.setItem("store_visible_count", next.toString());
+      return next;
+    });
   }, [filteredProducts.length]);
 
   // Intersection Observer for infinite scroll
@@ -60,6 +78,17 @@ const AllProductsSection = () => {
     observer.observe(loader);
     return () => observer.disconnect();
   }, [loadMore]);
+
+  if (isLoading) {
+    return (
+      <section className="py-24 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-muted-foreground">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm font-medium">Carregando catálogo...</p>
+        </div>
+      </section>
+    );
+  }
 
   if (filteredProducts.length === 0) return null;
 
