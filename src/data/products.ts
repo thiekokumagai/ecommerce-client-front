@@ -1,6 +1,7 @@
 export interface ProductVariationOption {
   label: string;
   available: boolean;
+  stock?: number;
 }
 
 export interface ProductVariationGroup {
@@ -17,6 +18,7 @@ export interface Product {
   price: number;
   oldPrice?: number;
   isPromo?: boolean;
+  stock?: number;
   variationGroup?: ProductVariationGroup;
 }
 

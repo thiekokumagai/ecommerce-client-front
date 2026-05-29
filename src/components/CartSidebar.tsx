@@ -307,9 +307,9 @@ const CartSidebar = () => {
       options.push({
         value: "PIX",
         title: "Pix",
-        subtitle: "Pagamento instantâneo com 5% de desconto",
+        subtitle: pixDiscountPercent > 0 ? `Pagamento instantâneo com ${pixDiscountPercent}% de desconto` : "Pagamento instantâneo",
         icon: Wallet,
-        highlight: "5% OFF",
+        highlight: pixDiscountPercent > 0 ? `${pixDiscountPercent}% OFF` : undefined,
       });
     }
     if (debitEnabled) {

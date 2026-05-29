@@ -78,6 +78,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     }
 
     if (cartItem) {
+      if (product.stock !== undefined && cartItem.quantity >= product.stock) return;
       updateQuantity(product.id, cartItem.quantity + 1);
       return;
     }
@@ -203,10 +204,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <button
               type="button"
               onClick={handleBuy}
-              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              disabled={product.stock === 0}
+              className={`mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold ${
+                product.stock === 0
+                  ? "bg-muted text-muted-foreground"
+                  : "bg-primary text-primary-foreground"
+              }`}
             >
               <ShoppingCart className="h-4 w-4" />
-              Comprar
+              {product.stock === 0 ? "Esgotado" : "Comprar"}
             </button>
           )}
         </div>

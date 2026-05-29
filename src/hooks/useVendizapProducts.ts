@@ -83,6 +83,7 @@ export function transformNewApiProduct(raw: NewApiProduct): Product & { isVisibl
     price: promoPriceNum || priceNum,
     oldPrice: promoPriceNum ? priceNum : undefined,
     isPromo: !!promoPriceNum,
+    stock: totalStock,
     variationGroup,
     isVisible: raw.isVisible,
   };

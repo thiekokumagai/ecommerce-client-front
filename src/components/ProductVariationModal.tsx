@@ -1,4 +1,13 @@
-import type { Product } from "@/data/products";
+const handleIncrease = () => {
+    if (!selectedOption || displayQuantity === 0) return;
+
+    const currentOption = product.variationGroup?.options.find(o => o.label === selectedOption);
+    if (currentOption?.stock !== undefined && displayQuantity >= currentOption.stock) return;
+
+    const nextQuantity = displayQuantity + 1;
+    setDisplayQuantity(nextQuantity);
+    updateQuantity(product.id, nextQuantity, selectedOption);
+  };import type { Product } from "@/data/products";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
