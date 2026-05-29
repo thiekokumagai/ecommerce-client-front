@@ -250,6 +250,12 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       ? baseMainText
       : `${baseMainText}, ${finalNumber}`;
 
+    let streetWithoutNumber = baseMainText;
+    if (finalNumber && finalNumber !== "s/n") {
+       const regex = new RegExp(`(?:,\\s*|\\s+)${finalNumber}\\b\\s*$`, 'i');
+       streetWithoutNumber = streetWithoutNumber.replace(regex, "").trim();
+    }
+
     const fullText = [
       mainText,
       secondaryText
@@ -259,7 +265,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
     onSave({
       id: selected.placeId || crypto.randomUUID(),
-      mainText: baseMainText,
+      mainText: streetWithoutNumber,
       number: finalNumber,
       secondaryText,
       fullText,
