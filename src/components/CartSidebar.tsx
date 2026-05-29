@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { useFreight } from "@/hooks/use-calculator-freight";
 import { ordersService } from "@/services/orders";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 
 import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
@@ -146,41 +147,10 @@ const StepIndicator = ({ currentStep }: { currentStep: CheckoutStep }) => {
   );
 };
 
-const paymentOptions: {
-  value: PaymentMethod;
-  title: string;
-  subtitle: string;
-  icon: typeof Wallet;
-  highlight?: string;
-}[] = [
-    {
-      value: "pix",
-      title: "Pix",
-      subtitle: "Pagamento instantâneo com 5% de desconto",
-      icon: Wallet,
-      highlight: "5% OFF",
-    },
-    {
-      value: "debito",
-      title: "Cartão de débito",
-      subtitle: "Pague na entrega",
-      icon: CreditCard,
-    },
-    {
-      value: "credito",
-      title: "Cartão de crédito",
-      subtitle: "Pague na entrega",
-      icon: CreditCard,
-    },
-    {
-      value: "dinheiro",
-      title: "Dinheiro",
-      subtitle: "Leve troco se precisar",
-      icon: Receipt,
-    },
   ];
 
 const CartSidebar = () => {
+  const { data: storeSettings } = useStoreSettings();
   const { calculate } = useFreight();
   const {
     items,
@@ -290,6 +260,57 @@ const CartSidebar = () => {
     }
     previousTotalItems.current = totalItems;
   }, [totalItems]);
+
+  const paymentOptions = useMemo(() => {
+    const options: {
+      value: PaymentMethod;
+      title: string;
+      subtitle: string;
+      icon: any;
+      highlight?: string;
+    }[] = [];
+    
+    // Fallback to true if settings aren't loaded yet to prevent empty screen on slow connections
+    const pixEnabled = storeSettings ? storeSettings.pixEnabled : true;
+    const debitEnabled = storeSettings ? storeSettings.payOnDeliveryCardDebit : true;
+    const creditEnabled = storeSettings ? storeSettings.payOnDeliveryCardCredit : true;
+    const cashEnabled = storeSettings ? storeSettings.payOnDeliveryCash : true;
+
+    if (pixEnabled) {
+      options.push({
+        value: "pix",
+        title: "Pix",
+        subtitle: "Pagamento instantâneo com 5% de desconto",
+        icon: Wallet,
+        highlight: "5% OFF",
+      });
+    }
+    if (debitEnabled) {
+      options.push({
+        value: "debito",
+        title: "Cartão de débito",
+        subtitle: "Pague na entrega",
+        icon: CreditCard,
+      });
+    }
+    if (creditEnabled) {
+      options.push({
+        value: "credito",
+        title: "Cartão de crédito",
+        subtitle: "Pague na entrega",
+        icon: CreditCard,
+      });
+    }
+    if (cashEnabled) {
+      options.push({
+        value: "dinheiro",
+        title: "Dinheiro",
+        subtitle: "Leve troco se precisar",
+        icon: Receipt,
+      });
+    }
+    return options;
+  }, [storeSettings]);
 
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
@@ -643,8 +664,11 @@ const CartSidebar = () => {
         installmentSurcharge: paymentMethod === 'credito' && creditMode === 'parcelado' ? creditTotal - totalPrice : 0,
         totalOrder: finalTotal,
         totalReceived: finalTotal,
-        paymentType: 'Na Entrega',
-        paymentMethod: paymentMethod,
+        paymentType: paymentMethod === 'pix' ? 'Online' : 'Na Entrega',
+        paymentMethod: paymentMethod === 'pix' ? 'PIX' : 
+                       paymentMethod === 'credito' ? 'Cartão de Crédito' : 
+                       paymentMethod === 'debito' ? 'Cartão de Débito' : 
+                       'Dinheiro',
         street: structuredAddress?.mainText || savedAddressDisplay,
         number: "S/N",
         neighborhood: structuredAddress?.secondaryText?.split(',')[0] || "Local",
