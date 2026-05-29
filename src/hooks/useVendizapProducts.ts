@@ -1,85 +1,112 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import type { Product, ProductVariationGroup } from "@/data/products";
 
-interface VendizapEstoqueCombinacao {
-  combinacao: Record<string, string>;
-  quantidade: number;
-}
-
-interface VendizapProduct {
+interface NewApiProduct {
   id: string;
-  descricao: string;
-  preco: number;
-  exibir: boolean;
-  destaque: boolean;
-  categorias_old?: string[];
-  tags?: string[];
-  detalhesFormatado?: string;
-  promocaoAplicada?: {
-    existe: boolean;
-    precoPromocional?: number;
-    percentual?: number;
-  };
-  estoque?: {
-    combinacoes?: VendizapEstoqueCombinacao[];
-  };
+  title: string;
+  categoryId: string;
+  description?: string;
+  descriptionFormated?: string;
+  price?: number;
+  promotionalPrice?: number;
+  imageUrl?: string;
+  isVisible?: boolean;
+  category?: { title: string };
+  variations?: {
+    id: string;
+    variation: {
+      id: string;
+      title: string;
+      options: { id: string; value: string }[];
+    };
+  }[];
+  items?: {
+    stock: number;
+    options: { option: { value: string } }[];
+  }[];
 }
 
-function buildVariationGroup(product: VendizapProduct): ProductVariationGroup | undefined {
-  const combos = product.estoque?.combinacoes;
-  if (!combos || combos.length === 0) return undefined;
-
-  // Get variation group name from the first combo's key
-  const firstCombo = combos[0]?.combinacao;
-  if (!firstCombo) return undefined;
-
-  const variationName = Object.keys(firstCombo)[0];
-  if (!variationName) return undefined;
-
-  const options = combos.map((c) => ({
-    label: c.combinacao[variationName] || "",
-    available: c.quantidade > 0,
-  }));
-
-  return { name: variationName, options };
+function buildImageUrl(path?: string) {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/products/${path}`;
 }
 
-export function transformProduct(raw: VendizapProduct): Product {
-  const hasPromo = raw.promocaoAplicada?.existe === true && raw.promocaoAplicada.precoPromocional;
-  const variationGroup = buildVariationGroup(raw);
+function buildCategoryImageUrl(path?: string) {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/categories/${path}`;
+}
+
+function buildVariationGroupFromNewApi(product: NewApiProduct): ProductVariationGroup | undefined {
+  if (!product.variations || product.variations.length === 0) return undefined;
+
+  const firstVariation = product.variations[0].variation;
+  
+  if (!firstVariation) return undefined;
+
+  const options = firstVariation.options.map(opt => {
+    // Check if there is any item with this option value that has stock > 0
+    const available = product.items?.some(item => 
+      item.stock > 0 && item.options.some(o => o.option.value === opt.value)
+    ) ?? false;
+    
+    return {
+      label: opt.value,
+      available,
+    };
+  });
+
+  return { name: firstVariation.title, options };
+}
+
+export function transformNewApiProduct(raw: NewApiProduct): Product & { isVisible?: boolean } {
+  const variationGroup = buildVariationGroupFromNewApi(raw);
+  
+  const totalStock = raw.items?.reduce((acc, item) => acc + item.stock, 0) || 0;
+
+  const promoPriceNum = raw.promotionalPrice ? Number(raw.promotionalPrice) : undefined;
+  const priceNum = raw.price ? Number(raw.price) : 0;
 
   return {
     id: raw.id,
-    name: raw.descricao,
-    image: "", // Will be loaded from detail
-    category: raw.categorias_old?.[0] || "",
-    description: raw.detalhesFormatado || raw.descricao,
-    price: hasPromo ? raw.promocaoAplicada!.precoPromocional! : raw.preco,
-    oldPrice: hasPromo ? raw.preco : undefined,
-    isPromo: hasPromo ? true : undefined,
+    name: raw.title,
+    image: buildImageUrl(raw.imageUrl),
+    category: raw.category?.title || raw.categoryId,
+    description: raw.descriptionFormated || raw.description || "",
+    price: promoPriceNum || priceNum,
+    oldPrice: promoPriceNum ? priceNum : undefined,
+    isPromo: !!promoPriceNum,
     variationGroup,
+    isVisible: raw.isVisible,
   };
 }
 
 export function useProducts(categoryId?: string | null) {
   return useQuery({
-    queryKey: categoryId ? ["vendizap-products-category", categoryId] : ["vendizap-products"],
+    queryKey: categoryId ? ["api-products-category", categoryId] : ["api-products"],
     queryFn: async (): Promise<Product[]> => {
-      const body = categoryId
-        ? { action: "productsByCategory", categoryId }
-        : { action: "products" };
+      let url = `${import.meta.env.VITE_ADMIN_API}/store/products?limit=100`;
+      if (categoryId) {
+        url += `&categoryId=${categoryId}`;
+      }
 
-      const { data, error } = await supabase.functions.invoke("vendizap-api", {
-        body,
-      });
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch products");
+      const data = await response.json();
+      
+      // Handle the new paginated wrapper or raw array
+      const productList: NewApiProduct[] = Array.isArray(data) ? data : (data.data || []);
 
-      if (error) throw error;
-
-      const products = (data as VendizapProduct[]).map(transformProduct);
+      const products = productList.map(transformNewApiProduct);
       
       return products.filter((p) => {
-        if (!p.variationGroup) return true;
+        if (p.isVisible === false) return false;
+        
+        if (!p.variationGroup) {
+          // If no variations, check if total stock > 0. But for now, we assume simple products are available if they were returned active.
+          return true;
+        }
         return p.variationGroup.options.some((o) => o.available);
       });
     },
@@ -90,16 +117,15 @@ export function useProducts(categoryId?: string | null) {
 
 export function useProductDetail(id: string | undefined) {
   return useQuery({
-    queryKey: ["vendizap-product", id],
+    queryKey: ["api-product", id],
     queryFn: async () => {
       if (!id) throw new Error("ID required");
 
-      const { data, error } = await supabase.functions.invoke("vendizap-api", {
-        body: { action: "product", id },
-      });
-
-      if (error) throw error;
-      return data as any;
+      const response = await fetch(`${import.meta.env.VITE_ADMIN_API}/store/products/${id}`);
+      if (!response.ok) throw new Error("Failed to fetch product");
+      
+      const data = await response.json();
+      return data; // Needs further transformation where used, or we could return transformNewApiProduct
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
@@ -109,19 +135,19 @@ export function useProductDetail(id: string | undefined) {
 
 export function useCategories() {
   return useQuery({
-    queryKey: ["vendizap-categories"],
+    queryKey: ["api-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("vendizap-api", {
-        body: { action: "categories" },
-      });
-
-      if (error) throw error;
-      return data as Array<{
-        id: string;
-        nome: string;
-        imagem?: string;
-        produtosAtivos: number;
-      }>;
+      const response = await fetch(`${import.meta.env.VITE_ADMIN_API}/store/categories`);
+      if (!response.ok) throw new Error("Failed to fetch categories");
+      
+      const data = await response.json();
+      
+      return data.map((c: any) => ({
+        id: c.id,
+        nome: c.title,
+        imagem: buildCategoryImageUrl(c.image),
+        produtosAtivos: 0, // We don't have this straight from the API right now
+      }));
     },
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
