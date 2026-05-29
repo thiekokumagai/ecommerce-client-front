@@ -40,7 +40,7 @@ const SESSION_PHONE_KEY = "podemais-checkout-phone";
 const PIX_KEY = "(67) 99213-0201";
 const PIX_HOLDER = "Wesley Thieko de Aguiar Kumagai";
 
-const CREDIT_INSTALLMENTS = [
+const creditInstallmentsOptions = [
   { value: 1, interest: 0 },
   { value: 2, interest: 5.95 },
   { value: 3, interest: 6.5 },
@@ -161,6 +161,35 @@ const CartSidebar = () => {
     addOrder,
     clearCart,
   } = useCart();
+
+
+  const pixDiscountPercent = useMemo(() => {
+    const rule = storeSettings?.paymentRules?.find((r) => r.paymentMethod === 'pix' && r.type === 'discount');
+    return rule ? rule.value : 0;
+  }, [storeSettings]);
+
+  const creditInstallmentsOptions = useMemo(() => {
+    const rules = storeSettings?.paymentRules?.filter(r => r.paymentMethod === 'credit' && r.type === 'charge') || [];
+    const options = [{ value: 1, interest: 0 }];
+    
+    if (rules.length === 0) return options;
+
+    rules.sort((a, b) => (a.parcelaMin || 0) - (b.parcelaMin || 0));
+
+    rules.forEach(rule => {
+       const min = rule.parcelaMin || 2;
+       const max = rule.parcelaMax || min;
+       const interest = rule.passedToCustomer ? rule.value : 0; 
+       
+       for (let i = min; i <= max; i++) {
+           if (!options.find(o => o.value === i)) {
+               options.push({ value: i, interest: interest });
+           }
+       }
+    });
+
+    return options.sort((a, b) => a.value - b.value);
+  }, [storeSettings]);
 
   const [step, setStep] = useState<CheckoutStep>("cart");
   const [name, setName] = useState("");
@@ -310,11 +339,11 @@ const CartSidebar = () => {
     return options;
   }, [storeSettings]);
 
-  const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
+  const pixDiscount = useMemo(() => totalPrice * (pixDiscountPercent / 100), [totalPrice, pixDiscountPercent]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
   const effectiveCreditInstallments = paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" ? creditInstallments : 1;
   const selectedInstallment =
-    CREDIT_INSTALLMENTS.find((installment) => installment.value === effectiveCreditInstallments) ?? CREDIT_INSTALLMENTS[0];
+    creditInstallmentsOptions.find((installment) => installment.value === effectiveCreditInstallments) ?? creditInstallmentsOptions[0];
 
   const creditTotal = useMemo(() => {
     if (paymentMethod !== "Cartão de Crédito") return totalPrice;
@@ -1220,7 +1249,7 @@ const CartSidebar = () => {
 
                         {creditMode === "parcelado" && (
                           <div className="mt-4 space-y-2">
-                            {CREDIT_INSTALLMENTS.filter((installment) => installment.value >= 2).map((installment) => {
+                            {creditInstallmentsOptions.filter((installment) => installment.value >= 2).map((installment) => {
                               const totalInstallmentPrice = totalPrice * (1 + installment.interest / 100);
                               const perInstallment = totalInstallmentPrice / installment.value;
                               const isSelected = creditInstallments === installment.value;

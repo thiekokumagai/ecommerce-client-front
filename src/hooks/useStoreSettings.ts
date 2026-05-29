@@ -20,6 +20,25 @@ interface StoreSettings {
   payOnDeliveryCash: boolean;
   payOnDeliveryCardDebit: boolean;
   payOnDeliveryCardCredit: boolean;
+  paymentRules?: {
+    id: string;
+    paymentMethod: string;
+    type: "discount" | "charge";
+    value: number;
+    parcelaMin?: number;
+    parcelaMax?: number;
+    passedToCustomer?: boolean;
+  }[];
+  deliveryOriginCep?: string;
+  deliveryOriginNumber?: string;
+  deliveryRanges?: {
+    ranges: {
+      id: string;
+      distancia: number;
+      valor: number;
+    }[];
+    allowAboveMax?: boolean;
+  };
 }
 
 function buildSettingsImageUrl(path?: string | null) {

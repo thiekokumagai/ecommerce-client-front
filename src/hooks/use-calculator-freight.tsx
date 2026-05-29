@@ -1,18 +1,5 @@
 import { useCallback, useState } from "react";
-
-const ORIGIN_ADDRESS =
-    "Rua Glauce Rocha, 539, Campo Grande, MS, Brasil";
-
-const PRICING_TIERS = [
-    { maxKm: 4, price: 10 },
-    { maxKm: 6, price: 12 },
-    { maxKm: 8, price: 15 },
-    { maxKm: 12, price: 20 },
-    { maxKm: 15, price: 22 },
-    { maxKm: 17, price: 25 },
-    { maxKm: 20, price: 30 },
-    { maxKm: 32, price: 35 },
-];
+import { useStoreSettings } from "./useStoreSettings";
 
 type FreightResult = {
     distanceKm: number;
@@ -26,20 +13,37 @@ type FreightError = {
     distanceKm?: number;
 };
 
-function getFreightPrice(distanceKm: number): number | null {
-    for (const tier of PRICING_TIERS) {
-        if (distanceKm <= tier.maxKm) return tier.price;
+type DeliveryRange = {
+    id: string;
+    distancia: number;
+    valor: number;
+};
+
+function getFreightPrice(distanceKm: number, ranges: DeliveryRange[]): number | null {
+    if (!ranges || ranges.length === 0) return null;
+    
+    // Assegurar que as faixas estão ordenadas por distância
+    const sortedRanges = [...ranges].sort((a, b) => a.distancia - b.distancia);
+    
+    for (const tier of sortedRanges) {
+        if (distanceKm <= tier.distancia) return tier.valor;
     }
     return null;
 }
 
-function validateDistance(distanceKm: number): FreightError | null {
+function validateDistance(
+    distanceKm: number, 
+    ranges: DeliveryRange[], 
+    allowAboveMax: boolean
+): FreightError | null {
+    if (!ranges || ranges.length === 0) return null;
 
     const km = Math.round(distanceKm * 10) / 10;
+    const maxDistance = Math.max(...ranges.map(r => r.distancia));
 
-    if (km > 32) {
+    if (km > maxDistance && !allowAboveMax) {
         return {
-            error: "Endereço fora da área de entrega (máximo 32km).",
+            error: `Endereço fora da área de entrega (máximo ${maxDistance}km).`,
             distanceKm: km,
         };
     }
@@ -47,7 +51,7 @@ function validateDistance(distanceKm: number): FreightError | null {
     return null;
 }
 
-async function fetchRoute(destination: string) {
+async function fetchRoute(origin: string, destination: string) {
     const response = await fetch(
         "https://routes.googleapis.com/directions/v2:computeRoutes",
         {
@@ -58,7 +62,7 @@ async function fetchRoute(destination: string) {
                 "X-Goog-FieldMask": "routes.distanceMeters,routes.duration",
             },
             body: JSON.stringify({
-                origin: { address: ORIGIN_ADDRESS },
+                origin: { address: origin },
                 destination: { address: destination },
                 travelMode: "DRIVE",
             }),
@@ -75,6 +79,7 @@ async function fetchRoute(destination: string) {
 }
 
 export function useFreight() {
+    const { data: storeSettings } = useStoreSettings();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [distanceKm, setDistanceKm] = useState<number | null>(null);
@@ -90,14 +95,23 @@ export function useFreight() {
                 return null;
             }
 
-            const route = await fetchRoute(destination);
+            // Fallback origin if missing
+            const cep = storeSettings?.deliveryOriginCep || "79000-000";
+            const num = storeSettings?.deliveryOriginNumber || "";
+            const originAddress = `CEP ${cep}, ${num}, Brasil`;
+
+            const route = await fetchRoute(originAddress, destination);
 
             const km = route.distanceMeters / 1000;
             const duration = route.duration;
 
-            const validationError = validateDistance(km);
+            const ranges = storeSettings?.deliveryRanges?.ranges || [];
+            const allowAboveMax = !!storeSettings?.deliveryRanges?.allowAboveMax;
+
+            const validationError = validateDistance(km, ranges, allowAboveMax);
             if (validationError) return validationError;
-            const freightPrice = getFreightPrice(km);
+            
+            const freightPrice = getFreightPrice(km, ranges);
 
             const result: FreightResult = {
                 distanceKm: Math.round(km * 10) / 10,
@@ -117,7 +131,7 @@ export function useFreight() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [storeSettings]);
 
     return {
         calculate,
