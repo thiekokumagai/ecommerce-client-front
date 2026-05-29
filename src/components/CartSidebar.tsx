@@ -147,8 +147,6 @@ const StepIndicator = ({ currentStep }: { currentStep: CheckoutStep }) => {
   );
 };
 
-  ];
-
 const CartSidebar = () => {
   const { data: storeSettings } = useStoreSettings();
   const { calculate } = useFreight();
