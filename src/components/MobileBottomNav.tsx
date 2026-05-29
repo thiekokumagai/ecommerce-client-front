@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/services/api";
 import { useCart } from "@/contexts/CartContext";
 
 const SESSION_ADDRESS_KEY = "podemais-checkout-address";
@@ -35,11 +35,11 @@ const MobileBottomNav = () => {
         setSavedAddress(parsedAddress);
 
         const destination = [parsedAddress.fullText, parsedAddress.complement].filter(Boolean).join(", ");
-        const { data } = await supabase.functions.invoke("calculate-freight", {
-          body: { destination },
+        const response = await api.post<{ freightPrice: number }>("/store/settings/calculate-freight", {
+          destination,
         });
 
-        setDeliveryFee(typeof data?.freightPrice === "number" ? data.freightPrice : 0);
+        setDeliveryFee(typeof response?.freightPrice === "number" ? response.freightPrice : 0);
       } catch {
         setSavedAddress(null);
         setDeliveryFee(0);

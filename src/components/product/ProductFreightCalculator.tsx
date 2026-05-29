@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Truck, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { api } from "@/services/api";
 
 interface FreightResult {
   distanceKm: number;
@@ -73,13 +73,13 @@ const ProductFreightCalculator = ({
 
       const fullDestination = parts.join(", ");
 
-      const { data, error } = await supabase.functions.invoke("calculate-freight", {
-        body: { destination: fullDestination },
-      });
+      const { data, error } = await api.post<any>("/store/settings/calculate-freight", {
+        destination: fullDestination,
+      }).then(res => ({ data: res, error: null })).catch(err => ({ data: null, error: err }));
 
       if (error) {
         setResult({ distanceKm: 0, error: "Erro ao calcular frete." });
-      } else if (data.error) {
+      } else if (data?.error) {
         setResult({ distanceKm: data.distanceKm || 0, error: data.error });
       } else {
         setResult(data);

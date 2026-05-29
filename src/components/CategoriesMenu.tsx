@@ -1,13 +1,7 @@
-import { X } from "lucide-react";
+import { X, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
-import catDescartavel from "@/assets/cat-descartavel.webp";
-import catLifepod from "@/assets/cat-lifepod.webp";
-import catNicsalt from "@/assets/cat-nicsalt.webp";
-import catResistencia from "@/assets/cat-resistencia.webp";
-import catJuice from "@/assets/cat-juice.webp";
-import catPodsystem from "@/assets/cat-podsystem.webp";
-import catAcessorios from "@/assets/cat-acessorios.webp";
+import { useCategories } from "@/hooks/useVendizapProducts";
 import { cn } from "@/lib/utils";
 
 interface CategoriesMenuProps {
@@ -15,19 +9,16 @@ interface CategoriesMenuProps {
   onClose: () => void;
 }
 
-const categories = [
-  { name: "Descartável", image: catDescartavel },
-  { name: "Life Pod", image: catLifepod },
-  { name: "NicSalt", image: catNicsalt },
-  { name: "Resistência", image: catResistencia },
-  { name: "Juice", image: catJuice },
-  { name: "Pod System", image: catPodsystem },
-  { name: "Acessórios", image: catAcessorios },
-];
-
 const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
   const navigate = useNavigate();
   const { selectedCategory, setSelectedCategory, setSelectedNicotineStrength } = useCart();
+  const { data: apiCategories = [] } = useCategories();
+
+  const categories = apiCategories.map((cat) => ({
+    id: cat.id,
+    name: cat.nome.trim(),
+    image: cat.imagem || "",
+  }));
 
   if (!open) return null;
 
@@ -60,10 +51,10 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
 
           return (
             <button
-              key={category.name}
+              key={category.id}
               type="button"
               onClick={() => {
-                setSelectedCategory(category.name);
+                setSelectedCategory(category.name, category.id);
                 if (category.name !== "NicSalt") {
                   setSelectedNicotineStrength(null);
                 }
@@ -80,12 +71,16 @@ const CategoriesMenu = ({ open, onClose }: CategoriesMenuProps) => {
                 isActive ? "bg-secondary" : "hover:bg-secondary/70",
               )}
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className="h-9 w-9 rounded-full object-cover"
-                />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-sm overflow-hidden border border-border">
+                {category.image ? (
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Package className="h-5 w-5 text-muted-foreground" />
+                )}
               </div>
               <span
                 className={cn(
