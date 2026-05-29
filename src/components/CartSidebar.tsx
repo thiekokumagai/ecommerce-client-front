@@ -71,7 +71,7 @@ const parseCurrencyInput = (value: string) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-type PaymentMethod = "pix" | "debito" | "credito" | "dinheiro";
+type PaymentMethod = "PIX" | "Cartão de Débito" | "Cartão de Crédito" | "Dinheiro";
 type CheckoutStep = "cart" | "delivery" | "payment" | "confirmation";
 type CreditMode = "avista" | "parcelado";
 
@@ -278,7 +278,7 @@ const CartSidebar = () => {
 
     if (pixEnabled) {
       options.push({
-        value: "pix",
+        value: "PIX",
         title: "Pix",
         subtitle: "Pagamento instantâneo com 5% de desconto",
         icon: Wallet,
@@ -287,7 +287,7 @@ const CartSidebar = () => {
     }
     if (debitEnabled) {
       options.push({
-        value: "debito",
+        value: "Cartão de Débito",
         title: "Cartão de débito",
         subtitle: "Pague na entrega",
         icon: CreditCard,
@@ -295,7 +295,7 @@ const CartSidebar = () => {
     }
     if (creditEnabled) {
       options.push({
-        value: "credito",
+        value: "Cartão de Crédito",
         title: "Cartão de crédito",
         subtitle: "Pague na entrega",
         icon: CreditCard,
@@ -303,7 +303,7 @@ const CartSidebar = () => {
     }
     if (cashEnabled) {
       options.push({
-        value: "dinheiro",
+        value: "Dinheiro",
         title: "Dinheiro",
         subtitle: "Leve troco se precisar",
         icon: Receipt,
@@ -314,18 +314,18 @@ const CartSidebar = () => {
 
   const pixDiscount = useMemo(() => totalPrice * 0.05, [totalPrice]);
   const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
-  const effectiveCreditInstallments = paymentMethod === "credito" && creditMode === "parcelado" ? creditInstallments : 1;
+  const effectiveCreditInstallments = paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" ? creditInstallments : 1;
   const selectedInstallment =
     CREDIT_INSTALLMENTS.find((installment) => installment.value === effectiveCreditInstallments) ?? CREDIT_INSTALLMENTS[0];
 
   const creditTotal = useMemo(() => {
-    if (paymentMethod !== "credito") return totalPrice;
+    if (paymentMethod !== "Cartão de Crédito") return totalPrice;
     return totalPrice * (1 + selectedInstallment.interest / 100);
   }, [paymentMethod, selectedInstallment.interest, totalPrice]);
 
   const discountedProductsTotal = useMemo(() => {
-    if (paymentMethod === "pix") return totalWithPixDiscount;
-    if (paymentMethod === "credito") return creditTotal;
+    if (paymentMethod === "PIX") return totalWithPixDiscount;
+    if (paymentMethod === "Cartão de Crédito") return creditTotal;
     return totalPrice;
   }, [paymentMethod, totalWithPixDiscount, creditTotal, totalPrice]);
 
@@ -345,15 +345,15 @@ const CartSidebar = () => {
   }, [structuredAddress]);
 
   const paymentLabel =
-    paymentMethod === "pix"
+    paymentMethod === "PIX"
       ? "PIX"
-      : paymentMethod === "debito"
+      : paymentMethod === "Cartão de Débito"
         ? "Cartão de débito"
-        : paymentMethod === "credito"
+        : paymentMethod === "Cartão de Crédito"
           ? creditMode === "parcelado"
             ? `Cartão de crédito - ${effectiveCreditInstallments}x`
             : "Cartão de crédito à vista"
-          : paymentMethod === "dinheiro"
+          : paymentMethod === "Dinheiro"
             ? "Dinheiro"
             : "-";
 
@@ -409,7 +409,7 @@ const CartSidebar = () => {
   const hasSelectedPaymentMethod = paymentMethod !== null;
   const isPaymentValid =
     hasSelectedPaymentMethod &&
-    (paymentMethod !== "dinheiro" || needsChange === "não" || (changeFor.trim().length > 0 && isChangeEnough));
+    (paymentMethod !== "Dinheiro" || needsChange === "não" || (changeFor.trim().length > 0 && isChangeEnough));
   const closeCart = useCallback(() => setIsCartOpen(false), [setIsCartOpen]);
 
   const handleNameChange = (value: string) => {
@@ -549,12 +549,12 @@ const CartSidebar = () => {
       return;
     }
 
-    if (paymentMethod === "dinheiro" && needsChange === "sim" && !changeFor.trim()) {
+    if (paymentMethod === "Dinheiro" && needsChange === "sim" && !changeFor.trim()) {
       toast.info("Informe o valor do troco para continuar.");
       return;
     }
 
-    if (paymentMethod === "dinheiro" && needsChange === "sim" && !isChangeEnough) {
+    if (paymentMethod === "Dinheiro" && needsChange === "sim" && !isChangeEnough) {
       toast.info("O troco precisa ser para um valor maior ou igual ao total com entrega.");
       return;
     }
@@ -597,28 +597,28 @@ const CartSidebar = () => {
     ...(checkoutSavedCouponCode ? [`Cupom: ${checkoutSavedCouponCode}`] : []),
     "",
     `Subtotal dos produtos: ${formatPrice(checkoutSubtotal)}`,
-    ...(checkoutPaymentMethod === "pix" ? [`Desconto Pix: -${formatPrice(checkoutPixDiscount)}`] : []),
-    ...(checkoutPaymentMethod === "credito" ? [
+    ...(checkoutPaymentMethod === "PIX" ? [`Desconto Pix: -${formatPrice(checkoutPixDiscount)}`] : []),
+    ...(checkoutPaymentMethod === "Cartão de Crédito" ? [
       `Crédito: ${checkoutCreditMode === "avista" ? "À vista" : "Parcelado"}`,
       ...(checkoutCreditMode === "parcelado" ? [
         `Parcelamento: ${checkoutCreditInstallments}x`,
         ...(checkoutCreditInterest > 0 ? [`Juros do crédito: +${checkoutCreditInterest.toFixed(2).replace(".", ",")}%`] : []),
       ] : []),
     ] : []),
-    checkoutPaymentMethod === "pix"
+    checkoutPaymentMethod === "PIX"
       ? `Forma de pagamento: Pix - Total com desconto: ${formatPrice(checkoutSubtotal - checkoutPixDiscount)}`
-      : checkoutPaymentMethod === "debito"
+      : checkoutPaymentMethod === "Cartão de Débito"
         ? "Forma de pagamento: Débito"
-        : checkoutPaymentMethod === "credito"
+        : checkoutPaymentMethod === "Cartão de Crédito"
           ? checkoutCreditMode === "parcelado"
             ? `Forma de pagamento: Crédito parcelado - ${checkoutCreditInstallments}x de ${formatPrice(checkoutTotal / checkoutCreditInstallments)}`
             : "Forma de pagamento: Crédito à vista"
           : "Forma de pagamento: Dinheiro",
-    ...(checkoutPaymentMethod === "dinheiro" ? [
+    ...(checkoutPaymentMethod === "Dinheiro" ? [
       `Precisa de troco: ${checkoutNeedsChange}`,
       ...(checkoutNeedsChange === "sim" ? [`Troco para: R$ ${checkoutChangeFor}`] : []),
     ] : []),
-    ...(checkoutPaymentMethod === "pix" ? [`Chave PIX: ${PIX_KEY}`, `Titular PIX: ${PIX_HOLDER}`] : []),
+    ...(checkoutPaymentMethod === "PIX" ? [`Chave PIX: ${PIX_KEY}`, `Titular PIX: ${PIX_HOLDER}`] : []),
     `Taxa do motoboy: ${formatPrice(checkoutDeliveryFee)}`,
     `Total final com entrega: ${formatPrice(checkoutTotal)}`,
   ].join("\n")), [
@@ -646,7 +646,7 @@ const CartSidebar = () => {
       return;
     }
 
-    if (paymentMethod === "dinheiro" && needsChange === "sim" && !isChangeEnough) {
+    if (paymentMethod === "Dinheiro" && needsChange === "sim" && !isChangeEnough) {
       toast.info("O troco precisa ser para um valor maior ou igual ao total com entrega.");
       return;
     }
@@ -660,17 +660,14 @@ const CartSidebar = () => {
         customerPhone: phone.trim(),
         itemsTotal: totalPrice,
         freight: deliveryFee,
-        paymentDiscount: paymentMethod === 'pix' ? pixDiscount : 0,
-        installmentSurcharge: paymentMethod === 'credito' && creditMode === 'parcelado' ? creditTotal - totalPrice : 0,
+        paymentDiscount: paymentMethod === 'PIX' ? pixDiscount : 0,
+        installmentSurcharge: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? creditTotal - totalPrice : 0,
         totalOrder: finalTotal,
         totalReceived: finalTotal,
-        paymentType: paymentMethod === 'pix' ? 'Online' : 'Na Entrega',
-        paymentMethod: paymentMethod === 'pix' ? 'PIX' : 
-                       paymentMethod === 'credito' ? 'Cartão de Crédito' : 
-                       paymentMethod === 'debito' ? 'Cartão de Débito' : 
-                       'Dinheiro',
+        paymentType: paymentMethod === 'PIX' ? 'Online' : 'Na Entrega',
+        paymentMethod: paymentMethod,
         street: structuredAddress?.mainText || savedAddressDisplay,
-        number: "S/N",
+        number: structuredAddress?.number || "S/N",
         neighborhood: structuredAddress?.secondaryText?.split(',')[0] || "Local",
         city: "Campo Grande",
         state: "MS",
@@ -725,7 +722,7 @@ const CartSidebar = () => {
       });
 
       clearCart();
-      setHasCopiedPix(paymentMethod !== "pix");
+      setHasCopiedPix(paymentMethod !== "PIX");
       setIsCartOpen(false);
       setIsFinishModalOpen(true);
     } catch (error: any) {
@@ -1153,7 +1150,7 @@ const CartSidebar = () => {
                             type="button"
                             onClick={() => {
                               setPaymentMethod(option.value);
-                              if (option.value === "credito") {
+                              if (option.value === "Cartão de Crédito") {
                                 setCreditMode("avista");
                                 setCreditInstallments(1);
                               }
@@ -1191,7 +1188,7 @@ const CartSidebar = () => {
                       })}
                     </div>
 
-                    {paymentMethod === "credito" && (
+                    {paymentMethod === "Cartão de Crédito" && (
                       <div className="mt-4 rounded-2xl bg-secondary p-4">
                         <label className="mb-2 block text-sm font-medium text-foreground">No crédito</label>
                         <div className="grid grid-cols-2 gap-2">
@@ -1257,7 +1254,7 @@ const CartSidebar = () => {
                       </div>
                     )}
 
-                    {paymentMethod === "dinheiro" && (
+                    {paymentMethod === "Dinheiro" && (
                       <div className="mt-4 space-y-3 rounded-2xl bg-secondary p-4">
                         <div>
                           <label className="mb-2 block text-sm font-medium text-foreground">Precisa de troco?</label>
@@ -1314,13 +1311,13 @@ const CartSidebar = () => {
                         <span className="text-muted-foreground">Subtotal</span>
                         <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
                       </div>
-                      {paymentMethod === "pix" && (
+                      {paymentMethod === "PIX" && (
                         <div className="flex justify-between text-primary">
                           <span>Desconto Pix</span>
                           <span className="font-medium">-{formatPrice(pixDiscount)}</span>
                         </div>
                       )}
-                      {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
+                      {paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
                         <div className="flex justify-between text-primary">
                           <span>Juros do parcelamento</span>
                           <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
@@ -1335,7 +1332,7 @@ const CartSidebar = () => {
                           <span className="font-semibold text-foreground">Total</span>
                           <span className="text-lg font-bold text-primary">{formatPrice(finalTotal)}</span>
                         </div>
-                        {paymentMethod === "credito" && creditMode === "parcelado" && (
+                        {paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" && (
                           <p className="mt-1 text-right text-xs text-muted-foreground">
                             {effectiveCreditInstallments}x de {formatPrice((discountedProductsTotal + deliveryFee) / effectiveCreditInstallments)}
                           </p>
@@ -1399,7 +1396,7 @@ const CartSidebar = () => {
                         <span className="text-muted-foreground">Forma de pagamento</span>
                         <span className="font-medium text-foreground">{paymentLabel}</span>
                       </div>
-                      {paymentMethod === "credito" && creditMode === "parcelado" && (
+                      {paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Parcelamento</span>
                           <span className="font-medium text-foreground">
@@ -1417,13 +1414,13 @@ const CartSidebar = () => {
                         <span className="text-muted-foreground">Subtotal</span>
                         <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
                       </div>
-                      {paymentMethod === "pix" && (
+                      {paymentMethod === "PIX" && (
                         <div className="flex justify-between text-primary">
                           <span>Desconto Pix</span>
                           <span className="font-medium">-{formatPrice(pixDiscount)}</span>
                         </div>
                       )}
-                      {paymentMethod === "credito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
+                      {paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" && selectedInstallment.interest > 0 && (
                         <div className="flex justify-between text-primary">
                           <span>Juros do parcelamento</span>
                           <span className="font-medium">+{selectedInstallment.interest.toFixed(2).replace(".", ",")}%</span>
@@ -1433,7 +1430,7 @@ const CartSidebar = () => {
                         <span className="text-muted-foreground">Entrega</span>
                         <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
                       </div>
-                      {paymentMethod === "dinheiro" && needsChange === "sim" && changeFor && (
+                      {paymentMethod === "Dinheiro" && needsChange === "sim" && changeFor && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Troco para</span>
                           <span className="font-medium text-foreground">R$ {changeFor}</span>
@@ -1590,7 +1587,7 @@ const CartSidebar = () => {
       <Dialog
         open={isFinishModalOpen}
         onOpenChange={(open) => {
-          if (paymentMethod === "pix" && !hasCopiedPix && !open) {
+          if (paymentMethod === "PIX" && !hasCopiedPix && !open) {
             return;
           }
           setIsFinishModalOpen(open);
@@ -1600,10 +1597,10 @@ const CartSidebar = () => {
           showCloseButton={false}
           className="z-[120] h-[100dvh] w-screen max-w-none rounded-none border-0 bg-[#5d5d5d]/85 p-0 shadow-none sm:h-auto sm:w-full sm:max-w-md sm:rounded-[32px] sm:border sm:border-border sm:bg-background sm:p-0 sm:shadow-2xl"
           onPointerDownOutside={(event) => {
-            if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
+            if (paymentMethod === "PIX" && !hasCopiedPix) event.preventDefault();
           }}
           onEscapeKeyDown={(event) => {
-            if (paymentMethod === "pix" && !hasCopiedPix) event.preventDefault();
+            if (paymentMethod === "PIX" && !hasCopiedPix) event.preventDefault();
           }}
         >
           <div className="flex h-full w-full items-center justify-center p-0 sm:p-0">
@@ -1682,7 +1679,7 @@ const CartSidebar = () => {
                     <span className="font-semibold">{formatPrice(checkoutDeliveryFee)}</span>
                   </div>
 
-                  {checkoutPaymentMethod === "pix" && (
+                  {checkoutPaymentMethod === "PIX" && (
                     <div className="mt-1 flex items-center justify-between gap-4">
                       <span>Desconto PIX</span>
                       <span className="font-semibold">-{formatPrice(checkoutPixDiscount)}</span>
@@ -1697,12 +1694,12 @@ const CartSidebar = () => {
 
                 <div className="mt-6 space-y-1 text-[15px] text-[#666666]">
                   <p>
-                    Pagamento: <span className="font-medium">{checkoutPaymentMethod === "pix" ? "Online" : "Na entrega"}</span>
+                    Pagamento: <span className="font-medium">{checkoutPaymentMethod === "PIX" ? "Online" : "Na entrega"}</span>
                   </p>
                   <p>
                     Forma de pagamento: <span className="font-medium">{checkoutPaymentLabel}</span>
                   </p>
-                  {checkoutPaymentMethod === "pix" && (
+                  {checkoutPaymentMethod === "PIX" && (
                     <p>
                       Chave PIX: <span className="font-semibold">{PIX_KEY}</span>{" "}
                       <button
@@ -1722,7 +1719,7 @@ const CartSidebar = () => {
               </div>
 
               <div className="border-t border-[#e6e6e6] px-6 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-4 sm:px-8 sm:pb-6">
-                {checkoutPaymentMethod === "pix" && !hasCopiedPix ? (
+                {checkoutPaymentMethod === "PIX" && !hasCopiedPix ? (
                   <button
                     type="button"
                     onClick={handleCopyPix}

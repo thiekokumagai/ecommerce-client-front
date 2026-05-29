@@ -37,6 +37,7 @@ export interface StructuredAddress {
   mainText: string;
   secondaryText: string;
   fullText: string;
+  number?: string;
   complement: string;
   reference: string;
   noComplement: boolean;
@@ -258,7 +259,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
     onSave({
       id: selected.placeId || crypto.randomUUID(),
-      mainText,
+      mainText: baseMainText,
+      number: finalNumber,
       secondaryText,
       fullText,
       complement,
