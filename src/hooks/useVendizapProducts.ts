@@ -29,13 +29,13 @@ interface NewApiProduct {
 function buildImageUrl(path?: string) {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/products/${path}`;
+  return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/${path}`;
 }
 
 function buildCategoryImageUrl(path?: string) {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/categories/${path}`;
+  return `${import.meta.env.VITE_MINIO_PUBLIC_URL}/${import.meta.env.VITE_MINIO_BUCKET || 'podemaismidia'}/${path}`;
 }
 
 function buildVariationGroupFromNewApi(product: NewApiProduct): ProductVariationGroup | undefined {
