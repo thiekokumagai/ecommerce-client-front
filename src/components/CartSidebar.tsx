@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { useFreight } from "@/hooks/use-calculator-freight";
+import { ordersService } from "@/services/orders";
 
 
 import AddressSearch, { type StructuredAddress } from "@/components/checkout/AddressSearch";
@@ -217,6 +218,7 @@ const CartSidebar = () => {
   const [isEditingCoupon, setIsEditingCoupon] = useState(false);
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
   const [hasCopiedPix, setHasCopiedPix] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [finalizedOrder, setFinalizedOrder] = useState<FinalizedOrder | null>(null);
   const previousTotalItems = useRef(totalItems);
   useEffect(() => {
@@ -617,7 +619,7 @@ const CartSidebar = () => {
     checkoutTotal,
   ]);
 
-  const finalizeOrder = () => {
+  const finalizeOrder = async () => {
     if (!isContactValid || !isAddressValid || !isPaymentValid || items.length === 0 || !paymentMethod || !hasValidDeliveryFee) {
       toast.info("Preencha todas as etapas obrigatórias para finalizar.");
       return;
@@ -628,49 +630,86 @@ const CartSidebar = () => {
       return;
     }
 
-    const orderItems = items.map((item) => ({ ...item }));
-    const orderId = crypto.randomUUID();
-    const createdAt = new Date().toISOString();
+    setIsSubmitting(true);
 
-    addOrder({
-      id: orderId,
-      createdAt,
-      customerName: name.trim(),
-      customerPhone: phone.trim(),
-      customerAddress: savedAddressDisplay,
-      paymentMethod,
-      deliveryFee,
-      subtotal: totalPrice,
-      total: finalTotal,
-      items: orderItems,
-    });
+    try {
+      const orderItems = items.map((item) => ({ ...item }));
+      const payload = {
+        customerName: name.trim(),
+        customerPhone: phone.trim(),
+        itemsTotal: totalPrice,
+        freight: deliveryFee,
+        paymentDiscount: paymentMethod === 'pix' ? pixDiscount : 0,
+        installmentSurcharge: paymentMethod === 'credito' && creditMode === 'parcelado' ? creditTotal - totalPrice : 0,
+        totalOrder: finalTotal,
+        totalReceived: finalTotal,
+        paymentType: 'Na Entrega',
+        paymentMethod: paymentMethod,
+        street: structuredAddress?.mainText || savedAddressDisplay,
+        number: "S/N",
+        neighborhood: structuredAddress?.secondaryText?.split(',')[0] || "Local",
+        city: "Campo Grande",
+        state: "MS",
+        cep: "00000000",
+        complement: structuredAddress?.complement || "",
+        items: orderItems.map(item => ({
+          productId: item.product.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+          unitPrice: item.product.price,
+          subTotal: item.product.price * item.quantity,
+          variationString: item.selectedVariation
+        }))
+      };
 
-    setFinalizedOrder({
-      id: orderId,
-      createdAt,
-      customerName: name.trim(),
-      customerPhone: phone.trim(),
-      customerAddress: savedAddressDisplay,
-      orderNote,
-      paymentMethod,
-      paymentLabel,
-      deliveryFee,
-      subtotal: totalPrice,
-      total: finalTotal,
-      pixDiscount,
-      creditMode,
-      creditInstallments: effectiveCreditInstallments,
-      creditInterest: selectedInstallment.interest,
-      savedCouponCode,
-      needsChange,
-      changeFor,
-      items: orderItems,
-    });
+      const result = await ordersService.createStoreOrder(payload as any);
+      const orderId = result.id;
+      const createdAt = new Date().toISOString();
 
-    clearCart();
-    setHasCopiedPix(paymentMethod !== "pix");
-    setIsCartOpen(false);
-    setIsFinishModalOpen(true);
+      addOrder({
+        id: orderId,
+        createdAt,
+        customerName: name.trim(),
+        customerPhone: phone.trim(),
+        customerAddress: savedAddressDisplay,
+        paymentMethod,
+        deliveryFee,
+        subtotal: totalPrice,
+        total: finalTotal,
+        items: orderItems,
+      });
+
+      setFinalizedOrder({
+        id: orderId,
+        createdAt,
+        customerName: name.trim(),
+        customerPhone: phone.trim(),
+        customerAddress: savedAddressDisplay,
+        orderNote,
+        paymentMethod,
+        paymentLabel,
+        deliveryFee,
+        subtotal: totalPrice,
+        total: finalTotal,
+        pixDiscount,
+        creditMode,
+        creditInstallments: effectiveCreditInstallments,
+        creditInterest: selectedInstallment.interest,
+        savedCouponCode,
+        needsChange,
+        changeFor,
+        items: orderItems,
+      });
+
+      clearCart();
+      setHasCopiedPix(paymentMethod !== "pix");
+      setIsCartOpen(false);
+      setIsFinishModalOpen(true);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao criar pedido.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCopyPix = async () => {
@@ -1444,9 +1483,17 @@ const CartSidebar = () => {
                 <button
                   type="button"
                   onClick={finalizeOrder}
-                  className="w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground"
+                  disabled={isSubmitting}
+                  className="flex w-full items-center justify-center rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground disabled:opacity-70"
                 >
-                  Finalizar
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    "Finalizar"
+                  )}
                 </button>
               )}
             </div>
