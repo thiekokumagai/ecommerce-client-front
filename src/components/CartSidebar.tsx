@@ -338,10 +338,10 @@ const CartSidebar = () => {
 
   const savedAddressDisplay = useMemo(() => {
     if (!structuredAddress) return "";
-    const parts = [structuredAddress.mainText, structuredAddress.secondaryText];
+    const parts = [structuredAddress.mainText, structuredAddress.number, structuredAddress.secondaryText];
     if (structuredAddress.complement) parts.push(`Complemento: ${structuredAddress.complement}`);
     if (structuredAddress.reference) parts.push(`Referência: ${structuredAddress.reference}`);
-    return parts.join(", ");
+    return parts.filter(Boolean).join(", ");
   }, [structuredAddress]);
 
   const paymentLabel =
