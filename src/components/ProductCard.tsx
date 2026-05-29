@@ -4,7 +4,7 @@ import { CheckCircle2, Minus, Plus, ShoppingCart } from "lucide-react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/CartContext";
 import ProductVariationModal from "@/components/ProductVariationModal";
-import { useProductDetail } from "@/hooks/useVendizapProducts";
+
 
 interface ProductCardProps {
   product: Product;
@@ -19,9 +19,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [showVariationModal, setShowVariationModal] = useState(false);
   
-  // Lazy-load product detail to get image
-  const { data: detail } = useProductDetail(product.id);
-  const productImage = detail?.imagens?.[0] || product.image || "";
+  const productImage = product.image || "";
 
   const availableOptions = product.variationGroup?.options.filter((option) => option.available) ?? [];
   const cartItem = items.find(
