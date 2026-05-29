@@ -656,9 +656,8 @@ const CartSidebar = () => {
           productId: item.product.id,
           productName: item.product.name,
           quantity: item.quantity,
-          unitPrice: item.product.price,
-          subTotal: item.product.price * item.quantity,
-          variationString: item.selectedVariation
+          price: item.product.price,
+          variation: item.selectedVariation
         }))
       };
 
