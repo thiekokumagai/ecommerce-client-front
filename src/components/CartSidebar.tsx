@@ -373,13 +373,13 @@ const CartSidebar = () => {
 
   const paymentLabel =
     paymentMethod === "PIX"
-      ? "PIX"
+      ? "Pix"
       : paymentMethod === "Cartão de Débito"
-        ? "Cartão de débito"
+        ? "Cartão de Débito"
         : paymentMethod === "Cartão de Crédito"
           ? creditMode === "parcelado"
-            ? `Cartão de crédito - ${effectiveCreditInstallments}x`
-            : "Cartão de crédito à vista"
+            ? `Cartão de Crédito - ${effectiveCreditInstallments}x`
+            : "Cartão de Crédito à vista"
           : paymentMethod === "Dinheiro"
             ? "Dinheiro"
             : "-";
@@ -691,8 +691,8 @@ const CartSidebar = () => {
         installmentSurcharge: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? creditTotal - totalPrice : 0,
         totalOrder: finalTotal,
         totalReceived: finalTotal,
-        paymentType: paymentMethod === 'PIX' ? 'Online' : 'Na Entrega',
-        paymentMethod: paymentMethod,
+        paymentType: paymentMethod === 'PIX' ? 'online' : 'entrega',
+        paymentMethod: paymentMethod === 'PIX' ? 'pix' : paymentMethod === 'Cartão de Crédito' ? 'credito' : paymentMethod === 'Cartão de Débito' ? 'debito' : paymentMethod === 'Dinheiro' ? 'dinheiro' : paymentMethod,
         street: structuredAddress?.mainText || savedAddressDisplay,
         number: structuredAddress?.number || "S/N",
         neighborhood: structuredAddress?.secondaryText?.split(',')[0] || "Local",
