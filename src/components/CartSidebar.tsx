@@ -1721,7 +1721,7 @@ const CartSidebar = () => {
 
                 <div className="mt-6 space-y-1 text-[15px] text-[#666666]">
                   <p>
-                    Pagamento: <span className="font-medium">{checkoutPaymentMethod === "PIX" ? "Online" : "Na entrega"}</span>
+                    Pagamento: <span className="font-medium">{checkoutPaymentMethod === "PIX" ? "Online" : "Na Entrega"}</span>
                   </p>
                   <p>
                     Forma de pagamento: <span className="font-medium">{checkoutPaymentLabel}</span>
