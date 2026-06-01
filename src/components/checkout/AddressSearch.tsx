@@ -57,6 +57,11 @@ const extractAddressPart = (components: GeocoderAddressComponent[], types: strin
   return component?.long_name ?? "";
 };
 
+const extractAddressShortPart = (components: GeocoderAddressComponent[], types: string[]) => {
+  const component = components.find((item) => types.some((type) => item.types.includes(type)));
+  return (component as any)?.short_name ?? component?.long_name ?? "";
+};
+
 const waitForGoogleMaps = async () => {
   if (window.google?.maps) return true;
 
@@ -126,20 +131,19 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             if (result) {
                 const components = result.address_components;
                 const fetchedCity = extractAddressPart(components, ["administrative_area_level_2"]);
-                const fetchedState = extractAddressPart(components, ["administrative_area_level_1"]);
+                const fetchedState = extractAddressShortPart(components, ["administrative_area_level_1"]);
                 const fetchedPostalCode = extractAddressPart(components, ["postal_code"]);
                 if (fetchedPostalCode) {
                     let formatted = fetchedPostalCode.replace(/\D/g, "");
+                    if (formatted.length > 0 && formatted.length < 8) {
+                        formatted = formatted.padEnd(8, "0");
+                    }
                     if (formatted.length > 5) formatted = formatted.substring(0, 5) + "-" + formatted.substring(5, 8);
                     setCep(formatted);
                 }
                 if (fetchedCity) setCity(fetchedCity);
                 if (fetchedState) {
-                  let shortState = fetchedState;
-                  if (fetchedState.toLowerCase() === "mato grosso do sul") shortState = "MS";
-                  if (fetchedState.toLowerCase() === "são paulo") shortState = "SP";
-                  if (shortState.length > 2) shortState = shortState.substring(0, 2).toUpperCase();
-                  setState(shortState);
+                  setState(fetchedState.toUpperCase());
                 }
             }
         }
@@ -215,7 +219,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
               "neighborhood",
             ]);
             const city = extractAddressPart(components, ["administrative_area_level_2"]);
-            const state = extractAddressPart(components, ["administrative_area_level_1"]);
+            const state = extractAddressShortPart(components, ["administrative_area_level_1"]);
             const postalCode = extractAddressPart(components, ["postal_code"]);
 
             const mainText = route || result.formatted_address.split(",")[0];
@@ -231,14 +235,13 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             setStreet(mainText);
             setNeighborhood(neighborhood);
             if (city) setCity(city);
-            if (state) {
-              let shortState = state;
-              if (shortState.length > 2) shortState = shortState.substring(0, 2).toUpperCase();
-              setState(shortState);
-            }
+            if (state) setState(state.toUpperCase());
             setNumber(streetNumber);
             if (postalCode) {
                 let formatted = postalCode.replace(/\D/g, "");
+                if (formatted.length > 0 && formatted.length < 8) {
+                    formatted = formatted.padEnd(8, "0");
+                }
                 if (formatted.length > 5) formatted = formatted.substring(0, 5) + "-" + formatted.substring(5, 8);
                 setCep(formatted);
             }
