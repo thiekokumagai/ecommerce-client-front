@@ -179,7 +179,7 @@ const CartSidebar = () => {
     rules.forEach(rule => {
        const min = rule.parcelaMin || 2;
        const max = rule.parcelaMax || min;
-       const interest = rule.passedToCustomer ? rule.value : 0; 
+       const interest = rule.passedToCustomer !== false ? rule.value : 0; 
        
        for (let i = min; i <= max; i++) {
            if (!options.find(o => o.value === i)) {
@@ -685,12 +685,12 @@ const CartSidebar = () => {
       const payload = {
         customerName: name.trim(),
         customerPhone: phone.trim(),
-        itemsTotal: totalPrice,
-        freight: deliveryFee,
-        paymentDiscount: paymentMethod === 'PIX' ? pixDiscount : 0,
-        installmentSurcharge: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? creditTotal - totalPrice : 0,
-        totalOrder: finalTotal,
-        totalReceived: finalTotal,
+        itemsTotal: Number(totalPrice.toFixed(2)),
+        freight: Number(deliveryFee.toFixed(2)),
+        paymentDiscount: paymentMethod === 'PIX' ? Number(pixDiscount.toFixed(2)) : 0,
+        installmentSurcharge: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? Number((creditTotal - totalPrice).toFixed(2)) : 0,
+        totalOrder: Number(finalTotal.toFixed(2)),
+        totalReceived: Number(finalTotal.toFixed(2)),
         paymentType: paymentMethod === 'PIX' ? 'online' : 'entrega',
         paymentMethod: paymentMethod === 'PIX' ? 'pix' : paymentMethod === 'Cartão de Crédito' ? 'credit' : paymentMethod === 'Cartão de Débito' ? 'debit' : paymentMethod === 'Dinheiro' ? 'cash' : paymentMethod,
         street: structuredAddress?.mainText || savedAddressDisplay,
