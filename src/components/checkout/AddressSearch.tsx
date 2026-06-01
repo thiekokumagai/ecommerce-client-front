@@ -41,6 +41,9 @@ export interface StructuredAddress {
   complement: string;
   reference: string;
   noComplement: boolean;
+  cep?: string;
+  city?: string;
+  state?: string;
 }
 
 interface AddressSearchProps {
@@ -89,7 +92,10 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   );
   const [street, setStreet] = useState(initialAddress?.mainText || "");
   const [neighborhood, setNeighborhood] = useState(initialAddress?.secondaryText.split(",")[0]?.trim() || "");
+  const [city, setCity] = useState(initialAddress?.city || "Campo Grande");
+  const [state, setState] = useState(initialAddress?.state || "MS");
   const [number, setNumber] = useState("");
+  const [cep, setCep] = useState(initialAddress?.cep || "");
   const [complement, setComplement] = useState(initialAddress?.complement || "");
   const [reference, setReference] = useState(initialAddress?.reference || "");
   const [noNumber, setNoNumber] = useState(false);
@@ -104,12 +110,42 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   const { predictions, loading: isLoading, handleSelect } = useAddressAutocomplete({
     value: query,
     restrictToCampoGrande: true,
-    onSelect: (p) => {
+    onSelect: async (p) => {
       const extractedNumber = extractNumberFromQuery(query);
 
       setSelected(p);
       setStreet(p.mainText);
       setNeighborhood(p.secondaryText.split(",")[0]?.trim() || "");
+
+      try {
+        const mapsReady = await waitForGoogleMaps();
+        if (mapsReady) {
+            const geocoder = new window.google!.maps!.Geocoder();
+            const response = await geocoder.geocode({ placeId: p.placeId });
+            const result = response.results[0];
+            if (result) {
+                const components = result.address_components;
+                const fetchedCity = extractAddressPart(components, ["administrative_area_level_2"]);
+                const fetchedState = extractAddressPart(components, ["administrative_area_level_1"]);
+                const fetchedPostalCode = extractAddressPart(components, ["postal_code"]);
+                if (fetchedPostalCode) {
+                    let formatted = fetchedPostalCode.replace(/\D/g, "");
+                    if (formatted.length > 5) formatted = formatted.substring(0, 5) + "-" + formatted.substring(5, 8);
+                    setCep(formatted);
+                }
+                if (fetchedCity) setCity(fetchedCity);
+                if (fetchedState) {
+                  let shortState = fetchedState;
+                  if (fetchedState.toLowerCase() === "mato grosso do sul") shortState = "MS";
+                  if (fetchedState.toLowerCase() === "são paulo") shortState = "SP";
+                  if (shortState.length > 2) shortState = shortState.substring(0, 2).toUpperCase();
+                  setState(shortState);
+                }
+            }
+        }
+      } catch (err) {
+        console.error("Failed to fetch place details", err);
+      }
 
       if (extractedNumber) {
         setNumber(extractedNumber);
@@ -180,6 +216,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             ]);
             const city = extractAddressPart(components, ["administrative_area_level_2"]);
             const state = extractAddressPart(components, ["administrative_area_level_1"]);
+            const postalCode = extractAddressPart(components, ["postal_code"]);
 
             const mainText = route || result.formatted_address.split(",")[0];
             const secondaryText = [neighborhood, city, state].filter(Boolean).join(", ");
@@ -193,7 +230,18 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
 
             setStreet(mainText);
             setNeighborhood(neighborhood);
+            if (city) setCity(city);
+            if (state) {
+              let shortState = state;
+              if (shortState.length > 2) shortState = shortState.substring(0, 2).toUpperCase();
+              setState(shortState);
+            }
             setNumber(streetNumber);
+            if (postalCode) {
+                let formatted = postalCode.replace(/\D/g, "");
+                if (formatted.length > 5) formatted = formatted.substring(0, 5) + "-" + formatted.substring(5, 8);
+                setCep(formatted);
+            }
             setSelectionMode("location");
             setPhase("details");
           } catch (err) {
@@ -271,6 +319,9 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       fullText,
       complement,
       reference,
+      cep,
+      city,
+      state,
       noComplement,
     });
   };

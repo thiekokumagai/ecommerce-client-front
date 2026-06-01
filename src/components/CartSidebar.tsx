@@ -696,9 +696,9 @@ const CartSidebar = () => {
         street: structuredAddress?.mainText || savedAddressDisplay,
         number: structuredAddress?.number || "S/N",
         neighborhood: structuredAddress?.secondaryText?.split(',')[0] || "Local",
-        city: "Campo Grande",
-        state: "MS",
-        cep: "00000000",
+        city: structuredAddress?.city || "Campo Grande",
+        state: structuredAddress?.state || "MS",
+        cep: structuredAddress?.cep ? structuredAddress.cep : "00000-000",
         complement: structuredAddress?.complement || "",
         items: orderItems.map(item => ({
           productId: item.product.id,
