@@ -692,7 +692,7 @@ const CartSidebar = () => {
         totalOrder: finalTotal,
         totalReceived: finalTotal,
         paymentType: paymentMethod === 'PIX' ? 'online' : 'entrega',
-        paymentMethod: paymentMethod === 'PIX' ? 'pix' : paymentMethod === 'Cartão de Crédito' ? 'credito' : paymentMethod === 'Cartão de Débito' ? 'debito' : paymentMethod === 'Dinheiro' ? 'dinheiro' : paymentMethod,
+        paymentMethod: paymentMethod === 'PIX' ? 'pix' : paymentMethod === 'Cartão de Crédito' ? 'credit' : paymentMethod === 'Cartão de Débito' ? 'debit' : paymentMethod === 'Dinheiro' ? 'cash' : paymentMethod,
         street: structuredAddress?.mainText || savedAddressDisplay,
         number: structuredAddress?.number || "S/N",
         neighborhood: structuredAddress?.secondaryText?.split(',')[0] || "Local",
