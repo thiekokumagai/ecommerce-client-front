@@ -345,18 +345,17 @@ const CartSidebar = () => {
   const selectedInstallment =
     creditInstallmentsOptions.find((installment) => installment.value === effectiveCreditInstallments) ?? creditInstallmentsOptions[0];
 
-  const creditTotal = useMemo(() => {
-    if (paymentMethod !== "Cartão de Crédito") return totalPrice;
-    return totalPrice * (1 + selectedInstallment.interest / 100);
-  }, [paymentMethod, selectedInstallment.interest, totalPrice]);
+  const creditInterestAmount = useMemo(() => {
+    if (paymentMethod !== "Cartão de Crédito" || creditMode !== "parcelado") return 0;
+    return (totalPrice + deliveryFee) * (selectedInstallment.interest / 100);
+  }, [paymentMethod, creditMode, selectedInstallment.interest, totalPrice, deliveryFee]);
 
   const discountedProductsTotal = useMemo(() => {
     if (paymentMethod === "PIX") return totalWithPixDiscount;
-    if (paymentMethod === "Cartão de Crédito") return creditTotal;
     return totalPrice;
-  }, [paymentMethod, totalWithPixDiscount, creditTotal, totalPrice]);
+  }, [paymentMethod, totalWithPixDiscount, totalPrice]);
 
-  const finalTotal = discountedProductsTotal + deliveryFee;
+  const finalTotal = discountedProductsTotal + deliveryFee + creditInterestAmount;
   const parsedChangeFor = parseCurrencyInput(changeFor);
   const isChangeEnough = needsChange === "não" || parsedChangeFor >= finalTotal;
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
@@ -688,11 +687,12 @@ const CartSidebar = () => {
         itemsTotal: Number(totalPrice.toFixed(2)),
         freight: Number(deliveryFee.toFixed(2)),
         paymentDiscount: paymentMethod === 'PIX' ? Number(pixDiscount.toFixed(2)) : 0,
-        installmentSurcharge: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? Number((creditTotal - totalPrice).toFixed(2)) : 0,
+        installmentSurcharge: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? Number(creditInterestAmount.toFixed(2)) : 0,
         totalOrder: Number(finalTotal.toFixed(2)),
         totalReceived: Number(finalTotal.toFixed(2)),
         paymentType: paymentMethod === 'PIX' ? 'online' : 'entrega',
         paymentMethod: paymentMethod === 'PIX' ? 'pix' : paymentMethod === 'Cartão de Crédito' ? 'credit' : paymentMethod === 'Cartão de Débito' ? 'debit' : paymentMethod === 'Dinheiro' ? 'cash' : paymentMethod,
+        installments: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? effectiveCreditInstallments : 1,
         street: structuredAddress?.mainText || savedAddressDisplay,
         number: structuredAddress?.number || "S/N",
         neighborhood: structuredAddress?.secondaryText?.split(',')[0] || "Local",
@@ -1250,7 +1250,7 @@ const CartSidebar = () => {
                         {creditMode === "parcelado" && (
                           <div className="mt-4 space-y-2">
                             {creditInstallmentsOptions.filter((installment) => installment.value >= 2).map((installment) => {
-                              const totalInstallmentPrice = totalPrice * (1 + installment.interest / 100);
+                              const totalInstallmentPrice = (totalPrice + deliveryFee) * (1 + installment.interest / 100);
                               const perInstallment = totalInstallmentPrice / installment.value;
                               const isSelected = creditInstallments === installment.value;
 
@@ -1361,7 +1361,7 @@ const CartSidebar = () => {
                         </div>
                         {paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" && (
                           <p className="mt-1 text-right text-xs text-muted-foreground">
-                            {effectiveCreditInstallments}x de {formatPrice((discountedProductsTotal + deliveryFee) / effectiveCreditInstallments)}
+                            {effectiveCreditInstallments}x de {formatPrice(finalTotal / effectiveCreditInstallments)}
                           </p>
                         )}
                       </div>
