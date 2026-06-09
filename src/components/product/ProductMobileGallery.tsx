@@ -49,12 +49,6 @@ const ProductMobileGallery = ({
         <Search className="h-5 w-5" />
       </button>
 
-      <button
-        type="button"
-        className="absolute bottom-5 left-4 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#e10600]"
-      >
-        <Play className="h-4 w-4 fill-current" />
-      </button>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-[#cfc4ba] px-3 py-0.5 text-sm text-foreground/80">
         {selectedImage + 1} de {images.length}

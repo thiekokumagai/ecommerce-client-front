@@ -26,9 +26,10 @@ const ProductPage = () => {
   const [hasJustUpdated, setHasJustUpdated] = useState(false);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: allProducts = [] } = useProducts();
+  const { data: allProducts = [], isLoading } = useProducts();
   const product = useMemo(() => allProducts.find((p) => p.id === id), [allProducts, id]);
   const gallery = useMemo(() => {
+    if (product?.images && product.images.length > 0) return product.images;
     return product?.image ? [product.image] : [];
   }, [product]);
 
@@ -44,7 +45,15 @@ const ProductPage = () => {
     };
   }, [id]);
 
-  if (!product && allProducts.length > 0) {
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!product) {
     return (
       <div className="min-h-screen bg-background">
         <SiteHeader />
@@ -55,14 +64,6 @@ const ProductPage = () => {
           </Link>
         </main>
         <SiteFooter />
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -121,7 +122,25 @@ const ProductPage = () => {
   const handleBackToStore = () => navigate("/");
   const handleGoBack = () => navigate(-1);
   const handleDecreaseQuantity = () => setQuantity((current) => Math.max(1, current - 1));
-  const handleIncreaseQuantity = () => setQuantity((current) => current + 1);
+  const handleIncreaseQuantity = () => setQuantity((current) => {
+    if (product.variationGroup) {
+      if (!selectedVariation) return current + 1;
+      const opt = product.variationGroup.options.find((o) => o.label === selectedVariation);
+      if (opt?.stock !== undefined && current >= opt.stock) return current;
+    } else if (product.stock !== undefined && current >= product.stock) {
+      return current;
+    }
+    return current + 1;
+  });
+
+  const isAtLimit = useMemo(() => {
+    if (product.variationGroup) {
+      if (!selectedVariation) return false;
+      const opt = product.variationGroup.options.find((o) => o.label === selectedVariation);
+      return opt?.stock !== undefined && quantity >= opt.stock;
+    }
+    return product.stock !== undefined && quantity >= product.stock;
+  }, [product.variationGroup, product.stock, selectedVariation, quantity]);
 
   const primaryButtonLabel = isUnavailable
     ? "Indisponível"
@@ -165,8 +184,9 @@ const ProductPage = () => {
                 <span className="min-w-5 text-center text-lg text-fg-secondary">{quantity}</span>
                 <button
                   type="button"
+                  disabled={isAtLimit}
                   onClick={handleIncreaseQuantity}
-                  className="text-fg-tertiary transition-colors hover:text-fg-secondary"
+                  className={`transition-colors ${isAtLimit ? "text-fg-subtle cursor-not-allowed opacity-50" : "text-fg-tertiary hover:text-fg-secondary"}`}
                   aria-label="Aumentar quantidade"
                 >
                   <span className="text-base">+</span>
@@ -245,8 +265,9 @@ const ProductPage = () => {
                   <span className="min-w-4 text-center text-lg tabular-nums">{quantity}</span>
                   <button
                     type="button"
+                    disabled={isAtLimit}
                     onClick={handleIncreaseQuantity}
-                    className="text-fg-tertiary transition-colors hover:text-fg-secondary"
+                    className={`transition-colors ${isAtLimit ? "text-fg-subtle cursor-not-allowed opacity-50" : "text-fg-tertiary hover:text-fg-secondary"}`}
                     aria-label="Aumentar quantidade"
                   >
                     <span className="text-base">+</span>

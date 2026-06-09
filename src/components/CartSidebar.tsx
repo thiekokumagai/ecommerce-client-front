@@ -213,6 +213,8 @@ const CartSidebar = () => {
   const [couponCode, setCouponCode] = useState("");
   const [savedCouponCode, setSavedCouponCode] = useState("");
   const [isEditingCoupon, setIsEditingCoupon] = useState(false);
+  const [couponData, setCouponData] = useState<{ discountAmount: number; type: string } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
   const [hasCopiedPix, setHasCopiedPix] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -339,23 +341,27 @@ const CartSidebar = () => {
     return options;
   }, [storeSettings]);
 
-  const pixDiscount = useMemo(() => totalPrice * (pixDiscountPercent / 100), [totalPrice, pixDiscountPercent]);
-  const totalWithPixDiscount = useMemo(() => totalPrice - pixDiscount, [totalPrice, pixDiscount]);
+  const couponDiscountAmount = couponData?.type !== 'FREE_SHIPPING' ? (couponData?.discountAmount || 0) : 0;
+  const totalAfterCoupon = Math.max(0, totalPrice - couponDiscountAmount);
+  const effectiveDeliveryFee = couponData?.type === 'FREE_SHIPPING' ? 0 : deliveryFee;
+
+  const pixDiscount = useMemo(() => totalAfterCoupon * (pixDiscountPercent / 100), [totalAfterCoupon, pixDiscountPercent]);
+  const totalWithPixDiscount = useMemo(() => totalAfterCoupon - pixDiscount, [totalAfterCoupon, pixDiscount]);
   const effectiveCreditInstallments = paymentMethod === "Cartão de Crédito" && creditMode === "parcelado" ? creditInstallments : 1;
   const selectedInstallment =
     creditInstallmentsOptions.find((installment) => installment.value === effectiveCreditInstallments) ?? creditInstallmentsOptions[0];
 
   const creditInterestAmount = useMemo(() => {
     if (paymentMethod !== "Cartão de Crédito" || creditMode !== "parcelado") return 0;
-    return (totalPrice + deliveryFee) * (selectedInstallment.interest / 100);
-  }, [paymentMethod, creditMode, selectedInstallment.interest, totalPrice, deliveryFee]);
+    return (totalAfterCoupon + effectiveDeliveryFee) * (selectedInstallment.interest / 100);
+  }, [paymentMethod, creditMode, selectedInstallment.interest, totalAfterCoupon, effectiveDeliveryFee]);
 
   const discountedProductsTotal = useMemo(() => {
     if (paymentMethod === "PIX") return totalWithPixDiscount;
-    return totalPrice;
-  }, [paymentMethod, totalWithPixDiscount, totalPrice]);
+    return totalAfterCoupon;
+  }, [paymentMethod, totalWithPixDiscount, totalAfterCoupon]);
 
-  const finalTotal = discountedProductsTotal + deliveryFee + creditInterestAmount;
+  const finalTotal = discountedProductsTotal + effectiveDeliveryFee + creditInterestAmount;
   const parsedChangeFor = parseCurrencyInput(changeFor);
   const isChangeEnough = needsChange === "não" || parsedChangeFor >= finalTotal;
   const isContactValid = name.trim().length > 0 && phone.replace(/\D/g, "").length >= 10;
@@ -506,23 +512,46 @@ const CartSidebar = () => {
     setIsEditingContact(false);
   };
 
-  const handleSaveCoupon = () => {
-    const trimmedCoupon = couponCode.trim();
+  const handleSaveCoupon = async () => {
+    const trimmedCoupon = couponCode.trim().toUpperCase();
 
     if (!trimmedCoupon) {
       toast.info("Digite um cupom para salvar.");
       return;
     }
 
-    setSavedCouponCode(trimmedCoupon);
-    setCouponCode(trimmedCoupon);
-    setIsEditingCoupon(false);
-    toast.success("Cupom salvo.");
+    setIsValidatingCoupon(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_ADMIN_API}/coupons/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: trimmedCoupon, orderTotal: totalPrice }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.message || "Cupom inválido ou expirado.");
+        setIsValidatingCoupon(false);
+        return;
+      }
+
+      const data = await response.json();
+      setCouponData({ discountAmount: data.discountAmount, type: data.coupon.type });
+      setSavedCouponCode(trimmedCoupon);
+      setCouponCode(trimmedCoupon);
+      setIsEditingCoupon(false);
+      toast.success("Cupom aplicado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao validar o cupom.");
+    } finally {
+      setIsValidatingCoupon(false);
+    }
   };
 
   const handleRemoveCoupon = () => {
     setCouponCode("");
     setSavedCouponCode("");
+    setCouponData(null);
     setIsEditingCoupon(false);
     toast.success("Cupom removido.");
   };
@@ -688,6 +717,9 @@ const CartSidebar = () => {
         freight: Number(deliveryFee.toFixed(2)),
         paymentDiscount: paymentMethod === 'PIX' ? Number(pixDiscount.toFixed(2)) : 0,
         installmentSurcharge: paymentMethod === 'Cartão de Crédito' && creditMode === 'parcelado' ? Number(creditInterestAmount.toFixed(2)) : 0,
+        couponTitle: savedCouponCode || undefined,
+        couponDiscount: couponData?.type !== 'FREE_SHIPPING' ? Number(couponDiscountAmount.toFixed(2)) : 0,
+        couponFreightDiscount: couponData?.type === 'FREE_SHIPPING' ? Number(deliveryFee.toFixed(2)) : 0,
         totalOrder: Number(finalTotal.toFixed(2)),
         totalReceived: Number(finalTotal.toFixed(2)),
         paymentType: paymentMethod === 'PIX' ? 'online' : 'entrega',
@@ -860,9 +892,17 @@ const CartSidebar = () => {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {items.map((item) => (
-                          <div
-                            key={`${item.product.id}-${item.selectedVariation ?? "default"}`}
+                        {items.map((item) => {
+                          const isAtLimit = item.selectedVariation && item.product.variationGroup
+                            ? (() => {
+                                const opt = item.product.variationGroup.options.find((o) => o.label === item.selectedVariation);
+                                return opt?.stock !== undefined && item.quantity >= opt.stock;
+                              })()
+                            : item.product.stock !== undefined && item.quantity >= item.product.stock;
+
+                          return (
+                            <div
+                              key={`${item.product.id}-${item.selectedVariation ?? "default"}`}
                             className="rounded-2xl border border-border bg-background p-3"
                           >
                             <div className="flex gap-3">
@@ -901,8 +941,12 @@ const CartSidebar = () => {
                                       {item.quantity}
                                     </span>
                                     <button
-                                      onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation)}
-                                      className="rounded-full bg-primary p-1.5 text-primary-foreground"
+                                      disabled={isAtLimit}
+                                      onClick={() => {
+                                        if (isAtLimit) return;
+                                        updateQuantity(item.product.id, item.quantity + 1, item.selectedVariation);
+                                      }}
+                                      className={`rounded-full p-1.5 ${isAtLimit ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50" : "bg-primary text-primary-foreground"}`}
                                     >
                                       <Plus className="h-3 w-3" />
                                     </button>
@@ -914,8 +958,9 @@ const CartSidebar = () => {
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
+                    </div>
                     )}
                   </div>
                 </div>
@@ -1099,11 +1144,11 @@ const CartSidebar = () => {
                           <button
                             type="button"
                             onClick={handleSaveCoupon}
-                            disabled={!couponCode.trim()}
-                            className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            disabled={!couponCode.trim() || isValidatingCoupon}
+                            className={`flex-1 rounded-2xl py-3 text-sm font-semibold ${couponCode.trim() && !isValidatingCoupon ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                               }`}
                           >
-                            Salvar cupom
+                            {isValidatingCoupon ? "Validando..." : "Salvar cupom"}
                           </button>
                           <button
                             type="button"
@@ -1334,6 +1379,14 @@ const CartSidebar = () => {
                   <div className="rounded-3xl bg-card p-4 text-sm shadow-sm">
                     <h3 className="mb-3 text-sm font-semibold text-foreground">Resumo</h3>
                     <div className="space-y-2">
+                      {savedCouponCode && (
+                        <div className="flex justify-between text-primary">
+                          <span>Cupom ({savedCouponCode})</span>
+                          <span className="font-medium">
+                            {couponData?.type === 'FREE_SHIPPING' ? 'Frete Grátis' : `-${formatPrice(couponData?.discountAmount || 0)}`}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Subtotal</span>
                         <span className="font-medium text-foreground">{formatPrice(totalPrice)}</span>
@@ -1352,7 +1405,13 @@ const CartSidebar = () => {
                       )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Entrega</span>
-                        <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
+                        <span className="font-medium text-foreground">
+                          {couponData?.type === 'FREE_SHIPPING' ? (
+                            <span className="text-primary font-bold">Grátis</span>
+                          ) : (
+                            formatPrice(deliveryFee)
+                          )}
+                        </span>
                       </div>
                       <div className="border-t border-border pt-3">
                         <div className="flex justify-between text-base">
@@ -1402,13 +1461,13 @@ const CartSidebar = () => {
                       {items.map((item) => (
                         <div
                           key={`${item.product.id}-${item.selectedVariation ?? "default"}`}
-                          className="flex items-center justify-between text-sm"
+                          className="flex items-start justify-between text-sm gap-3"
                         >
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">{item.quantity}x</span>
+                          <div className="flex items-start gap-2 flex-1">
+                            <span className="text-muted-foreground whitespace-nowrap">{item.quantity}x</span>
                             <span className="text-foreground">{item.product.name}</span>
                           </div>
-                          <span className="font-medium text-foreground">
+                          <span className="font-medium text-foreground whitespace-nowrap">
                             {formatPrice(item.product.price * item.quantity)}
                           </span>
                         </div>
@@ -1432,9 +1491,11 @@ const CartSidebar = () => {
                         </div>
                       )}
                       {savedCouponCode && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Cupom</span>
-                          <span className="font-medium text-foreground">{savedCouponCode}</span>
+                        <div className="flex justify-between text-primary">
+                          <span>Cupom ({savedCouponCode})</span>
+                          <span className="font-medium">
+                            {couponData?.type === 'FREE_SHIPPING' ? 'Frete Grátis' : `-${formatPrice(couponData?.discountAmount || 0)}`}
+                          </span>
                         </div>
                       )}
                       <div className="flex justify-between">
@@ -1455,7 +1516,13 @@ const CartSidebar = () => {
                       )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Entrega</span>
-                        <span className="font-medium text-foreground">{formatPrice(deliveryFee)}</span>
+                        <span className="font-medium text-foreground">
+                          {couponData?.type === 'FREE_SHIPPING' ? (
+                            <span className="text-primary font-bold">Grátis</span>
+                          ) : (
+                            formatPrice(deliveryFee)
+                          )}
+                        </span>
                       </div>
                       {paymentMethod === "Dinheiro" && needsChange === "sim" && changeFor && (
                         <div className="flex justify-between">

@@ -86,6 +86,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
     addToCart(product);
   };
 
+  const isAtLimit = cartItem && product.stock !== undefined ? cartItem.quantity >= product.stock : false;
+
   return (
     <>
       <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl">
@@ -193,8 +195,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
               <button
                 type="button"
+                disabled={isAtLimit}
                 onClick={handleIncrease}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20"
+                className={`flex h-7 w-7 items-center justify-center rounded-full ${isAtLimit ? "bg-muted/40 text-muted-foreground opacity-50 cursor-not-allowed" : "bg-primary-foreground/20"}`}
                 aria-label="Aumentar quantidade"
               >
                 <Plus className="h-4 w-4" />

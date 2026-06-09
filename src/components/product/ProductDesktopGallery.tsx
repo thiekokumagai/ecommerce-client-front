@@ -21,15 +21,6 @@ const ProductDesktopGallery = ({
     <div className={`grid items-start gap-4 pt-16 grid-cols-[82px_1fr]`}>
       {!isNicSalt && (
         <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            className="flex h-20 flex-col items-center justify-center rounded-2xl bg-[#f3f3f3] text-primary"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
-              <Play className="h-5 w-5 fill-current" />
-            </span>
-            <span className="mt-1 text-sm">Vídeo</span>
-          </button>
 
           {images.map((image, index) => (
             <button

@@ -124,6 +124,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           cartItem.selectedVariation === normalizedItem.selectedVariation
       );
 
+      if (existing) {
+        if (normalizedItem.selectedVariation && normalizedItem.product.variationGroup) {
+          const opt = normalizedItem.product.variationGroup.options.find(o => o.label === normalizedItem.selectedVariation);
+          if (opt?.stock !== undefined && existing.quantity >= opt.stock) return prev;
+        } else if (normalizedItem.product.stock !== undefined && existing.quantity >= normalizedItem.product.stock) {
+          return prev;
+        }
+      } else {
+        if (normalizedItem.selectedVariation && normalizedItem.product.variationGroup) {
+          const opt = normalizedItem.product.variationGroup.options.find(o => o.label === normalizedItem.selectedVariation);
+          if (opt?.stock !== undefined && opt.stock < 1) return prev;
+        } else if (normalizedItem.product.stock !== undefined && normalizedItem.product.stock < 1) {
+          return prev;
+        }
+      }
+
       const nextItems = existing
         ? prev.map((cartItem) =>
             cartItem.product.id === normalizedItem.product.id &&
@@ -177,11 +193,21 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setItems((prev) =>
-      prev.map((item) =>
-        item.product.id === productId && item.selectedVariation === selectedVariation
-          ? { ...item, quantity }
-          : item
-      )
+      prev.map((item) => {
+        if (item.product.id === productId && item.selectedVariation === selectedVariation) {
+          let finalQuantity = quantity;
+          if (selectedVariation && item.product.variationGroup) {
+            const opt = item.product.variationGroup.options.find(o => o.label === selectedVariation);
+            if (opt?.stock !== undefined && finalQuantity > opt.stock) {
+              finalQuantity = opt.stock;
+            }
+          } else if (item.product.stock !== undefined && finalQuantity > item.product.stock) {
+            finalQuantity = item.product.stock;
+          }
+          return { ...item, quantity: finalQuantity };
+        }
+        return item;
+      })
     );
   }, []);
 

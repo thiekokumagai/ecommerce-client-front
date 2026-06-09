@@ -1,13 +1,4 @@
-const handleIncrease = () => {
-    if (!selectedOption || displayQuantity === 0) return;
-
-    const currentOption = product.variationGroup?.options.find(o => o.label === selectedOption);
-    if (currentOption?.stock !== undefined && displayQuantity >= currentOption.stock) return;
-
-    const nextQuantity = displayQuantity + 1;
-    setDisplayQuantity(nextQuantity);
-    updateQuantity(product.id, nextQuantity, selectedOption);
-  };import type { Product } from "@/data/products";
+import type { Product } from "@/data/products";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Plus, ShoppingCart, X } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
@@ -109,10 +100,19 @@ const ProductVariationModal = ({
   const handleIncrease = () => {
     if (!selectedOption || displayQuantity === 0) return;
 
+    const currentOption = product.variationGroup?.options.find(o => o.label === selectedOption);
+    if (currentOption?.stock !== undefined && displayQuantity >= currentOption.stock) return;
+
     const nextQuantity = displayQuantity + 1;
     setDisplayQuantity(nextQuantity);
     updateQuantity(product.id, nextQuantity, selectedOption);
   };
+
+  const isAtLimit = useMemo(() => {
+    if (!selectedOption) return false;
+    const currentOption = product.variationGroup?.options.find(o => o.label === selectedOption);
+    return currentOption?.stock !== undefined && displayQuantity >= currentOption.stock;
+  }, [product.variationGroup, selectedOption, displayQuantity]);
 
   return (
     <div
@@ -186,8 +186,9 @@ const ProductVariationModal = ({
 
               <button
                 type="button"
+                disabled={isAtLimit}
                 onClick={handleIncrease}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20"
+                className={`flex h-8 w-8 items-center justify-center rounded-full ${isAtLimit ? "bg-muted/40 text-muted-foreground opacity-50 cursor-not-allowed" : "bg-primary-foreground/20"}`}
                 aria-label="Aumentar quantidade"
               >
                 <Plus className="h-4 w-4" />

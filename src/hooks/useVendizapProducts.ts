@@ -24,6 +24,7 @@ interface NewApiProduct {
     stock: number;
     options: { option: { value: string } }[];
   }[];
+  images?: { url: string }[];
 }
 
 function buildImageUrl(path?: string) {
@@ -52,14 +53,12 @@ function buildVariationGroupFromNewApi(product: NewApiProduct): ProductVariation
   });
 
   const options = linkedOptions.map(opt => {
-    // Check if there is any item with this option value that has stock > 0
-    const available = product.items?.some(item => 
-      item.stock > 0 && item.options.some(o => o.option.value === opt.value)
-    ) ?? false;
+    const item = product.items?.find(i => i.options.some(o => o.option.value === opt.value));
     
     return {
       label: opt.value,
-      available,
+      available: item ? item.stock > 0 : false,
+      stock: item ? item.stock : 0,
     };
   });
 
@@ -74,10 +73,13 @@ export function transformNewApiProduct(raw: NewApiProduct): Product & { isVisibl
   const promoPriceNum = raw.promotionalPrice ? Number(raw.promotionalPrice) : undefined;
   const priceNum = raw.price ? Number(raw.price) : 0;
 
+  const images = raw.images?.map(img => buildImageUrl(img.url)) || [];
+
   return {
     id: raw.id,
     name: raw.title,
     image: buildImageUrl(raw.imageUrl),
+    images: images.length > 0 ? images : undefined,
     category: raw.category?.title || raw.categoryId,
     description: raw.descriptionFormated || raw.description || "",
     price: promoPriceNum || priceNum,
