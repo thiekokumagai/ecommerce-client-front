@@ -71,8 +71,8 @@ const ProductPage = () => {
   const isNicSalt = product.category === "NicSalt";
   const nicotineOptions = product.variationGroup?.options ?? [];
   const availableNicotineOptions = nicotineOptions.filter((option) => option.available);
-  const canAddToCart = !isNicSalt || nicotineStrength !== null;
-  const isUnavailable = isNicSalt && availableNicotineOptions.length === 0;
+  const canAddToCart = product.variationGroup ? nicotineStrength !== null : product.stock !== 0;
+  const isUnavailable = product.variationGroup ? availableNicotineOptions.length === 0 : product.stock === 0;
   const hasNicotineOptions = nicotineOptions.length > 0;
   const productDescription = cleanDescription;
 
@@ -143,7 +143,7 @@ const ProductPage = () => {
   }, [product.variationGroup, product.stock, selectedVariation, quantity]);
 
   const primaryButtonLabel = isUnavailable
-    ? "Indisponível"
+    ? "Esgotado"
     : !canAddToCart
       ? "Selecione"
       : isInCart

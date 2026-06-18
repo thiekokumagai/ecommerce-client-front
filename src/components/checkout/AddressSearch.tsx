@@ -107,6 +107,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   const [noComplement, setNoComplement] = useState(initialAddress?.noComplement || false);
   const [manualEditAddress, setManualEditAddress] = useState(false);
   const [selectionMode, setSelectionMode] = useState<"manual" | "location" | null>(null);
+  const [hasExtractedNumber, setHasExtractedNumber] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const extractNumberFromQuery = (text: string) => {
     const match = text.match(/(?:,|\s)(\d{1,6})\b/);
@@ -154,6 +155,9 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
       if (extractedNumber) {
         setNumber(extractedNumber);
         setNoNumber(false);
+        setHasExtractedNumber(true);
+      } else {
+        setHasExtractedNumber(false);
       }
 
       setSelectionMode("manual");
@@ -246,6 +250,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
                 setCep(formatted);
             }
             setSelectionMode("location");
+            setHasExtractedNumber(false);
             setPhase("details");
           } catch (err) {
             console.error(err);
@@ -330,7 +335,8 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
   };
   if (phase === "details" && selected) {
     const isLocationMode = selectionMode === "location";
-    const canSave = isLocationMode
+    const showNumberField = isLocationMode || !hasExtractedNumber;
+    const canSave = showNumberField
       ? (number || noNumber) && (complement || noComplement)
       : (complement || noComplement);
 
@@ -390,7 +396,7 @@ const AddressSearch = ({ onSave, onCancel, initialAddress }: AddressSearchProps)
             </>
           )}
 
-          {isLocationMode && (
+          {showNumberField && (
             <div>
               <input
                 value={number}

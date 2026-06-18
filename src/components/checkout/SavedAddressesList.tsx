@@ -62,7 +62,10 @@ const SavedAddressesList = ({
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-base font-semibold text-foreground">{address.mainText}</p>
+                  <p className="text-base font-semibold text-foreground">
+                    {address.mainText}
+                    {address.number && address.number !== "s/n" ? `, ${address.number}` : ""}
+                  </p>
                   <p className="text-sm text-muted-foreground">{address.secondaryText}</p>
                   {address.reference && (
                     <p className="mt-1 text-xs text-muted-foreground">{address.reference}</p>

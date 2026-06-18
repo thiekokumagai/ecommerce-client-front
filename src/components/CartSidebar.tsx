@@ -221,10 +221,10 @@ const CartSidebar = () => {
   const [finalizedOrder, setFinalizedOrder] = useState<FinalizedOrder | null>(null);
   const previousTotalItems = useRef(totalItems);
   useEffect(() => {
-    const storedAddress = sessionStorage.getItem(SESSION_ADDRESS_KEY);
-    const storedAddresses = sessionStorage.getItem(SESSION_ADDRESSES_KEY);
-    const storedName = sessionStorage.getItem(SESSION_NAME_KEY) ?? "";
-    const storedPhone = sessionStorage.getItem(SESSION_PHONE_KEY) ?? "";
+    const storedAddress = localStorage.getItem(SESSION_ADDRESS_KEY);
+    const storedAddresses = localStorage.getItem(SESSION_ADDRESSES_KEY);
+    const storedName = localStorage.getItem(SESSION_NAME_KEY) ?? "";
+    const storedPhone = localStorage.getItem(SESSION_PHONE_KEY) ?? "";
     if (storedAddresses) {
       try {
         const parsedAddresses = JSON.parse(storedAddresses) as StructuredAddress[];
@@ -391,7 +391,7 @@ const CartSidebar = () => {
 
   const persistAddresses = (addresses: StructuredAddress[]) => {
     setSavedAddresses(addresses);
-    sessionStorage.setItem(SESSION_ADDRESSES_KEY, JSON.stringify(addresses));
+    localStorage.setItem(SESSION_ADDRESSES_KEY, JSON.stringify(addresses));
   };
 
   const calculateDeliveryFee = useCallback(
@@ -446,13 +446,13 @@ const CartSidebar = () => {
 
   const handleNameChange = (value: string) => {
     setName(value);
-    sessionStorage.setItem(SESSION_NAME_KEY, value);
+    localStorage.setItem(SESSION_NAME_KEY, value);
   };
 
   const handlePhoneChange = (value: string) => {
     const formattedPhone = formatPhone(value);
     setPhone(formattedPhone);
-    sessionStorage.setItem(SESSION_PHONE_KEY, formattedPhone);
+    localStorage.setItem(SESSION_PHONE_KEY, formattedPhone);
   };
 
   const handleSaveAddress = useCallback((addr: StructuredAddress) => {
@@ -464,7 +464,7 @@ const CartSidebar = () => {
     const nextAddresses = [...savedAddresses.filter((item) => item.id !== nextAddress.id), nextAddress];
     persistAddresses(nextAddresses);
     setStructuredAddress(nextAddress);
-    sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(nextAddress));
+    localStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(nextAddress));
     setEditingAddress(null);
     setIsAddressModalOpen(false);
     setIsShowingSavedAddresses(false);
@@ -473,7 +473,7 @@ const CartSidebar = () => {
 
   const handleSelectSavedAddress = useCallback((addr: StructuredAddress) => {
     setStructuredAddress(addr);
-    sessionStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
+    localStorage.setItem(SESSION_ADDRESS_KEY, JSON.stringify(addr));
     setEditingAddress(null);
     setIsAddressModalOpen(false);
     setIsShowingSavedAddresses(false);
@@ -491,7 +491,7 @@ const CartSidebar = () => {
 
     if (structuredAddress?.id === addressId) {
       setStructuredAddress(null);
-      sessionStorage.removeItem(SESSION_ADDRESS_KEY);
+      localStorage.removeItem(SESSION_ADDRESS_KEY);
       setDeliveryFee(0);
       setDeliveryDistanceKm(null);
       setDeliveryError("");
@@ -1044,7 +1044,10 @@ const CartSidebar = () => {
                         <div className="flex gap-3">
                           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
                           <div>
-                            <p className="text-sm font-semibold text-foreground">{structuredAddress.mainText}</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              {structuredAddress.mainText}
+                              {structuredAddress.number && structuredAddress.number !== "s/n" ? `, ${structuredAddress.number}` : ""}
+                            </p>
                             <p className="text-xs text-muted-foreground">{structuredAddress.secondaryText}</p>
                             {structuredAddress.complement && (
                               <p className="mt-1 text-xs text-muted-foreground">
