@@ -640,52 +640,96 @@ const CartSidebar = () => {
   const checkoutNeedsChange = finalizedOrder?.needsChange ?? needsChange;
   const checkoutChangeFor = finalizedOrder?.changeFor ?? changeFor;
 
-  const checkoutMessage = useMemo(() => encodeURIComponent([
-    "Olá! Gostaria de finalizar meu pedido:",
-    "",
-    ...checkoutItems.map((item) => `${item.quantity}x ${item.product.name}${item.selectedVariation ? ` (${item.product.variationGroup?.name}: ${item.selectedVariation})` : ""} - ${formatPrice(item.product.price * item.quantity)}`),
-    "",
-    `Nome: ${checkoutName || "-"}`,
-    `Telefone: ${checkoutPhone || "-"}`,
-    `Endereço completo: ${checkoutAddress || "-"}`,
-    ...(checkoutOrderNote.trim() ? [`Observação do pedido: ${checkoutOrderNote.trim()}`] : []),
-    ...(checkoutSavedCouponCode ? [`Cupom: ${checkoutSavedCouponCode}`] : []),
-    "",
-    `Subtotal dos produtos: ${formatPrice(checkoutSubtotal)}`,
-    ...(checkoutPaymentMethod === "PIX" ? [`Desconto Pix: -${formatPrice(checkoutPixDiscount)}`] : []),
-    ...(checkoutPaymentMethod === "Cartão de Crédito" ? [
-      `Crédito: ${checkoutCreditMode === "avista" ? "À vista" : "Parcelado"}`,
-      ...(checkoutCreditMode === "parcelado" ? [
-        `Parcelamento: ${checkoutCreditInstallments}x`,
-        ...(checkoutCreditInterest > 0 ? [`Juros do crédito: +${checkoutCreditInterest.toFixed(2).replace(".", ",")}%`] : []),
-      ] : []),
-    ] : []),
-    checkoutPaymentMethod === "PIX"
-      ? `Forma de pagamento: Pix - Total com desconto: ${formatPrice(checkoutSubtotal - checkoutPixDiscount)}`
-      : checkoutPaymentMethod === "Cartão de Débito"
-        ? "Forma de pagamento: Débito"
-        : checkoutPaymentMethod === "Cartão de Crédito"
-          ? checkoutCreditMode === "parcelado"
-            ? `Forma de pagamento: Crédito parcelado - ${checkoutCreditInstallments}x de ${formatPrice(checkoutTotal / checkoutCreditInstallments)}`
-            : "Forma de pagamento: Crédito à vista"
-          : "Forma de pagamento: Dinheiro",
-    ...(checkoutPaymentMethod === "Dinheiro" ? [
-      `Precisa de troco: ${checkoutNeedsChange}`,
-      ...(checkoutNeedsChange === "sim" ? [`Troco para: R$ ${checkoutChangeFor}`] : []),
-    ] : []),
-    ...(checkoutPaymentMethod === "PIX" ? [`Chave PIX: ${PIX_KEY}`, `Titular PIX: ${PIX_HOLDER}`] : []),
-    `Taxa do motoboy: ${formatPrice(checkoutDeliveryFee)}`,
-    `Total final com entrega: ${formatPrice(checkoutTotal)}`,
-  ].join("\n")), [
+  const checkoutMessage = useMemo(() => {
+    const itemsFormatted = checkoutItems.map(item => {
+      let qtyStr = `${item.quantity} x ${item.product.name}: ${formatPrice(item.product.price * item.quantity)}`;
+      if (item.selectedVariation) {
+        qtyStr += `\n    ${item.quantity}x ${item.selectedVariation}`;
+      }
+      return qtyStr;
+    }).join("\n\n");
+
+    const isCredit = checkoutPaymentMethod === "Cartão de Crédito";
+    const isDebit = checkoutPaymentMethod === "Cartão de Débito";
+    const isPix = checkoutPaymentMethod === "PIX";
+    const isCash = checkoutPaymentMethod === "Dinheiro";
+
+    const paymentLabelFormat = isPix 
+      ? `PIX`
+      : isDebit
+        ? `Cartão de Débito`
+        : isCash
+          ? `Dinheiro`
+          : checkoutCreditMode === "parcelado"
+            ? `Cartão de Crédito - ${checkoutCreditInstallments}x ${formatPrice(checkoutTotal / checkoutCreditInstallments)}`
+            : `Cartão de Crédito - 1x ${formatPrice(checkoutTotal)}`;
+
+    const pagamentoType = isPix 
+      ? `Online`
+      : isCash 
+        ? `Presencial (Dinheiro)` 
+        : `Presencial (Máquina de cartão)`;
+        
+    const finishOrderNumber = finalizedOrder ? finalizedOrder.id.slice(-4) : Date.now().toString().slice(-4);
+
+    const lines = [
+      `Olá, meu nome é ${checkoutName || "-"}, esse é o meu pedido realizado através da loja Pod & Mais`,
+      `--------`,
+      ``,
+      itemsFormatted,
+      ``,
+      `--------`,
+      `Quantidade de itens: ${checkoutItems.reduce((acc, item) => acc + item.quantity, 0)} `,
+      `Total dos itens: ${formatPrice(checkoutSubtotal)}`,
+      `--------`,
+      `Valor da entrega: ${formatPrice(checkoutDeliveryFee)}`
+    ];
+
+    if (checkoutSavedCouponCode) {
+       const cDiscount = couponData?.type === 'FREE_SHIPPING' ? 'Frete Grátis' : (couponData?.discountAmount ? formatPrice(couponData.discountAmount) : "");
+       lines.push(`Cupom: ${checkoutSavedCouponCode} ${cDiscount}`);
+    }
+
+    if (isPix && checkoutPixDiscount > 0) {
+      lines.push(`Desconto PIX: ${formatPrice(checkoutPixDiscount)}`);
+    }
+
+    if (isCredit && checkoutCreditMode === "parcelado" && checkoutCreditInterest > 0) {
+      const baseForCredit = checkoutSubtotal - (couponData?.discountAmount || 0) + checkoutDeliveryFee;
+      const interestAmt = checkoutTotal - baseForCredit;
+      if (interestAmt > 0) {
+        lines.push(`Acréscimo parcelamento: ${formatPrice(interestAmt)}`);
+      }
+    }
+
+    lines.push(`Valor Total: ${formatPrice(checkoutTotal)}`);
+    lines.push(`Forma de pagamento: ${paymentLabelFormat}`);
+    
+    if (isPix) {
+      lines.push(`Chave PIX: ${PIX_KEY} (Celular)`);
+      lines.push(`Titular da conta: ${PIX_HOLDER}`);
+    }
+
+    lines.push(`Pagamento: ${pagamentoType}`);
+    
+    lines.push(`--------`);
+    lines.push(`Para entregar em: ${checkoutAddress || "-"}`);
+    lines.push(`Contato: ${checkoutPhone || "-"}`);
+    lines.push(`Número do pedido: ${finishOrderNumber}`);
+    
+    if (checkoutOrderNote.trim()) {
+      lines.push(`Observação: ${checkoutOrderNote.trim()}`);
+    }
+
+    return encodeURIComponent(lines.join("\n"));
+  }, [
     checkoutAddress,
-    checkoutChangeFor,
     checkoutCreditInstallments,
     checkoutCreditInterest,
     checkoutCreditMode,
     checkoutDeliveryFee,
     checkoutItems,
     checkoutName,
-    checkoutNeedsChange,
     checkoutOrderNote,
     checkoutPaymentMethod,
     checkoutPhone,
@@ -693,6 +737,8 @@ const CartSidebar = () => {
     checkoutSavedCouponCode,
     checkoutSubtotal,
     checkoutTotal,
+    couponData,
+    finalizedOrder
   ]);
 
   const finalizeOrder = async () => {
@@ -793,8 +839,23 @@ const CartSidebar = () => {
 
   const handleCopyPix = async () => {
     try {
-      await navigator.clipboard.writeText(PIX_KEY);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(PIX_KEY);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = PIX_KEY;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!successful) throw new Error('Falha ao copiar');
+      }
       setHasCopiedPix(true);
+      toast.success("Chave PIX copiada!");
     } catch {
       toast.error("Não foi possível copiar a chave PIX.");
     }
