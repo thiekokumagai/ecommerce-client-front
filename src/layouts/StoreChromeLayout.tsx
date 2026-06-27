@@ -7,6 +7,8 @@ import CartSidebar from "@/components/CartSidebar";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { io } from "socket.io-client";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Chrome global da loja: carrinho, modal, navegação móvel e utilitários.
@@ -14,6 +16,26 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
  */
 const StoreChromeLayout = () => {
   const { data: settings } = useStoreSettings();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const socketUrl = import.meta.env.VITE_ADMIN_API?.replace(/\/api$/, '') || 'http://localhost:3000';
+    const socket = io(socketUrl);
+
+    socket.on('connect', () => {
+      console.log('Connected to websocket server for catalog updates');
+    });
+
+    socket.on('products.refresh', () => {
+      console.log('Catalog update received via websocket');
+      queryClient.invalidateQueries({ queryKey: ["api-products"] });
+      queryClient.invalidateQueries({ queryKey: ["api-products-category"] });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [queryClient]);
 
   useEffect(() => {
     if (!settings) return;
