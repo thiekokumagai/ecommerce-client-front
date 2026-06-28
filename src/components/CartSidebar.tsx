@@ -77,6 +77,7 @@ type CreditMode = "avista" | "parcelado";
 
 type FinalizedOrder = {
   id: string;
+  orderNumber: number;
   createdAt: string;
   customerName: string;
   customerPhone: string;
@@ -670,7 +671,7 @@ const CartSidebar = () => {
         ? `Presencial (Dinheiro)` 
         : `Presencial (Máquina de cartão)`;
         
-    const finishOrderNumber = finalizedOrder ? finalizedOrder.id.slice(-4) : Date.now().toString().slice(-4);
+    const finishOrderNumber = finalizedOrder ? finalizedOrder.orderNumber : Date.now().toString().slice(-4);
 
     const lines = [
       `Olá, meu nome é ${checkoutName || "-"}, esse é o meu pedido realizado através da loja Pod & Mais`,
@@ -789,6 +790,7 @@ const CartSidebar = () => {
 
       const result = await ordersService.createStoreOrder(payload as any);
       const orderId = result.id;
+      const orderNumber = result.orderNumber;
       const createdAt = new Date().toISOString();
 
       addOrder({
@@ -806,6 +808,7 @@ const CartSidebar = () => {
 
       setFinalizedOrder({
         id: orderId,
+        orderNumber,
         createdAt,
         customerName: name.trim(),
         customerPhone: phone.trim(),
@@ -881,7 +884,7 @@ const CartSidebar = () => {
   };
 
   const canContinueDelivery = isContactValid && isAddressValid && !isEditingContact && hasValidDeliveryFee;
-  const finishOrderNumber = finalizedOrder ? finalizedOrder.id.slice(-4) : Date.now().toString().slice(-4);
+  const finishOrderNumber = finalizedOrder ? finalizedOrder.orderNumber : Date.now().toString().slice(-4);
   const finishDate = finalizedOrder ? new Date(finalizedOrder.createdAt) : new Date();
 
   return (

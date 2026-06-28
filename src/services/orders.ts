@@ -39,6 +39,6 @@ export interface CreateOrderPayload {
 
 export const ordersService = {
   async createStoreOrder(payload: CreateOrderPayload) {
-    return api.post<{ id: string }>("/store/orders", payload);
+    return api.post<{ id: string; orderNumber: number }>("/store/orders", payload);
   },
 };
