@@ -7,7 +7,7 @@ import ProductContact from "@/components/product/ProductContact";
 import ProductDesktopGallery from "@/components/product/ProductDesktopGallery";
 import ProductInfo from "@/components/product/ProductInfo";
 import ProductMobileGallery from "@/components/product/ProductMobileGallery";
-import { useProducts } from "@/hooks/useVendizapProducts";
+import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useStoreMobilePadding } from "@/hooks/use-store-mobile-padding";
 import { Loader2 } from "lucide-react";
@@ -26,8 +26,7 @@ const ProductPage = () => {
   const [hasJustUpdated, setHasJustUpdated] = useState(false);
   const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: allProducts = [], isLoading } = useProducts();
-  const product = useMemo(() => allProducts.find((p) => p.id === id), [allProducts, id]);
+  const { data: product, isLoading } = useProduct(id);
   const gallery = useMemo(() => {
     if (product?.images && product.images.length > 0) return product.images;
     return product?.image ? [product.image] : [];

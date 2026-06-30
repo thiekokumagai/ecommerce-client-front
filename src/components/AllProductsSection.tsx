@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import ProductCard from "./ProductCard";
 import { Package } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { useProducts } from "@/hooks/useVendizapProducts";
+import { useProducts } from "@/hooks/useProducts";
 
 const ITEMS_PER_PAGE = 12;
 

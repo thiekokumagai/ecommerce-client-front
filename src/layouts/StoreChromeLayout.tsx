@@ -4,6 +4,7 @@ import { Outlet } from "react-router-dom";
 import AddedToCartModal from "@/components/AddedToCartModal";
 import BackToTopButton from "@/components/BackToTopButton";
 import CartSidebar from "@/components/CartSidebar";
+import StoreClosedModal from "@/components/StoreClosedModal";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
@@ -60,6 +61,7 @@ const StoreChromeLayout = () => {
       <Outlet />
       <CartSidebar />
       <AddedToCartModal />
+      <StoreClosedModal />
       <MobileBottomNav />
       <WhatsAppButton />
       <BackToTopButton />

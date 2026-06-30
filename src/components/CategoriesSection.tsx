@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { useCategories } from "@/hooks/useVendizapProducts";
+import { useCategories } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 
 const CategoriesSection = () => {

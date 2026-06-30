@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useCart } from "@/contexts/CartContext";
-import { useProducts } from "@/hooks/useVendizapProducts";
+import { useProducts } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 
 const NicotineFilter = () => {

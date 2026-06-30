@@ -6,11 +6,14 @@ import logoFallback from "@/assets/logo.webp";
 import { useCart } from "@/contexts/CartContext";
 import CategoriesMenu from "@/components/CategoriesMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useBusinessStatus } from "@/hooks/useBusinessStatus";
+import { AlertCircle } from "lucide-react";
 
 const SiteHeader = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const { totalItems, setIsCartOpen, searchTerm, setSearchTerm } = useCart();
   const { data: settings } = useStoreSettings();
+  const { isOpen } = useBusinessStatus(settings?.businessHours);
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -22,8 +25,15 @@ const SiteHeader = () => {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-[70] border-b border-border-subtle bg-background/95 px-4 pb-3 pt-3 backdrop-blur-md md:hidden">
-        <div className="mx-auto max-w-7xl space-y-2.5">
+      <div className="fixed inset-x-0 top-0 z-[70] border-b border-border-subtle bg-background/95 backdrop-blur-md md:hidden">
+        {!isOpen && (
+          <div className="bg-red-500 text-white text-[10px] sm:text-xs font-semibold py-1 px-4 text-center flex items-center justify-center gap-1.5 w-full">
+            <AlertCircle className="h-3 w-3 shrink-0" />
+            <span className="truncate">A loja está fechada. Os pedidos serão processados no próximo horário útil.</span>
+          </div>
+        )}
+        <div className="px-4 pb-3 pt-3">
+          <div className="mx-auto max-w-7xl space-y-2.5">
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -71,11 +81,18 @@ const SiteHeader = () => {
               </button>
             )}
           </div>
+          </div>
         </div>
       </div>
 
-      <header className="sticky top-0 z-50 hidden border-b border-border-subtle bg-background/95 backdrop-blur-md md:block">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
+      <header className="sticky top-0 z-50 hidden border-b border-border-subtle bg-background/95 backdrop-blur-md md:block flex flex-col">
+        {!isOpen && (
+          <div className="bg-red-500 text-white text-xs font-semibold py-1.5 px-4 text-center flex items-center justify-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            <span>A loja está fechada no momento. Os pedidos serão processados no próximo horário útil.</span>
+          </div>
+        )}
+        <div className="mx-auto flex h-20 max-w-7xl w-full items-center justify-between px-8">
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2">
               <img src={settings?.logoUrl || logoFallback} alt={settings?.storeName || "Pod & Mais"} className="h-20 w-20 object-contain" />

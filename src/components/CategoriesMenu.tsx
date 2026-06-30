@@ -1,7 +1,7 @@
 import { X, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
-import { useCategories } from "@/hooks/useVendizapProducts";
+import { useCategories } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 
 interface CategoriesMenuProps {

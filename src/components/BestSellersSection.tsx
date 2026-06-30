@@ -2,7 +2,7 @@ import { useState } from "react";
 import ProductCard from "./ProductCard";
 import { TrendingUp } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { useProducts } from "@/hooks/useVendizapProducts";
+import { useProducts } from "@/hooks/useProducts";
 
 const BestSellersSection = () => {
   const [showAll, setShowAll] = useState(false);

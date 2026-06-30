@@ -1,9 +1,11 @@
 import { Clock, MapPin, CreditCard, BadgeDollarSign, Instagram } from "lucide-react";
 import logoFallback from "@/assets/logo.webp";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useBusinessStatus, getTodayWeekdayName } from "@/hooks/useBusinessStatus";
 
 const SiteFooter = () => {
   const { data: settings } = useStoreSettings();
+  const { isOpen, todayRules } = useBusinessStatus(settings?.businessHours);
 
   const storeName = settings?.storeName || "Pod & Mais";
   const logo = settings?.logoUrl || logoFallback;
@@ -82,18 +84,31 @@ const SiteFooter = () => {
             <h3 className="font-display text-sm font-bold uppercase tracking-wider text-foreground">
               Horário de Funcionamento
             </h3>
-            <div className="text-sm text-muted-foreground">
-              {settings?.topHeaderText ? (
-                <p className="whitespace-pre-wrap text-center md:text-right">{settings.topHeaderText}</p>
+            <div className="text-sm text-muted-foreground flex flex-col items-center md:items-end">
+              <div className="flex items-center justify-center gap-2 md:justify-end mb-2">
+                <Clock className="h-5 w-5 shrink-0 text-primary" />
+                <p className="font-semibold text-foreground">{getTodayWeekdayName()}</p>
+                {!isOpen && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                    Fechado
+                  </span>
+                )}
+                {isOpen && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                    Aberto
+                  </span>
+                )}
+              </div>
+              {todayRules ? (
+                todayRules.map((interval: any, index: number) => (
+                  <p key={index} className="mt-1">
+                    {interval.open} às {interval.close}
+                  </p>
+                ))
+              ) : settings?.businessHours?.length > 0 ? (
+                <p className="mt-1">Não abrimos hoje</p>
               ) : (
-                <>
-                  <div className="flex items-center justify-center gap-2 md:justify-end">
-                    <Clock className="h-5 w-5 shrink-0 text-primary" />
-                    <p className="font-semibold text-foreground">Sexta</p>
-                  </div>
-                  <p className="mt-1">08:00 às 12:00</p>
-                  <p>13:00 às 20:00</p>
-                </>
+                <p className="mt-1">Horário não configurado</p>
               )}
             </div>
           </div>

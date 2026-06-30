@@ -1,7 +1,7 @@
 import ProductCard from "./ProductCard";
 import { Flame } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
-import { useProducts } from "@/hooks/useVendizapProducts";
+import { useProducts } from "@/hooks/useProducts";
 
 const PromotionsSection = () => {
   const { selectedCategory, searchTerm, selectedNicotineStrength } = useCart();

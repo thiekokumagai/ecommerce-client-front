@@ -125,6 +125,23 @@ export function useProducts(categoryId?: string | null) {
 }
 
 
+export function useProduct(id?: string) {
+  return useQuery({
+    queryKey: ["api-product", id],
+    queryFn: async (): Promise<Product | null> => {
+      if (!id) return null;
+      const response = await fetch(`${import.meta.env.VITE_ADMIN_API}/store/products/${id}`);
+      if (!response.ok) throw new Error("Failed to fetch product");
+      const data = await response.json();
+      if (!data) return null;
+      return transformNewApiProduct(data);
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
 export function useCategories() {
   return useQuery({
     queryKey: ["api-categories"],
@@ -138,7 +155,7 @@ export function useCategories() {
         id: c.id,
         nome: c.title,
         imagem: buildCategoryImageUrl(c.image),
-        produtosAtivos: 0, // We don't have this straight from the API right now
+        produtosAtivos: 0,
       }));
     },
     staleTime: 10 * 60 * 1000,

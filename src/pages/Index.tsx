@@ -8,7 +8,7 @@ import AllProductsSection from "@/components/AllProductsSection";
 import SiteFooter from "@/components/SiteFooter";
 import { useCart } from "@/contexts/CartContext";
 import { useStoreMobilePadding } from "@/hooks/use-store-mobile-padding";
-import { useProducts } from "@/hooks/useVendizapProducts";
+import { useProducts } from "@/hooks/useProducts";
 
 const Index = () => {
   const {
