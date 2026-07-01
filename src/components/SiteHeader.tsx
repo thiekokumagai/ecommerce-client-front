@@ -12,7 +12,7 @@ import { AlertCircle } from "lucide-react";
 const SiteHeader = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const { totalItems, setIsCartOpen, searchTerm, setSearchTerm } = useCart();
-  const { data: settings } = useStoreSettings();
+  const { data: settings, isLoading } = useStoreSettings();
   const { isOpen } = useBusinessStatus(settings?.businessHours);
 
   const handleSearchChange = (value: string) => {
@@ -26,7 +26,7 @@ const SiteHeader = () => {
   return (
     <>
       <div className="fixed inset-x-0 top-0 z-[70] border-b border-border-subtle bg-background/95 backdrop-blur-md md:hidden">
-        {!isOpen && (
+        {!isLoading && !isOpen && (
           <div className="bg-red-500 text-white text-[10px] sm:text-xs font-semibold py-1 px-4 text-center flex items-center justify-center gap-1.5 w-full">
             <AlertCircle className="h-3 w-3 shrink-0" />
             <span className="truncate">A loja está fechada. Os pedidos serão processados no próximo horário útil.</span>
@@ -86,7 +86,7 @@ const SiteHeader = () => {
       </div>
 
       <header className="sticky top-0 z-50 hidden border-b border-border-subtle bg-background/95 backdrop-blur-md md:block flex flex-col">
-        {!isOpen && (
+        {!isLoading && !isOpen && (
           <div className="bg-red-500 text-white text-xs font-semibold py-1.5 px-4 text-center flex items-center justify-center gap-2">
             <AlertCircle className="h-4 w-4" />
             <span>A loja está fechada no momento. Os pedidos serão processados no próximo horário útil.</span>

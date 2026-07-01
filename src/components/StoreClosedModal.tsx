@@ -15,7 +15,7 @@ import { AlertCircle } from "lucide-react";
 
 const StoreClosedModal = () => {
   const { totalItems } = useCart();
-  const { data: settings } = useStoreSettings();
+  const { data: settings, isLoading } = useStoreSettings();
   const { isOpen } = useBusinessStatus(settings?.businessHours);
   const [showModal, setShowModal] = useState(false);
   
@@ -27,6 +27,7 @@ const StoreClosedModal = () => {
     if (
       previousTotalItems.current === 0 &&
       totalItems > 0 &&
+      !isLoading &&
       !isOpen &&
       !hasShownThisSession.current
     ) {
@@ -34,7 +35,7 @@ const StoreClosedModal = () => {
       hasShownThisSession.current = true;
     }
     previousTotalItems.current = totalItems;
-  }, [totalItems, isOpen]);
+  }, [totalItems, isOpen, isLoading]);
 
   return (
     <Dialog open={showModal} onOpenChange={setShowModal}>
