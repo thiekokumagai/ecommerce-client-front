@@ -132,14 +132,14 @@ const ProductPage = () => {
     return current + 1;
   });
 
-  const isAtLimit = useMemo(() => {
-    if (product.variationGroup) {
+  const isAtLimit = (() => {
+    if (product?.variationGroup) {
       if (!selectedVariation) return false;
       const opt = product.variationGroup.options.find((o) => o.label === selectedVariation);
       return opt?.stock !== undefined && quantity >= opt.stock;
     }
-    return product.stock !== undefined && quantity >= product.stock;
-  }, [product.variationGroup, product.stock, selectedVariation, quantity]);
+    return product?.stock !== undefined && quantity >= product.stock;
+  })();
 
   const primaryButtonLabel = isUnavailable
     ? "Esgotado"

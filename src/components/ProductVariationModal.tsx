@@ -22,9 +22,7 @@ const ProductVariationModal = ({
   const [displayQuantity, setDisplayQuantity] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
 
-  if (!product.variationGroup) return null;
-
-  const availableOptions = product.variationGroup.options.filter((option) => option.available);
+  const availableOptions = product.variationGroup?.options.filter((option) => option.available) ?? [];
 
   const quantityInCart = useMemo(() => {
     if (!selectedOption) return 0;
@@ -113,6 +111,8 @@ const ProductVariationModal = ({
     const currentOption = product.variationGroup?.options.find(o => o.label === selectedOption);
     return currentOption?.stock !== undefined && displayQuantity >= currentOption.stock;
   }, [product.variationGroup, selectedOption, displayQuantity]);
+
+  if (!product.variationGroup) return null;
 
   return (
     <div

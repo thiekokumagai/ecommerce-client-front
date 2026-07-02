@@ -9,12 +9,13 @@ import ProductVariationModal from "@/components/ProductVariationModal";
 interface ProductCardProps {
   product: Product;
   index: number;
+  isBestSeller?: boolean;
 }
 
 const formatPrice = (price: number) =>
   `R$${price.toFixed(2).replace(".", ",")}`;
 
-const ProductCard = ({ product }: ProductCardProps) => {
+const ProductCard = ({ product, isBestSeller }: ProductCardProps) => {
   const { items, addToCart, updateQuantity, removeFromCart } = useCart();
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [showVariationModal, setShowVariationModal] = useState(false);
@@ -90,10 +91,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <>
-      <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl">
+      <div className={`group relative flex h-full flex-col overflow-hidden rounded-2xl ${isBestSeller ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-background shadow-lg' : ''}`}>
         {product.isPromo && product.oldPrice && (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
             -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
+          </span>
+        )}
+        
+        {isBestSeller && (
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md flex items-center gap-1">
+            <span className="text-xs">🔥</span> Top 1
           </span>
         )}
 
