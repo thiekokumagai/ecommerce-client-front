@@ -36,7 +36,13 @@ const BestSellersSection = () => {
   if (selectedNicotineStrength && filteredProducts.length === 0) return null;
   if (!selectedCategory && !normalizedSearch && !selectedNicotineStrength && filteredProducts.length === 0) return null;
 
-  const visible = showAll || normalizedSearch || selectedNicotineStrength ? filteredProducts : filteredProducts.slice(0, 8);
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (a.isBestSeller && !b.isBestSeller) return -1;
+    if (!a.isBestSeller && b.isBestSeller) return 1;
+    return 0;
+  });
+
+  const visible = showAll || normalizedSearch || selectedNicotineStrength ? sortedProducts : sortedProducts.slice(0, 8);
 
   return (
     <section id="produtos" className="py-12 md:py-16">
