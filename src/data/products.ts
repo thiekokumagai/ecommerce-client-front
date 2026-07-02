@@ -21,6 +21,7 @@ export interface Product {
   isPromo?: boolean;
   stock?: number;
   variationGroup?: ProductVariationGroup;
+  isBestSeller?: boolean;
 }
 
 export interface SelectedProduct {

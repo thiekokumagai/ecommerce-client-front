@@ -25,6 +25,7 @@ interface NewApiProduct {
     options: { option: { value: string } }[];
   }[];
   images?: { url: string }[];
+  isBestSeller?: boolean;
 }
 
 function buildImageUrl(path?: string) {
@@ -88,6 +89,7 @@ export function transformNewApiProduct(raw: NewApiProduct): Product & { isVisibl
     stock: totalStock,
     variationGroup,
     isVisible: raw.isVisible,
+    isBestSeller: raw.isBestSeller,
   };
 }
 

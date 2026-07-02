@@ -59,9 +59,17 @@ const BestSellersSection = () => {
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
-          {visible.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
-          ))}
+          {visible.map((product, i) => {
+            const isBestSeller = Boolean(product.isBestSeller) && !normalizedSearch && !selectedNicotineStrength && !selectedCategory;
+            return (
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                index={i} 
+                isBestSeller={isBestSeller} 
+              />
+            );
+          })}
         </div>
       </div>
     </section>
