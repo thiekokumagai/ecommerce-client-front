@@ -46,7 +46,7 @@ const PromotionsSection = () => {
         </div>
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
           {visibleProducts.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
+            <ProductCard key={product.id} product={product} index={i} isBestSeller={Boolean(product.isBestSeller)} />
           ))}
         </div>
       </div>

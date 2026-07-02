@@ -91,7 +91,7 @@ const ProductCard = ({ product, isBestSeller }: ProductCardProps) => {
 
   return (
     <>
-      <div className={`group relative flex h-full flex-col overflow-hidden rounded-2xl ${isBestSeller ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-background shadow-lg' : ''}`}>
+      <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl bg-card transition-shadow hover:shadow-md">
         {product.isPromo && product.oldPrice && (
           <span className="absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
             -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}%
@@ -99,9 +99,22 @@ const ProductCard = ({ product, isBestSeller }: ProductCardProps) => {
         )}
         
         {isBestSeller && (
-          <span className="absolute right-3 top-3 z-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-md flex items-center gap-1">
-            <span className="text-xs">🔥</span> Top 1
-          </span>
+          <div 
+            className="absolute right-1 top-1 z-10 flex h-[64px] w-[64px] items-center justify-center drop-shadow-md" 
+            style={{ transform: 'rotate(-8deg)' }}
+          >
+            <div className="absolute inset-1 bg-[#DE2839]" style={{ transform: 'rotate(0deg)' }}></div>
+            <div className="absolute inset-1 bg-[#DE2839]" style={{ transform: 'rotate(22.5deg)' }}></div>
+            <div className="absolute inset-1 bg-[#DE2839]" style={{ transform: 'rotate(45deg)' }}></div>
+            <div className="absolute inset-1 bg-[#DE2839]" style={{ transform: 'rotate(67.5deg)' }}></div>
+            
+            <div 
+              className="relative z-10 flex flex-col items-center justify-center leading-[0.95] text-white font-black tracking-[-0.03em]" 
+            >
+              <span className="text-[17px]">BEST</span>
+              <span className="text-[13px]">SELLER</span>
+            </div>
+          </div>
         )}
 
         <Link to={`/produto/${product.id}`} className="block">

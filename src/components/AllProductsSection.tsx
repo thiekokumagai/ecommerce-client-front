@@ -37,6 +37,11 @@ const AllProductsSection = () => {
         : true;
 
       return hasAvailableVariations && matchesSearch && matchesNicotine;
+    })
+    .sort((a, b) => {
+      if (a.isBestSeller && !b.isBestSeller) return -1;
+      if (!a.isBestSeller && b.isBestSeller) return 1;
+      return 0;
     });
 
   // Reset visible count ONLY when filters ACTUALLY change
@@ -111,7 +116,7 @@ const AllProductsSection = () => {
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
           {visible.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
+            <ProductCard key={product.id} product={product} index={i} isBestSeller={Boolean(product.isBestSeller)} />
           ))}
         </div>
 

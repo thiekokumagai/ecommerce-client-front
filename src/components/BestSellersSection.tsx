@@ -66,7 +66,7 @@ const BestSellersSection = () => {
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
           {visible.map((product, i) => {
-            const isBestSeller = Boolean(product.isBestSeller) && !normalizedSearch && !selectedNicotineStrength && !selectedCategory;
+            const isBestSeller = Boolean(product.isBestSeller);
             return (
               <ProductCard 
                 key={product.id} 
